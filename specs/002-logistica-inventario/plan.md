@@ -2,53 +2,97 @@
 
 ## 1. Resumen
 
-Proponemos desarrollar un módulo de Logística e Inventario para un sistema ERP, que nos permita gestionar o administrar los productos y bodegas de una empresa.
+Nuestro proyecto consiste en desarrollar un módulo de Logística e Inventario para un sistema ERP, que permita llevar un mejor control de los productos y bodegas de una empresa.
 
-La herramienta permitirá registrar productos, controlar las existencias, registrar las entradas y salidas de productos y consultar información del inventario.
+La herramienta permitirá registrar productos, revisar las cantidades disponibles y controlar las entradas y salidas del inventario.
 
-El módulo se desarrollará a partir de la plantilla proporcionada por el profesor, adaptándola a las necesidades del área de logística.
+Para desarrollarla utilizaremos la plantilla entregada por el profesor, adaptándola a las funciones que necesitamos.
 
 ## 2. Problema a resolver
 
-Las empresas necesitan mantener un control de los productos que almacenan y distribuyen. Cuando la información del inventario no está organizada, pueden producirse errores en las cantidades registradas, pérdidas de productos y problemas de abastecimiento.
+Las empresas necesitan mantener un control de los productos que almacenan y distribuyen. Cuando no existe un buen registro del inventario, pueden producirse errores en las cantidades, pérdidas de productos o problemas de abastecimiento.
 
-Por ello, la idea es crear una herramienta que facilite el registro y seguimiento del inventario.
+Por esto, queremos desarrollar una herramienta que ayude a mantener la información organizada y actualizada.
 
 ## 3. Objetivo
 
-Diseñar e implementar un módulo ERP para administrar el inventario de una empresa, simplificando el control de productos, bodegas y movimientos de mercancías.
+Diseñar un módulo ERP que permita administrar los productos, bodegas y movimientos de inventario de una empresa.
 
-Se busca proporcionar información actualizada sobre las existencias y ayudar a llevar un mejor control del inventario.
+Buscamos facilitar el control de las existencias y tener acceso a la información necesaria para realizar las actividades de logística.
 
 ## 4. Funcionalidades del módulo
-El módulo de Logística e Inventario contará con cinco funcionalidades principales:
 
-1. **Registro de productos:** permitirá ingresar, modificar y consultar información de los productos, incluyendo su nombre, código y categoría.
+Nuestro módulo tendrá cinco funcionalidades principales:
 
-2. **Control de stock:** permitirá conocer las cantidades disponibles de cada producto en las distintas bodegas.
+1. **Registro de productos:** agregar, modificar y consultar información de los productos, como nombre, código y categoría.
 
-3. **Registro de entradas y salidas:** permitirá registrar los movimientos de productos, manteniendo un historial de las operaciones realizadas.
+2. **Control de stock:** revisar las cantidades disponibles de cada producto en las distintas bodegas.
 
-4. **Gestión de bodegas:** permitirá administrar las bodegas, consultar la ubicación de los productos y registrar transferencias entre ellas.
+3. **Entradas y salidas:** registrar los ingresos y retiros de productos, manteniendo un historial de los movimientos.
 
-5. **Alertas de stock:** permitirá identificar los productos cuyas existencias se encuentren por debajo de una cantidad mínima definida.
+4. **Gestión de bodegas:** registrar bodegas, conocer la ubicación de los productos y realizar transferencias entre ellas.
+
+5. **Alertas de stock:** identificar los productos que tengan una cantidad disponible menor al mínimo establecido.
 
 ## 5. Usuarios del sistema
 
-El módulo está dirigido principalmente a empresas que necesitan administrar sus productos y bodegas.
+El módulo estará dirigido a empresas que necesiten controlar sus productos y bodegas.
 
 Los principales usuarios serán:
 
-- **Encargados de bodega:** responsables de registrar las entradas, salidas y transferencias de productos.
-- **Supervisores de inventario:** encargados de revisar las existencias, controlar los movimientos y detectar productos con bajo stock.
-- **Administradores:** responsables de mantener actualizada la información de los productos y las bodegas.
+- Encargados de bodega: registrarán las entradas, salidas y transferencias de productos.
+- Supervisores de inventario: revisarán las existencias, los movimientos y las alertas de stock.
+- Administradores: mantendrán actualizada la información de los productos y bodegas.
 
 ## 6. Manejo de datos y riesgos
 
-El sistema almacenará información relacionada con los productos, sus cantidades, ubicaciones y movimientos de inventario.
+El sistema guardará información de los productos, sus cantidades, ubicaciones y movimientos.
 
-Para disminuir los errores, se propone incorporar validaciones que eviten registros incompletos, cantidades negativas y salidas superiores al stock disponible.
+Para evitar errores, se incorporarán validaciones que impidan registrar datos incompletos, cantidades negativas o retirar más productos de los disponibles.
 
-También se deberá considerar el riesgo de pérdida o modificación incorrecta de información. Como la plantilla utiliza almacenamiento local en el navegador, los datos no estarán sincronizados automáticamente entre distintos computadores.
+También existe el riesgo de perder información, ya que inicialmente los datos se guardarán en el navegador mediante localStorage. Por esto, más adelante se podría incorporar una base de datos compartida y un sistema de respaldos.
+## 7. Contexto técnico
 
-Por este motivo, el módulo se desarrollará inicialmente como un prototipo, considerando para futuras versiones una base de datos centralizada y mecanismos de respaldo y control de acceso.
+Para desarrollar nuestro módulo utilizaremos la plantilla ERP entregada por el profesor, que trabaja con HTML, CSS, JavaScript y Vite.
+
+La plantilla ya permite registrar, modificar y buscar información, por lo que aprovecharemos estas funciones para adaptarlas a Logística e Inventario.
+
+En un principio, los datos se guardarán mediante localStorage, es decir, directamente en el navegador.
+
+## 8. Estructura de datos
+
+Para organizar la información utilizaremos como referencia el modelo de datos entregado por el profesor.
+
+Las principales tablas que necesitamos son:
+
+- `products`: información de los productos.
+- `warehouses`: información de las bodegas.
+- `inventory_stock`: cantidades disponibles de cada producto.
+- `inventory_transactions`: registro de entradas y salidas.
+- `stock_transfers`: transferencias entre bodegas.
+
+También consideraremos otras tablas para las categorías, ubicaciones y detalles de las transferencias.
+
+La idea es mantener las relaciones del modelo original para que nuestro módulo sea compatible con el resto del ERP. Además, tendremos que adaptar la estructura de entidades y documentos de la plantilla.
+
+Para las alertas proponemos agregar un stock mínimo, ya que este dato no aparece directamente en el modelo entregado.
+
+## 9. Etapas de desarrollo
+
+Primero definiremos las funcionalidades y las tablas necesarias para nuestro módulo.
+
+Después realizaremos el Modelo Entidad-Relación, identificando cómo se conectan las tablas.
+
+Una vez terminado el diseño, comenzaremos a adaptar la plantilla y desarrollar las funciones de inventario.
+
+Finalmente, realizaremos pruebas para revisar el funcionamiento del sistema y corregir posibles errores.
+
+## 10. Pruebas del sistema
+
+Para comprobar que nuestro módulo funcione correctamente, utilizaremos productos y bodegas de ejemplo.
+
+Revisaremos que las entradas y salidas actualicen las cantidades disponibles, que las transferencias se registren correctamente y que las alertas aparezcan cuando el stock sea bajo.
+
+## 11. Mejoras futuras
+
+Más adelante se podría incorporar una base de datos compartida, permitir el acceso de distintos usuarios y agregar reportes que ayuden a analizar el inventario.
