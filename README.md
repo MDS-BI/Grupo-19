@@ -1,16 +1,8 @@
-# ERP Software Base Module (Vite + Vanilla JS)
+# Módulo de Logística e Inventario
 
-Minimal single-page app serving as an Enterprise Resource Planning (ERP) software base module. It provides the common foundation for building custom ERP modules: master data management (Entities) and linked transactional documents (Documents) with create/edit/delete/search, validation, and browser localStorage persistence — using Vite and vanilla HTML, CSS, and JavaScript.
+Nuestro proyecto consiste en desarrollar un módulo de Logística e Inventario para un sistema ERP, que permita llevar un mejor control de los productos y bodegas de una empresa. El sistema estará orientado al registro de productos, la consulta de las cantidades disponibles y el control de las entradas y salidas de inventario. También se busca incorporar transferencias entre bodegas y alertas cuando las existencias estén por debajo del stock mínimo establecido.
 
-The user interface is fully in **Spanish** (default terms: Entidad / Documento; module name: Módulo Base ERP), including labels, validation messages, empty states, and dialogs.
-
-Entities carry standard ERP master-data fields (name, code, tax ID, email, phone, address, category, target date, credit limit, payment terms). Documents use series + folio numbering and carry a monetary breakdown (subtotal, discount, tax, total), currency, payment terms, notes, quantity, dates, and status.
-
-The app presents itself as a coherent ERP workspace:
-
-- **Workspace shell** — every screen lives inside a branded chrome: a top bar with a logo (an SVG monogram derived from the module name) and module name, plus a persistent sidebar of module buttons (Panel, Entidades, Documentos, Búsqueda). The active module is highlighted (`aria-current="page"`), and the sidebar collapses to an icon rail on narrow viewports.
-- **Home dashboard** — the entry screen offers quick-action buttons for key ERP tasks (new entity, new document, open management areas, find records) and live statistic cards showing record counts.
-- **Design tokens** — styling is driven by CSS custom properties in `src/styles.css`, so branding changes apply globally.
+Para desarrollar el módulo utilizaremos la plantilla entregada por el profesor, aprovechando sus funciones de registro, edición y búsqueda de información. El sistema tomará como referencia nuestro Modelo Entidad-Relación, que considera productos, categorías, bodegas, usuarios, existencias, movimientos y transferencias. La idea es adaptar la estructura existente y desarrollar las funciones necesarias para administrar el inventario de manera más organizada.
 
 ## Setup
 
