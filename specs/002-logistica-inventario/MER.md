@@ -87,4 +87,6 @@ erDiagram
 
 El MER original elaborado por nuestro grupo se conserva como referencia visual.
 
-![MER visual original](MER-visual.png)
+
+![MER visual original](MER_logisica_visual.jpeg)
+
