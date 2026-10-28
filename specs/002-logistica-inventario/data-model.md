@@ -1,105 +1,236 @@
-# Modelo de Datos: Módulo Base de Software de Planificación de Recursos Empresariales (ERP)
+# Modelo de Datos: Módulo de Logística e Inventario
 
-## Entidad: Entity (registro de datos maestros)
+## Descripción general
 
-Representa el dato maestro central del módulo (p. ej., cliente, proveedor, artículo) con su identidad fiscal, contacto y condiciones comerciales.
+El módulo permitirá organizar la información de productos, bodegas, usuarios y movimientos de inventario de una empresa.
 
-| Campo | Tipo | Descripción | Restricciones |
-|---|---|---|---|
-| id | string | Identificador interno único del registro de entidad | Obligatorio, generado automáticamente |
-| entity_id | string | Identificador público usado para vincular documentos a esta entidad | Obligatorio, generado automáticamente, único |
-| name | string | Nombre o razón social de la entidad | Obligatorio, no vacío |
-| code | string | Código o clave de negocio que identifica la entidad | Obligatorio, no vacío |
-| taxId | string | Identificación fiscal de la entidad (p. ej., RFC, NIT, CUIT) | Opcional; se almacena recortada cuando se proporciona |
-| email | string | Correo electrónico principal de contacto | Opcional; debe tener formato de correo válido si se proporciona |
-| phone | string | Teléfono de contacto | Opcional |
-| address | string | Dirección fiscal o comercial | Opcional |
-| category | string | Clasificación opcional como tipo, grupo o clase | Opcional |
-| description | string | Descripción corta o notas | Opcional |
-| targetDate | string | Fecha objetivo opcional en formato YYYY-MM-DD; los módulos personalizados definen su significado (p. ej., fecha de vencimiento, fecha de revisión) | Opcional, debe ser una fecha de calendario válida si se proporciona |
-| creditLimit | number | Límite de crédito extendido a la entidad en la moneda configurada | Opcional, debe ser un número no negativo |
-| paymentTerms | string | Condiciones de pago acordadas (p. ej., contado, neto 30) | Opcional |
-| createdAt | string | Marca de tiempo de cuándo se creó la entidad | Obligatorio |
-| updatedAt | string | Marca de tiempo de la última actualización de la entidad | Obligatorio |
+Para ello, utilizaremos las entidades definidas en nuestro Modelo Entidad-Relación (MER).
 
-## Entidad: Document (registro transaccional)
+## Entidad: PRODUCT_CATEGORIES
 
-Representa un documento transaccional vinculado a una entidad (p. ej., pedido, factura, contrato), identificado por serie y folio y con desglose económico.
+Permite clasificar los productos según su categoría.
 
 | Campo | Tipo | Descripción | Restricciones |
 |---|---|---|---|
-| id | string | Identificador único del documento | Obligatorio, generado automáticamente |
-| entity_id | string | Identificador de la entidad a la que pertenece este documento | Obligatorio, debe referenciar el entity_id de una entidad existente |
-| series | string | Serie del documento (p. ej., FAC, A, NV) que agrupa folios consecutivos | Opcional |
-| folio | number | Folio consecutivo que, junto con la serie, forma el número oficial del documento | Obligatorio, debe ser un entero positivo |
-| startDate | string | Fecha de inicio en formato YYYY-MM-DD | Obligatorio, debe ser una fecha de calendario válida |
-| endDate | string | Fecha de fin en formato YYYY-MM-DD | Obligatorio, debe ser una fecha de calendario válida, debe ser igual o posterior a startDate |
-| quantity | number | Cantidad asociada al documento | Opcional, debe ser un entero positivo |
-| subtotal | number | Importe antes de descuentos e impuestos | Opcional, debe ser un número no negativo |
-| discount | number | Descuento aplicado sobre el subtotal | Opcional, debe ser un número no negativo y no puede superar el subtotal |
-| taxAmount | number | Impuesto calculado para el documento | Opcional, debe ser un número no negativo |
-| totalAmount | number | Importe total del documento en la moneda configurada | Opcional, debe ser un número no negativo |
-| currency | string | Código de moneda para los importes del documento (p. ej., MXN, USD, EUR) | Opcional |
-| paymentTerms | string | Condiciones de pago del documento (p. ej., contado, neto 30) | Opcional |
-| notes | string | Notas u observaciones libres del documento | Opcional |
-| status | string | Estado del documento como borrador, pendiente, aprobado o cancelado | Opcional |
-| createdAt | string | Marca de tiempo de cuándo se creó el documento | Obligatorio |
-| updatedAt | string | Marca de tiempo de la última actualización del documento | Obligatorio |
+| category_id | int | Identificador de la categoría | PK, obligatorio y único |
+| category_name | string | Nombre de la categoría | Obligatorio, no vacío |
 
-## Entidad: ModuleConfig
+## Entidad: PRODUCTS
 
-Objeto de configuración cargado al arrancar que adapta el módulo base en un módulo específico.
+Almacena la información de los productos de la empresa.
 
 | Campo | Tipo | Descripción | Restricciones |
 |---|---|---|---|
-| moduleName | string | Nombre visible del módulo adaptado | Obligatorio, no vacío |
-| labels | object | Mapeos de términos como `{ entity: "Cliente", entities: "Clientes", document: "Pedido de Venta", documents: "Pedidos de Venta" }` | Opcional; retrocede a Entidad/Documento |
-| customFields | array | Definiciones de campos por tipo de registro: `{ target: "entity"\|"document", key, label, type: "text"\|"number"\|"date"\|"select", required: boolean, options?: string[] }` | Opcional; las claves NO DEBEN chocar con nombres de campos base |
-| statusLifecycle | object | Estados ordenados y transiciones permitidas para documentos, p. ej., `{ statuses: ["cotización", "pedido", "facturado"], transitions: { cotización: ["pedido"], pedido: ["facturado"], facturado: [] } }` | Opcional |
-| theme | object | Opciones de marca, p. ej., `{ accentColor: "#0f62fe" }`; aplicado como propiedad personalizada de CSS en todo el marco del espacio de trabajo | Opcional; accentColor debe ser un color CSS válido o retrocede al predeterminado |
+| product_id | int | Identificador del producto | PK, obligatorio y único |
+| product_name | string | Nombre del producto | Obligatorio, no vacío |
+| description | string | Descripción del producto | Opcional |
+| unit_price | decimal | Precio unitario | Mayor o igual a cero |
+| category_id | int | Categoría del producto | FK a PRODUCT_CATEGORIES |
+| dimensions_height | string | Altura del producto | Opcional |
+| dimensions_width | string | Ancho del producto | Opcional |
+| dimensions_depth | string | Profundidad del producto | Opcional |
+| weight | decimal | Peso del producto | Mayor o igual a cero |
 
-## Reglas de ModuleConfig
 
-- La configuración se carga una vez al arrancar y se aplica en todas las pantallas.
-- Cuando la configuración está ausente, se aplican los valores predeterminados integrados: etiquetas Entidad/Documento, sin campos personalizados, estado de texto libre, color de acento predeterminado.
-- Los valores inválidos o conflictivos deben informarse con claridad en lugar de fallar silenciosamente.
-- Las claves de campos personalizados no deben chocar con los nombres de campos base (`id`, `entity_id`, `name`, `code`, `taxId`, `email`, `phone`, `address`, `category`, `description`, `targetDate`, `creditLimit`, `paymentTerms`, `series`, `folio`, `startDate`, `endDate`, `quantity`, `subtotal`, `discount`, `taxAmount`, `totalAmount`, `currency`, `notes`, `status`).
-- Los valores de campos personalizados se persisten junto a los campos base sin cambios de esquema en el almacenamiento.
-- Un ciclo de vida configurado reemplaza la entrada de estado de texto libre; sin uno, el estado permanece como texto libre.
+## Entidad: WAREHOUSES (Bodegas)
 
-## Reglas de Validación
+Almacena la información de las bodegas de la empresa, incluyendo su ubicación, capacidad y responsable.
 
-### Entidad
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| warehouse_id | int | Identificador de la bodega | PK, obligatorio y único |
+| name | string | Nombre de la bodega | Obligatorio, no vacío |
+| location | string | Ubicación de la bodega | Obligatorio |
+| capacity | int | Capacidad de almacenamiento | Mayor o igual a cero |
+| responsable_id | int | Usuario responsable de la bodega | FK a USERS, puede ser nulo |
 
-- Una entidad debe incluir un nombre no vacío.
-- Una entidad debe incluir un código no vacío.
-- La identificación fiscal, teléfono, dirección, categoría, descripción y condiciones de pago son opcionales pero deben almacenarse como cadenas recortadas.
-- El correo electrónico es opcional pero, cuando está presente, debe tener formato de correo válido.
-- El límite de crédito es opcional pero, cuando está presente, debe ser un número no negativo.
-- La fecha objetivo es opcional pero, cuando está presente, debe ser una fecha de calendario válida en formato YYYY-MM-DD.
-- Un entity_id debe generarse automáticamente y debe ser único entre todas las entidades.
+## Entidad: USERS (Usuarios)
 
-### Documento
+Contiene la información de los usuarios que utilizan el sistema de inventario.
 
-- Un documento debe referenciar una entidad existente mediante entity_id.
-- Un documento debe incluir un folio entero positivo; la serie es opcional y, cuando existe, se combina con el folio para formar el número oficial del documento (p. ej., `FAC-1001`).
-- Un documento debe incluir fechas de inicio y fin válidas; la fecha de fin debe ser igual o posterior a la fecha de inicio.
-- La cantidad es opcional y debe ser un entero positivo.
-- Subtotal, descuento, impuesto e importe total son opcionales y deben ser números no negativos; el descuento no puede superar el subtotal.
-- La aplicación debe normalizar el texto para un comportamiento de búsqueda consistente.
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| user_id | int | Identificador del usuario | PK, obligatorio y único |
+| user_name | string | Nombre del usuario | Obligatorio, no vacío |
+| role | string | Rol del usuario dentro del sistema | Obligatorio |
+| email | string | Correo electrónico del usuario | Formato de correo válido |
+| assigned_warehouse_id | int | Bodega asignada al usuario | FK a WAREHOUSES, puede ser nulo |
 
-> Nota: el cálculo automático de totales (p. ej., `total = subtotal - descuento + impuesto`) queda como punto de extensión; el módulo base valida cada importe de forma independiente para evitar sorpresas por redondeo.
+## Relaciones entre WAREHOUSES y USERS
 
-## Relaciones
+- Un usuario puede ser responsable de una o varias bodegas.
+- Una bodega puede tener varios usuarios asignados.
+- `responsable_id` referencia a `USERS.user_id`.
+- `assigned_warehouse_id` referencia a `WAREHOUSES.warehouse_id`.
 
-- Cada entidad se almacena independientemente y aparece como una única fila en la lista de entidades.
-- Cada entidad tiene un entity_id usado para conectarse a sus documentos.
-- Cada documento pertenece exactamente a una entidad, vinculada por el entity_id de la entidad.
-- Cuando se elimina una entidad, todos los documentos que referencian su entity_id también se eliminan.
-- Las operaciones de búsqueda se realizan sobre los registros de entidad almacenados, incluyendo identidad fiscal, contacto y condiciones comerciales.
 
-## Notas de Extensibilidad
+## Entidad: STOCK (Existencias)
 
-- Los módulos personalizados pueden añadir campos específicos del dominio a cualquiera de los dos tipos de registro; los campos base anteriores deben mantener sus nombres y semántica para que el almacenamiento, la validación y la integridad referencial permanezcan intactos.
-- El campo `status` es intencionadamente de texto libre a nivel base para que cada módulo personalizado pueda imponer su propio ciclo de vida (p. ej., estados de pedidos, estados de aprobación).
-- La unicidad de folio por serie, las partidas de documento (líneas con producto, cantidad y precio) y la numeración automática son puntos de extensión naturales para módulos que los requieran.
+Registra las cantidades disponibles de cada producto en las distintas bodegas.
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| stock_id | int | Identificador del registro de stock | PK, obligatorio y único |
+| product_id | int | Producto almacenado | FK a PRODUCTS |
+| warehouse_id | int | Bodega donde se almacena | FK a WAREHOUSES |
+| quantity_available | int | Cantidad disponible del producto | Mayor o igual a cero |
+| min_stock_level | int | Cantidad mínima de stock permitida | Mayor o igual a cero |
+| expiration_date | date | Fecha de vencimiento del producto | Opcional |
+| update_date | date | Fecha de última actualización del stock | Obligatorio |
+
+## Entidad: INVENTORY_TRANSACTIONS (Movimientos de inventario)
+
+Registra las entradas y salidas de productos, manteniendo un historial de los movimientos realizados.
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| transaction_id | int | Identificador del movimiento | PK, obligatorio y único |
+| product_id | int | Producto involucrado | FK a PRODUCTS |
+| warehouse_id | int | Bodega donde ocurre el movimiento | FK a WAREHOUSES |
+| transaction_type | string | Tipo de movimiento (entrada o salida) | Obligatorio |
+| quantity | int | Cantidad de productos movidos | Mayor que cero |
+| user_id | int | Usuario que registra el movimiento | FK a USERS |
+| transaction_date | date | Fecha del movimiento | Obligatorio |
+
+## Entidad: STOCK_TRANSFERS (Transferencias entre bodegas)
+
+Registra los traslados de productos desde una bodega de origen hacia una bodega de destino.
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| transfer_id | int | Identificador de la transferencia | PK, obligatorio y único |
+| product_id | int | Producto que se transfiere | FK a PRODUCTS |
+| source_warehouse_id | int | Bodega de origen | FK a WAREHOUSES |
+| target_warehouse_id | int | Bodega de destino | FK a WAREHOUSES |
+| quantity | int | Cantidad de productos transferidos | Mayor que cero |
+| status | string | Estado de la transferencia | Obligatorio |
+| transfer_date | date | Fecha de la transferencia | Obligatorio |
+
+## Relaciones entre entidades
+
+Las entidades del módulo de Logística e Inventario se relacionan mediante claves primarias (PK) y foráneas (FK), permitiendo conectar la información de los productos, bodegas, usuarios y movimientos.
+
+### 1. PRODUCT_CATEGORIES - PRODUCTS
+Una categoría puede contener varios productos, pero cada producto pertenece a una categoría.
+
+- Cardinalidad: 1:N
+- FK: PRODUCTS.category_id
+
+### 2. PRODUCTS - STOCK
+Un producto puede tener registros de stock en distintas bodegas. Cada registro de stock corresponde a un producto.
+
+- Cardinalidad: 1:N
+- FK: STOCK.product_id
+
+### 3. WAREHOUSES - STOCK
+Una bodega puede almacenar distintos productos, y cada registro de stock pertenece a una bodega.
+
+- Cardinalidad: 1:N
+- FK: STOCK.warehouse_id
+
+### 4. PRODUCTS - INVENTORY_TRANSACTIONS
+Un producto puede tener varios movimientos de inventario, como entradas y salidas.
+
+- Cardinalidad: 1:N
+- FK: INVENTORY_TRANSACTIONS.product_id
+
+### 5. WAREHOUSES - INVENTORY_TRANSACTIONS
+En una bodega pueden realizarse varios movimientos de inventario.
+
+- Cardinalidad: 1:N
+- FK: INVENTORY_TRANSACTIONS.warehouse_id
+
+### 6. USERS - INVENTORY_TRANSACTIONS
+Un usuario puede registrar varios movimientos de inventario. Cada movimiento es registrado por un usuario.
+
+- Cardinalidad: 1:N
+- FK: INVENTORY_TRANSACTIONS.user_id
+
+### 7. PRODUCTS - STOCK_TRANSFERS
+Un producto puede aparecer en varias transferencias entre bodegas.
+
+- Cardinalidad: 1:N
+- FK: STOCK_TRANSFERS.product_id
+
+### 8. WAREHOUSES - STOCK_TRANSFERS
+Una bodega puede participar en varias transferencias, ya sea como origen o destino.
+
+- Cardinalidad: 1:N en ambos casos
+- FK: STOCK_TRANSFERS.source_warehouse_id
+- FK: STOCK_TRANSFERS.target_warehouse_id
+
+### 9. USERS - WAREHOUSES
+Un usuario puede ser responsable de varias bodegas, mientras que cada bodega puede tener un responsable.
+
+- Cardinalidad: 1:N
+- FK: WAREHOUSES.responsable_id
+
+### 10. WAREHOUSES - USERS
+Una bodega puede tener varios usuarios asignados, mientras que cada usuario puede estar asignado a una bodega.
+
+- Cardinalidad: 1:N
+- FK: USERS.assigned_warehouse_id
+
+
+## Reglas de validación
+
+Para mantener la información del inventario correcta, el sistema deberá considerar las siguientes reglas:
+
+### Productos
+- Cada producto debe tener un identificador único.
+- El nombre del producto es obligatorio.
+- El precio y el peso no pueden ser negativos.
+- Cada producto debe estar asociado a una categoría existente.
+
+### Stock
+- Las cantidades disponibles no pueden ser negativas.
+- Cada registro de stock debe estar asociado a un producto y una bodega.
+- El sistema debe identificar los productos cuyo stock disponible sea menor al mínimo establecido.
+- Para este prototipo se mantendrá un registro de stock por producto y bodega.
+
+### Movimientos de inventario
+- Cada movimiento debe indicar un producto, una bodega, una cantidad y un usuario responsable.
+- La cantidad registrada debe ser mayor que cero.
+- Las entradas aumentan el stock disponible.
+- Las salidas disminuyen el stock disponible.
+- No se permitirá retirar una cantidad superior a la disponible.
+- Cada movimiento deberá quedar registrado con su fecha.
+
+### Transferencias entre bodegas
+- Cada transferencia debe indicar un producto, una bodega de origen y una de destino.
+- La bodega de origen debe ser distinta de la bodega de destino.
+- La cantidad transferida debe ser mayor que cero.
+- No se permitirá transferir más productos de los disponibles en la bodega de origen.
+- Al confirmar una transferencia, se descontará la cantidad de la bodega de origen y se agregará a la de destino.
+- Una transferencia confirmada no debe volver a actualizar el stock.
+
+## Compatibilidad con la plantilla ERP
+
+El módulo se desarrollará utilizando la plantilla entregada por el profesor, que cuenta con estructuras generales llamadas Entity, Document y ModuleConfig.
+
+### Entity
+La estructura Entity permite registrar datos maestros. En nuestro módulo se utilizará como referencia para gestionar los productos, manteniendo los identificadores y campos necesarios de la plantilla.
+
+### Document
+La estructura Document permite registrar operaciones asociadas a una entidad. Se utilizará como referencia para los movimientos de inventario, considerando el producto, la cantidad, la fecha y el estado de la operación.
+
+### ModuleConfig
+El archivo module-config.js permite personalizar el nombre del módulo, las etiquetas, los campos adicionales y los estados de los documentos.
+
+Lo utilizaremos para adaptar las opciones disponibles a Logística e Inventario.
+
+### Extensiones necesarias
+El control de stock por bodega, la administración de usuarios y las transferencias requieren estructuras y funciones adicionales a las que ofrece la plantilla base.
+
+El modelo ERP de referencia utiliza identificadores enteros, mientras que la plantilla trabaja con identificadores de texto. Durante la implementación se deberá mantener un tipo consistente para cada identificador y sus relaciones.
+
+Inicialmente los datos se almacenarán mediante localStorage, manteniendo las relaciones definidas en nuestro MER.
+
+Las estructuras Entity y Document conservarán los campos técnicos necesarios para no afectar las funcionalidades existentes.
+
+## Referencias del Modelo Entidad-Relación (MER)
+
+El modelo de datos se complementa con los siguientes archivos:
+
+- [MER en código Mermaid](mer.md): contiene las entidades y relaciones del módulo en un formato que puede ser interpretado por OpenCode y SpecKit.
+- [MER visual original](MER_logistica_VISUAL.jpeg): corresponde al diagrama elaborado por nuestro grupo y se incluye como referencia visual.
