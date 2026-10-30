@@ -25,7 +25,7 @@ Almacena la información de los productos de la empresa.
 | product_name | string | Nombre del producto | Obligatorio, no vacío |
 | description | string | Descripción del producto | Opcional |
 | unit_price | decimal | Precio unitario | Mayor o igual a cero |
-| category_id | int | Categoría del producto | FK a PRODUCT_CATEGORIES |
+| category_id | int | Categoría del producto | FK a PRODUCT_CATEGORIES, obligatorio |
 | dimensions_height | string | Altura del producto | Opcional |
 | dimensions_width | string | Ancho del producto | Opcional |
 | dimensions_depth | string | Profundidad del producto | Opcional |
@@ -71,12 +71,14 @@ Registra las cantidades disponibles de cada producto en las distintas bodegas.
 | Campo | Tipo | Descripción | Restricciones |
 |---|---|---|---|
 | stock_id | int | Identificador del registro de stock | PK, obligatorio y único |
-| product_id | int | Producto almacenado | FK a PRODUCTS |
-| warehouse_id | int | Bodega donde se almacena | FK a WAREHOUSES |
+| product_id | int | Producto almacenado | FK a PRODUCTS, forma parte de la restricción única (product_id, warehouse_id) |
+| warehouse_id | int | Bodega donde se almacena | FK a WAREHOUSES, forma parte de la restricción única (product_id, warehouse_id) |
 | quantity_available | int | Cantidad disponible del producto | Mayor o igual a cero |
 | min_stock_level | int | Cantidad mínima de stock permitida | Mayor o igual a cero |
 | expiration_date | date | Fecha de vencimiento del producto | Opcional |
 | update_date | date | Fecha de última actualización del stock | Obligatorio |
+
+**Restricción única:** la combinación (`product_id`, `warehouse_id`) debe ser única; solo puede existir un registro de stock por producto y bodega.
 
 ## Entidad: INVENTORY_TRANSACTIONS (Movimientos de inventario)
 
@@ -87,7 +89,7 @@ Registra las entradas y salidas de productos, manteniendo un historial de los mo
 | transaction_id | int | Identificador del movimiento | PK, obligatorio y único |
 | product_id | int | Producto involucrado | FK a PRODUCTS |
 | warehouse_id | int | Bodega donde ocurre el movimiento | FK a WAREHOUSES |
-| transaction_type | string | Tipo de movimiento (entrada o salida) | Obligatorio |
+| transaction_type | string | Tipo de movimiento | Obligatorio; valores permitidos: "entrada" o "salida" |
 | quantity | int | Cantidad de productos movidos | Mayor que cero |
 | user_id | int | Usuario que registra el movimiento | FK a USERS |
 | transaction_date | date | Fecha del movimiento | Obligatorio |
@@ -103,7 +105,7 @@ Registra los traslados de productos desde una bodega de origen hacia una bodega 
 | source_warehouse_id | int | Bodega de origen | FK a WAREHOUSES |
 | target_warehouse_id | int | Bodega de destino | FK a WAREHOUSES |
 | quantity | int | Cantidad de productos transferidos | Mayor que cero |
-| status | string | Estado de la transferencia | Obligatorio |
+| status | string | Estado de la transferencia | Obligatorio; valores permitidos: "pendiente", "confirmada" o "cancelada" |
 | transfer_date | date | Fecha de la transferencia | Obligatorio |
 
 ## Relaciones entre entidades
@@ -186,10 +188,11 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 - Las cantidades disponibles no pueden ser negativas.
 - Cada registro de stock debe estar asociado a un producto y una bodega.
 - El sistema debe identificar los productos cuyo stock disponible sea menor al mínimo establecido.
-- Para este prototipo se mantendrá un registro de stock por producto y bodega.
+- Para este prototipo se mantendrá un registro de stock por producto y bodega; la combinación (`product_id`, `warehouse_id`) debe ser única.
 
 ### Movimientos de inventario
 - Cada movimiento debe indicar un producto, una bodega, una cantidad y un usuario responsable.
+- El tipo de movimiento solo puede ser "entrada" o "salida".
 - La cantidad registrada debe ser mayor que cero.
 - Las entradas aumentan el stock disponible.
 - Las salidas disminuyen el stock disponible.
@@ -198,6 +201,7 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 
 ### Transferencias entre bodegas
 - Cada transferencia debe indicar un producto, una bodega de origen y una de destino.
+- El estado de la transferencia solo puede ser "pendiente", "confirmada" o "cancelada".
 - La bodega de origen debe ser distinta de la bodega de destino.
 - La cantidad transferida debe ser mayor que cero.
 - No se permitirá transferir más productos de los disponibles en la bodega de origen.
@@ -232,5 +236,5 @@ Las estructuras Entity y Document conservarán los campos técnicos necesarios p
 
 El modelo de datos se complementa con los siguientes archivos:
 
-- [MER en código Mermaid](mer.md): contiene las entidades y relaciones del módulo en un formato que puede ser interpretado por OpenCode y SpecKit.
-- [MER visual original](MER_logistica_VISUAL.jpeg): corresponde al diagrama elaborado por nuestro grupo y se incluye como referencia visual.
+- [MER en código Mermaid](MER.md): contiene las entidades y relaciones del módulo en un formato que puede ser interpretado por OpenCode y SpecKit.
+- [MER visual original](MER_logisica_visual.jpeg): corresponde al diagrama elaborado por nuestro grupo y se incluye como referencia visual.
