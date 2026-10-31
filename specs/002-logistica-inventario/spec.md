@@ -9,12 +9,28 @@
 
 El módulo de Logística e Inventario tiene como objetivo facilitar la gestión de productos, bodegas y existencias de una empresa. Permitirá registrar entradas y salidas de productos, consultar el stock disponible, realizar transferencias entre bodegas y generar alertas cuando las existencias sean bajas.
 
+## Clarifications
+
+### Session 2026-10-30
+
+- Q: Cuando se guarda un movimiento de entrada o salida, ¿cómo debe actualizarse el stock? → A: Actualización inmediata; si no existe registro de stock para producto+bodega, la entrada lo crea y la salida sin existencias se rechaza.
+- Q: Una vez registrado un movimiento de inventario, ¿se debe poder editar o eliminar? → A: El movimiento es inmutable; no se edita ni elimina y las correcciones se hacen con un nuevo movimiento de ajuste que deja rastro.
+- Q: ¿Cómo se debe determinar el usuario que registra el movimiento de inventario? → A: El formulario exige seleccionar un usuario existente de USERS y guarda su user_id; el movimiento se rechaza si el usuario no existe.
+- Q: ¿Cómo se debe establecer la fecha del movimiento de inventario? → A: El sistema asigna automáticamente la fecha y hora al guardar; el usuario no puede modificarla.
+- Q: Cuando se registra una entrada de un producto con vencimiento, ¿cómo se debe manejar la fecha de vencimiento? → A: Queda fuera de HU-03; se difiere a una historia posterior de lotes o vencimientos.
+
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
 ### Historia de Usuario 3 - Registrar entradas y salidas de inventario (Prioridad: P1)
 
 Como encargado de bodega, quiero registrar las entradas y salidas de productos, indicando el producto, la bodega y la cantidad correspondiente, para mantener actualizado el stock disponible y conservar un historial de los movimientos realizados.
+
+- **Actualización de stock**: al guardar un movimiento, el stock se actualiza inmediatamente. Si no existe un registro de stock para la combinación producto+bodega, una entrada lo crea con la cantidad indicada y una salida se rechaza.
+- **Historial inmutable**: los movimientos registrados no se editan ni eliminan; las correcciones se realizan con un nuevo movimiento de entrada o salida que queda en el historial.
+- **Usuario responsable**: el formulario de movimiento exige seleccionar un usuario existente de USERS; el sistema guarda su `user_id` y rechaza el movimiento si el usuario no existe.
+- **Fecha automática**: la fecha y hora del movimiento se asignan automáticamente al guardar y no son editables por el usuario.
+- **Vencimientos fuera de alcance**: HU-03 no captura fechas de vencimiento ni lotes; se abordan en una historia posterior.
 
 ---
 
@@ -36,6 +52,10 @@ Como encargado de bodega, quiero registrar las entradas y salidas de productos, 
 - ¿Qué ocurre cuando el panel se abre con cero entidades o cero documentos (valores estadísticos)?
 - ¿Qué ocurre cuando el color de acento configurado no es un valor de color válido?
 - ¿Cómo mantiene la barra lateral contraída las etiquetas de módulo accesibles en ventanas gráficas estrechas?
+- ¿Qué ocurre cuando se registra una salida sin stock disponible para el producto y la bodega?
+- ¿Qué ocurre cuando se intenta editar o eliminar un movimiento de inventario ya registrado?
+- ¿Qué ocurre cuando se intenta registrar un movimiento con un usuario que no existe?
+- ¿Qué ocurre cuando se registra una entrada de un producto con fecha de vencimiento? (Se difiere a una historia posterior).
 
 ## Requisitos *(obligatorio)*
 
@@ -80,6 +100,13 @@ Como encargado de bodega, quiero registrar las entradas y salidas de productos, 
 - **FR-037**: La barra lateral DEBE resaltar visualmente el módulo activo en cada pantalla.
 - **FR-038**: La configuración PUEDE definir un color de acento; el sistema DEBE aplicarlo consistentemente en todo el marco y retroceder de forma segura a los valores integrados cuando esté ausente o sea inválido.
 - **FR-039**: En ventanas gráficas estrechas, la barra lateral DEBE contraerse a una columna de iconos manteniéndose operable.
+- **FR-040**: Al guardar un movimiento de inventario, el sistema DEBE actualizar inmediatamente `quantity_available` del registro de stock correspondiente al producto y la bodega.
+- **FR-041**: Si no existe un registro de stock para la combinación producto+bodega, una entrada DEBE crear el registro; una salida DEBE rechazarse.
+- **FR-042**: Una salida cuya cantidad supere el stock disponible DEBE rechazarse sin modificar el stock.
+- **FR-043**: El sistema DEBE impedir la edición y eliminación de movimientos de inventario ya registrados.
+- **FR-044**: El sistema DEBE permitir corregir un movimiento mediante un nuevo movimiento de ajuste que quede registrado en el historial.
+- **FR-045**: El formulario de movimiento DEBE exigir la selección de un usuario existente en USERS y guardar su `user_id`; el sistema DEBE rechazar el movimiento si el usuario no existe.
+- **FR-046**: El sistema DEBE asignar automáticamente la fecha y hora del movimiento al guardarlo y NO DEBE permitir que el usuario la modifique.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
 
@@ -128,4 +155,5 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - Los datos siguen persistiéndose en el localStorage del navegador y no se ven afectados por la navegación entre pantallas.
 - La pantalla de búsqueda se centra en encontrar y ver entidades; la edición permanece en la pantalla de gestión.
 - El contenido del usuario introducido por el usuario (nombres, descripciones, notas de documentos) DEBE sanitizarse antes de renderizarse en el DOM para prevenir ataques de inyección de scripts (XSS). El módulo base DEBE escapar HTML y atributos de eventos al mostrar datos de localStorage.
+- La fecha de vencimiento y el control por lotes quedan fuera de HU-03; se abordarán en una historia posterior.
 
