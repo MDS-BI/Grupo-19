@@ -22,6 +22,65 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
+
+### Historia de Usuario 1 - Registro y Modificación de Productos (Prioridad: P1)
+
+Como administrador del sistema, quiero registrar nuevos productos y modificar los existentes, para mantener la información del inventario actualizada, precisa y disponible para las operaciones de venta y logística.
+
+**Por qué es prioridad**: El catálogo de productos es la entidad fundacional de todo el sistema. Sin productos registrados y correctamente tipificados, es imposible ejecutar módulos dependientes como las entradas/salidas de bodega (HU-03), el control de existencias, reportes o ventas. Esta historia desbloquea el flujo operativo principal.
+
+**Prueba Independiente**: Se puede probar creando un producto de prueba en un entorno aislado, proporcionando todos los campos requeridos (Nombre, SKU, Precio, Categoría), validando su correcta inserción en la base de datos, luego modificando su precio y confirmando que la fecha de actualización cambia sin afectar el histórico de otros registros.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** el administrador se encuentra en la pantalla de "Nuevo Producto", **Cuando** ingresa todos los campos obligatorios válidos (Nombre, SKU único, Precio de Venta, Categoría) y guarda, **Entonces** el sistema almacena el producto, muestra un mensaje de éxito ("Producto registrado correctamente") y lo lista en el inventario con estado activo.
+2. **Dado que** el administrador intenta registrar un producto nuevo o editar uno existente, **Cuando** ingresa un SKU que ya está en uso por otro producto, **Entonces** el sistema impide la acción, conserva los datos en el formulario y muestra un mensaje de error: "El SKU ingresado ya existe".
+3. **Dado que** el administrador está editando un producto existente, **Cuando** modifica atributos permitidos (como Precio de Venta o Descripción) y guarda, **Entonces** los cambios se reflejan inmediatamente en el listado y el sistema actualiza de manera automática la "Fecha de última modificación".
+4. **Dado que** el administrador está en el formulario de creación/edición, **Cuando** intenta guardar dejando campos obligatorios en blanco, **Entonces** el sistema bloquea el envío y resalta visualmente los campos faltantes requiriendo su llenado.
+
+---
+
+### Casos Límite
+
+* ¿Qué ocurre si un administrador intenta modificar el SKU de un producto que ya tiene historial de movimientos (entradas/salidas) asociados?
+* ¿Cómo se advierte al usuario si ingresa un "Precio de Costo" superior al "Precio de Venta"? (¿Se bloquea o solo alerta?).
+* ¿Qué sucede si un usuario intenta cambiar el estado de un producto a "Inactivo" pero este aún cuenta con stock físico en bodegas?
+* ¿Cómo maneja el sistema la importación o el copiado y pegado de texto que incluye espacios en blanco al inicio o final del SKU o el Nombre?
+
+## Requisitos *(obligatorio)*
+
+### Requisitos Funcionales
+
+* **FR-001**: El sistema DEBE permitir el registro de productos requiriendo como mínimo: Nombre, SKU (Código de Referencia Único), Precio de Venta, Categoría y Estado.
+* **FR-002**: El sistema DEBE permitir añadir campos opcionales como: Descripción, Precio de Costo, Proveedor y Unidad de Medida.
+* **FR-003**: El sistema DEBE garantizar que el campo SKU sea único en toda la base de datos de productos.
+* **FR-004**: El sistema DEBE validar que los valores numéricos ingresados en "Precio de Venta" y "Precio de Costo" sean mayores o iguales a 0.
+* **FR-005**: El sistema DEBE registrar automáticamente el usuario que crea/modifica el producto, así como las marcas de tiempo de creación (`created_at`) y actualización (`updated_at`).
+* **FR-006**: El sistema DEBE permitir alternar el estado del producto (Activo/Inactivo) para controlar su disponibilidad en los módulos operativos.
+* **FR-007**: El sistema DEBE sanitizar todos los campos de texto ingresados para prevenir ataques XSS antes de su renderizado.
+
+### Entidades Clave
+
+* **Producto**: Representa el artículo físico o bien gestionado en el inventario. Atributos clave: Identificador interno (`product_id`), SKU (único), Nombre, Descripción, Categoría, Precio de Venta, Precio de Costo, Unidad de Medida, Estado (Activo/Inactivo), Fecha de Creación, Fecha de Modificación.
+
+## Criterios de Éxito *(obligatorio)*
+
+### Resultados Medibles
+
+* **SC-001**: Los usuarios administradores pueden registrar un nuevo producto sin errores de navegación en menos de 1 minuto.
+* **SC-002**: El sistema detecta y bloquea intentos de duplicación de SKU en menos de 1 segundo tras la solicitud de guardado, sin que se caiga la aplicación.
+* **SC-003**: Las modificaciones realizadas a un producto se reflejan en el listado general inmediatamente sin necesidad de que el usuario fuerce la recarga del navegador.
+* **SC-004**: El 100% de los envíos con datos faltantes son atajados por la validación del front-end antes de llegar al servidor.
+
+## Suposiciones
+
+* El administrador cuenta con los privilegios de seguridad necesarios para la creación y edición del catálogo.
+* El SKU es un código alfanumérico estandarizado por la empresa; no se genera automáticamente en esta versión (el usuario lo digita).
+* No se contempla el manejo de imágenes múltiples de productos en esta iteración inicial; se trabajará únicamente con datos alfanuméricos.
+* La gestión de impuestos sobre el producto se considerará resuelta de manera global o en una capa de facturación posterior; el módulo almacena el valor neto.
+
+
+
 ### Historia de Usuario 3 - Registrar entradas y salidas de inventario (Prioridad: P1)
 
 Como encargado de bodega, quiero registrar las entradas y salidas de productos, indicando el producto, la bodega y la cantidad correspondiente, para mantener actualizado el stock disponible y conservar un historial de los movimientos realizados.
