@@ -212,6 +212,68 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - Solo se muestra una pantalla a la vez; no hay diseño lado a lado del contenido de gestión y búsqueda.
 - La navegación entre pantallas se maneja dentro de la aplicación (p. ej., cambio de vistas), y el botón atrás del navegador debe comportarse de forma predecible.
 - Los datos siguen persistiéndose en el localStorage del navegador y no se ven afectados por la navegación entre pantallas.
+  ## Feature Specification: Gestión de Bodegas (HU-04)
+
+**Feature Branch**: `[004-warehouse-management]`
+
+**Created**: [2026-11-01]
+
+**Status**: Draft
+
+**Input**: User description based on User Story HU-04 (Gestión de bodegas).
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Registro y Administración de Bodegas (Priority: P1)
+
+Como administrador, quiero registrar y administrar bodegas para organizar los lugares donde se almacenan los productos.
+
+**Why this priority**: Es la funcionalidad central requerida para habilitar la estructura física del sistema de inventario. Sin bodegas registradas, no es posible asociar existencias, registrar entradas/salidas ni realizar transferencias entre ubicaciones.
+
+**Independent Test**: Se puede probar registrando una nueva bodega con su información básica, modificando sus datos y cambiando su estado (activo/inactivo), verificando que cada cambio se refleje correctamente en el sistema.
+
+**Acceptance Scenarios**:
+
+1. **Given** que el administrador se encuentra en el módulo de configuración de bodegas, **When** ingresa los datos obligatorios de una nueva bodega (nombre, ubicación y descripción) y guarda los cambios, **Then** el sistema registra la bodega exitosamente y la muestra en el listado general con estado activo.
+2. **Given** que una bodega ya se encuentra registrada en el sistema, **When** el administrador edita sus detalles (por ejemplo, cambia el nombre o la ubicación) y confirma la actualización, **Then** el sistema guarda los nuevos datos de manera correcta.
+3. **Given** que una bodega existe en el sistema, **When** el administrador cambia su estado a inactivo, **Then** el sistema actualiza su disponibilidad y restringe la selección de esta bodega para nuevos movimientos operativos.
+
+---
+
+### Edge Cases
+
+* ¿Qué sucede si el administrador intenta registrar una nueva bodega utilizando un nombre o identificador que ya existe en el sistema?
+* ¿Cómo maneja el sistema la desactivación o eliminación lógica de una bodega que aún contiene stock de productos o historial de movimientos activos?
+* ¿Qué ocurre si un usuario intenta realizar una operación seleccionando una bodega que ha sido marcada como inactiva?
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+* **FR-001**: El sistema MUST permitir registrar nuevas bodegas indicando nombre único, ubicación física y detalles opcionales.
+* **FR-002**: El sistema MUST permitir al administrador modificar la información descriptiva y de ubicación de las bodegas existentes.
+* **FR-003**: El sistema MUST permitir cambiar el estado de una bodega entre activo e inactivo.
+* **FR-004**: El sistema MUST impedir la selección de bodegas inactivas para la realización de nuevos movimientos de inventario o transferencias.
+* **FR-005**: El sistema MUST validar que no se dupliquen los nombres o códigos identificatorios de las bodegas.
+
+### Key Entities
+
+* **Bodega**: Representa la ubicación física o almacén donde se resguardan los productos. Atributos clave: Identificador único, Nombre, Ubicación/Dirección, Descripción, Estado (Activo/Inactivo), Fecha de creación.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+* **SC-001**: Los administradores pueden registrar una nueva bodega completa en menos de 1 minuto.
+* **SC-002**: El listado y la actualización de los datos de las bodegas se reflejan en la interfaz de usuario en menos de 2 segundos.
+* **SC-003**: El 100% de los intentos de realizar operaciones sobre bodegas inactivas son bloqueados correctamente por el sistema.
+* **SC-004**: El 100% de los registros de bodegas nuevas validan y previenen duplicidades de nombres o identificadores.
+
+## Assumptions
+
+* El administrador cuenta con los privilegios de seguridad necesarios para crear, editar y cambiar el estado de las bodegas.
+* Una bodega representa una ubicación física real dentro de la operación logística de la organización.
+* Las validaciones de duplicidad de nombres de bodegas se realizan a nivel de base de datos o lógica de negocio central.
 - La pantalla de búsqueda se centra en encontrar y ver entidades; la edición permanece en la pantalla de gestión.
 - El contenido del usuario introducido por el usuario (nombres, descripciones, notas de documentos) DEBE sanitizarse antes de renderizarse en el DOM para prevenir ataques de inyección de scripts (XSS). El módulo base DEBE escapar HTML y atributos de eventos al mostrar datos de localStorage.
 - La fecha de vencimiento y el control por lotes quedan fuera de HU-03; se abordarán en una historia posterior.
