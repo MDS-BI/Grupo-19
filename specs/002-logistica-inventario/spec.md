@@ -292,7 +292,7 @@ Como administrador, quiero registrar y administrar bodegas para organizar los lu
 1. **Dado que** el encargado de bodega se encuentra en el formulario de "Nueva Transferencia", **Cuando** selecciona un producto válido, una bodega de origen con stock suficiente, una bodega de destino diferente y una cantidad mayor a cero, **Entonces** el sistema genera el registro con estado `"pendiente"` y asigna la fecha del día (`transfer_date`).
 2. **Dado que** existe una transferencia registrada en estado `"pendiente"`, **Cuando** el usuario confirma la recepción en la bodega de destino, **Entonces** el sistema cambia el estado a `"confirmada"`, descuenta las unidades de la bodega origen e incrementa el stock en la bodega destino.
 3. **Dado que** un usuario intenta registrar una transferencia, **Cuando** selecciona la misma bodega como origen y destino, **Entonces** el sistema bloquea el envío y muestra el mensaje de error: "La bodega de destino debe ser diferente a la bodega de origen".
-4. **Dado que** la cantidad a transferir supera el stock disponible en la bodega de origen (`quantity\_available`), **Cuando** el usuario intenta guardar la solicitud, **Entonces** el sistema rechaza la transacción informando falta de existencias.
+4. **Dado que** la cantidad a transferir supera el stock disponible en la bodega de origen (`quantity_available`), **Cuando** el usuario intenta guardar la solicitud, **Entonces** el sistema rechaza la transacción informando falta de existencias.
 
 **Casos Límite**: 
 * ¿Qué ocurre si la bodega de destino pasa a estar inactiva mientras existe una transferencia en camino en estado 'pendiente'?
@@ -308,7 +308,7 @@ Como administrador, quiero registrar y administrar bodegas para organizar los lu
 * **FR-052**: El sistema DEBE registrar la fecha de la transacción (`transfer_date`) de forma automática.
 
 **Entidades Clave**: 
-* **Transferencia de Stock (`STOCK\_TRANSFERS`)**: Documento transaccional que enlaza `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity`, `status` y `transfer_date`.
+* **Transferencia de Stock (`STOCK_TRANSFERS`)**: Documento transaccional que enlaza `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity`, `status` y `transfer_date`.
 
 **Criterios de Éxito Medibles**: 
 * **SC-051**: Los usuarios pueden registrar una solicitud de transferencia en menos de 45 segundos.
