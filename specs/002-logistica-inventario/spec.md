@@ -278,3 +278,44 @@ Como administrador, quiero registrar y administrar bodegas para organizar los lu
 - El contenido del usuario introducido por el usuario (nombres, descripciones, notas de documentos) DEBE sanitizarse antes de renderizarse en el DOM para prevenir ataques de inyección de scripts (XSS). El módulo base DEBE escapar HTML y atributos de eventos al mostrar datos de localStorage.
 - La fecha de vencimiento y el control por lotes quedan fuera de HU-03; se abordarán en una historia posterior.
 
+### Historia de Usuario 5 - Transferencias de Productos entre Bodegas (Prioridad: P2)
+
+**Como** encargado de bodega, 
+**quiero** registrar transferencias de productos entre distintas bodegas, 
+**para** controlar los traslados de mercadería, evitar pérdidas de stock y mantener la trazabilidad de los envíos.
+
+**Por qué es prioridad**: Las transferencias permiten balancear existencias entre distintas ubicaciones físicas sin alterar el balance global de inventario. Esta historia es clave para la operación multi-bodega y conecta directamente las entidades `WAREHOUSES`, `PRODUCTS` y la tabla transaccional `STOCK_TRANSFERS`.
+
+**Prueba Independiente**: Se puede probar generando una solicitud de traslado de 10 unidades del Producto A desde Bodega Origen hacia Bodega Destino. Se verifica que la orden quede en estado `"pendiente"`, que no permita seleccionar la misma bodega como origen y destino, y que al confirmarse actualice de forma simultánea el stock acumulado en la tabla `STOCK` de ambas ubicaciones.
+
+**Escenarios de Aceptación**:
+1. **Dado que** el encargado de bodega se encuentra en el formulario de "Nueva Transferencia", **Cuando** selecciona un producto válido, una bodega de origen con stock suficiente, una bodega de destino diferente y una cantidad mayor a cero, **Entonces** el sistema genera el registro con estado `"pendiente"` y asigna la fecha del día (`transfer_date`).
+2. **Dado que** existe una transferencia registrada en estado `"pendiente"`, **Cuando** el usuario confirma la recepción en la bodega de destino, **Entonces** el sistema cambia el estado a `"confirmada"`, descuenta las unidades de la bodega origen e incrementa el stock en la bodega destino.
+3. **Dado que** un usuario intenta registrar una transferencia, **Cuando** selecciona la misma bodega como origen y destino, **Entonces** el sistema bloquea el envío y muestra el mensaje de error: "La bodega de destino debe ser diferente a la bodega de origen".
+4. **Dado que** la cantidad a transferir supera el stock disponible en la bodega de origen (`quantity\_available`), **Cuando** el usuario intenta guardar la solicitud, **Entonces** el sistema rechaza la transacción informando falta de existencias.
+
+**Casos Límite**: 
+* ¿Qué ocurre si la bodega de destino pasa a estar inactiva mientras existe una transferencia en camino en estado 'pendiente'?
+* ¿Qué sucede si un usuario intenta cancelar o editar una transferencia que ya fue marcada como 'confirmada'? (El sistema bloquea la acción; los traslados confirmados son inmutables).
+* ¿Cómo reacciona el sistema si el registro de stock para el producto aún no existe en la bodega de destino al momento de confirmar la recepción? (El sistema crea automáticamente la entrada correspondiente en `STOCK`).
+
+**Requisitos Funcionales**:
+* **FR-047**: El sistema DEBE permitir registrar solicitudes de transferencia entre bodegas requiriendo: Producto (`product_id`), Bodega Origen (`source_warehouse_id`), Bodega Destino (`target_warehouse_id`) y Cantidad (`quantity`).
+* **FR-048**: El sistema DEBE validar que la Bodega Origen y la Bodega Destino sean entidades distintas.
+* **FR-049**: El sistema DEBE verificar que la Bodega Origen disponga de `quantity_available` suficiente en `STOCK` antes de autorizar el registro.
+* **FR-050**: El sistema DEBE gestionar el estado de la transferencia permitiendo únicamente los valores: 'pendiente', 'confirmada' y 'cancelada'.
+* **FR-051**: El sistema DEBE actualizar los niveles de `STOCK` en origen y destino únicamente cuando la transferencia cambie a estado 'confirmada'.
+* **FR-052**: El sistema DEBE registrar la fecha de la transacción (`transfer_date`) de forma automática.
+
+**Entidades Clave**: 
+* **Transferencia de Stock (`STOCK\_TRANSFERS`)**: Documento transaccional que enlaza `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity`, `status` y `transfer_date`.
+
+**Criterios de Éxito Medibles**: 
+* **SC-051**: Los usuarios pueden registrar una solicitud de transferencia en menos de 45 segundos.
+* **SC-052**: El 100% de los intentos de transferencia entre bodegas idénticas o sin stock suficiente son bloqueados por las validaciones.
+* **SC-053**: El stock de ambas bodegas se actualiza en la interfaz de forma inmediata al confirmar la recepción.
+
+**Suposiciones**: 
+* Ambas bodegas participantes deben estar en estado activo al momento de crear la solicitud.
+* Las transferencias confirmadas no vuelven a actualizar el stock para evitar duplicaciones.
+   
