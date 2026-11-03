@@ -229,19 +229,19 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 
 ## User Scenarios & Testing *(mandatory)*
 
-### Historia de Usuario 4 - Registro y Administración de Bodegas (Priority: P1)
+### Historia de Usuario 4 - Registro y Administración de Bodegas (Prioridad: P1)
 
-Como administrador, quiero registrar y administrar bodegas para organizar los lugares donde se almacenan los productos.
+Como administrador, quiero registrar y administrar bodegas, para organizar los lugares donde se almacenan los productos.
 
-**Why this priority**: Es la funcionalidad central requerida para habilitar la estructura física del sistema de inventario. Sin bodegas registradas, no es posible asociar existencias, registrar entradas/salidas ni realizar transferencias entre ubicaciones.
+**Por qué es prioridad**: Es la funcionalidad central requerida para habilitar la estructura física del sistema de inventario. Sin bodegas registradas, no es posible asociar existencias, registrar entradas/salidas ni realizar transferencias entre ubicaciones.
 
-**Independent Test**: Se puede probar registrando una nueva bodega con su información básica, modificando sus datos y cambiando su estado (activo/inactivo), verificando que cada cambio se refleje correctamente en el sistema.
+**Prueba Independiente**: Se puede probar registrando una nueva bodega con su información básica, modificando sus datos y cambiando su estado (activo/inactivo), verificando que cada cambio se refleje correctamente en el sistema.
 
-**Acceptance Scenarios**:
+**Escenarios de Aceptación**:
 
-1. **Given** que el administrador se encuentra en el módulo de configuración de bodegas, **When** ingresa los datos obligatorios de una nueva bodega (nombre, ubicación y descripción) y guarda los cambios, **Then** el sistema registra la bodega exitosamente y la muestra en el listado general con estado activo.
-2. **Given** que una bodega ya se encuentra registrada en el sistema, **When** el administrador edita sus detalles (por ejemplo, cambia el nombre o la ubicación) y confirma la actualización, **Then** el sistema guarda los nuevos datos de manera correcta.
-3. **Given** que una bodega existe en el sistema, **When** el administrador cambia su estado a inactivo, **Then** el sistema actualiza su disponibilidad y restringe la selección de esta bodega para nuevos movimientos operativos.
+1. **Dado que** el administrador se encuentra en el módulo de configuración de bodegas, **Cuando** ingresa los datos obligatorios de una nueva bodega (nombre, ubicación y descripción) y guarda los cambios, **Entonces** el sistema registra la bodega exitosamente y la muestra en el listado general con estado activo.
+2. **Dado que** una bodega ya se encuentra registrada en el sistema, **Cuando** el administrador edita sus detalles (por ejemplo, cambia el nombre o la ubicación) y confirma la actualización, **Entonces** el sistema guarda los nuevos datos de manera correcta.
+3. **Dado que** una bodega existe en el sistema, **Cuando** el administrador cambia su estado a inactivo, **Entonces** el sistema actualiza su disponibilidad y restringe la selección de esta bodega para nuevos movimientos operativos.
 
 ---
 
@@ -285,15 +285,14 @@ Como administrador, quiero registrar y administrar bodegas para organizar los lu
 
 ### Historia de Usuario 5 - Transferencias de Productos entre Bodegas (Prioridad: P2)
 
-**Como** encargado de bodega, 
-**quiero** registrar transferencias de productos entre distintas bodegas, 
-**para** controlar los traslados de mercadería, evitar pérdidas de stock y mantener la trazabilidad de los envíos.
+Como encargado de bodega, quiero registrar transferencias de productos entre distintas bodegas, para controlar los traslados de mercadería, evitar pérdidas de stock y mantener la trazabilidad de los envíos.
 
 **Por qué es prioridad**: Las transferencias permiten balancear existencias entre distintas ubicaciones físicas sin alterar el balance global de inventario. Esta historia es clave para la operación multi-bodega y conecta directamente las entidades `WAREHOUSES`, `PRODUCTS` y la tabla transaccional `STOCK_TRANSFERS`.
 
 **Prueba Independiente**: Se puede probar generando una solicitud de traslado de 10 unidades del Producto A desde Bodega Origen hacia Bodega Destino. Se verifica que la orden quede en estado `"pendiente"`, que no permita seleccionar la misma bodega como origen y destino, y que al confirmarse actualice de forma simultánea el stock acumulado en la tabla `STOCK` de ambas ubicaciones.
 
 **Escenarios de Aceptación**:
+
 1. **Dado que** el encargado de bodega se encuentra en el formulario de "Nueva Transferencia", **Cuando** selecciona un producto válido, una bodega de origen con stock suficiente, una bodega de destino diferente y una cantidad mayor a cero, **Entonces** el sistema genera el registro con estado `"pendiente"` y asigna la fecha del día (`transfer_date`).
 2. **Dado que** existe una transferencia registrada en estado `"pendiente"`, **Cuando** el usuario confirma la recepción en la bodega de destino, **Entonces** el sistema cambia el estado a `"confirmada"`, descuenta las unidades de la bodega origen e incrementa el stock en la bodega destino.
 3. **Dado que** un usuario intenta registrar una transferencia, **Cuando** selecciona la misma bodega como origen y destino, **Entonces** el sistema bloquea el envío y muestra el mensaje de error: "La bodega de destino debe ser diferente a la bodega de origen".
