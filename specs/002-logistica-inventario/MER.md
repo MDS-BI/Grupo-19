@@ -80,6 +80,8 @@ erDiagram
         int quantity
         string status
         date transfer_date
+        int created_by FK
+        int confirmed_by FK
     }
 
     PRODUCT_CATEGORIES ||--o{ PRODUCTS : clasifica
@@ -93,6 +95,8 @@ erDiagram
     WAREHOUSES ||--o{ STOCK_TRANSFERS : destino
     USERS |o--o{ WAREHOUSES : responsable
     WAREHOUSES |o--o{ USERS : asignados
+    USERS ||--o{ STOCK_TRANSFERS : crea
+    USERS |o--o{ STOCK_TRANSFERS : confirma
 ```
 
 ## Restricciones adicionales
@@ -104,6 +108,11 @@ erDiagram
 - En `STOCK`, la combinación (`product_id`, `warehouse_id`) debe ser única; solo puede existir un registro por producto y bodega.
 - `INVENTORY_TRANSACTIONS.transaction_type` solo admite los valores "entrada", "salida", "ajuste_entrada" o "ajuste_salida".
 - `STOCK_TRANSFERS.status` solo admite los valores "pendiente", "confirmada" o "cancelada".
+- `STOCK_TRANSFERS.created_by` es obligatorio y registra al usuario que crea la solicitud.
+- `STOCK_TRANSFERS.confirmed_by` es obligatorio cuando la transferencia pasa a estado "confirmada".
+- `PRODUCTS.unit_price` se conserva solo por compatibilidad con la plantilla base; las reglas de negocio usan `sale_price` y `cost_price`.
+- `STOCK.min_stock_level` y `STOCK.expiration_date` quedan reservados para iteraciones futuras; no se calculan alertas ni vencimientos en esta iteración.
+- `WAREHOUSES.responsable_id` identifica al responsable principal de la bodega; `USERS.assigned_warehouse_id` identifica la bodega operativa asignada al usuario.
 
 ## Referencia visual
 

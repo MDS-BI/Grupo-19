@@ -31,7 +31,7 @@ Almacena la información de los productos de la empresa.
 | unit_of_measure | string | Unidad de medida del producto (p. ej., unidad, caja, kg) | Opcional |
 | status | string | Estado del producto | Obligatorio; valores permitidos: "activo" o "inactivo" |
 | supplier | string | Proveedor del producto | Opcional |
-| unit_price | decimal | Precio unitario de referencia | Mayor o igual a cero |
+| unit_price | decimal | Precio unitario heredado de la plantilla base; no se usa en reglas de venta ni de costo | Mayor o igual a cero; solo compatibilidad |
 | dimensions_height | string | Altura del producto | Opcional |
 | dimensions_width | string | Ancho del producto | Opcional |
 | dimensions_depth | string | Profundidad del producto | Opcional |
@@ -54,7 +54,7 @@ Almacena la información de las bodegas de la empresa, incluyendo su ubicación,
 | description | string | Descripción de la bodega | Opcional |
 | capacity | int | Capacidad de almacenamiento | Mayor o igual a cero |
 | status | string | Estado de la bodega | Obligatorio; valores permitidos: "activo" o "inactivo" |
-| responsable_id | int | Usuario responsable de la bodega | FK a USERS, puede ser nulo |
+| responsable_id | int | Usuario responsable principal de la bodega | FK a USERS, puede ser nulo |
 
 ## Entidad: USERS (Usuarios)
 
@@ -66,12 +66,12 @@ Contiene la información de los usuarios que utilizan el sistema de inventario.
 | user_name | string | Nombre del usuario | Obligatorio, no vacío |
 | role | string | Rol del usuario dentro del sistema | Obligatorio |
 | email | string | Correo electrónico del usuario | Formato de correo válido |
-| assigned_warehouse_id | int | Bodega asignada al usuario | FK a WAREHOUSES, puede ser nulo |
+| assigned_warehouse_id | int | Bodega operativa asignada al usuario | FK a WAREHOUSES, puede ser nulo |
 
 ## Relaciones entre WAREHOUSES y USERS
 
-- Un usuario puede ser responsable de una o varias bodegas.
-- Una bodega puede tener varios usuarios asignados.
+- `responsable_id` identifica al usuario responsable principal de la bodega; un usuario puede ser responsable principal de una o varias bodegas.
+- `assigned_warehouse_id` identifica la bodega operativa asignada al usuario; una bodega puede tener varios usuarios asignados.
 - `responsable_id` referencia a `USERS.user_id`.
 - `assigned_warehouse_id` referencia a `WAREHOUSES.warehouse_id`.
 
@@ -86,8 +86,8 @@ Registra las cantidades disponibles de cada producto en las distintas bodegas.
 | product_id | int | Producto almacenado | FK a PRODUCTS, forma parte de la restricción única (product_id, warehouse_id) |
 | warehouse_id | int | Bodega donde se almacena | FK a WAREHOUSES, forma parte de la restricción única (product_id, warehouse_id) |
 | quantity_available | int | Cantidad disponible del producto | Mayor o igual a cero |
-| min_stock_level | int | Cantidad mínima de stock permitida | Mayor o igual a cero |
-| expiration_date | date | Fecha de vencimiento del producto | Opcional |
+| min_stock_level | int | Cantidad mínima de stock permitida; reservada para alertas futuras | Mayor o igual a cero; sin reglas en esta iteración |
+| expiration_date | date | Fecha de vencimiento del producto; reservada para control de lotes y vencimientos futuro | Opcional; sin reglas en esta iteración |
 | update_date | date | Fecha de última actualización del stock | Obligatorio |
 
 **Restricción única:** la combinación (`product_id`, `warehouse_id`) debe ser única; solo puede existir un registro de stock por producto y bodega.
@@ -119,6 +119,8 @@ Registra los traslados de productos desde una bodega de origen hacia una bodega 
 | quantity | int | Cantidad de productos transferidos | Mayor que cero |
 | status | string | Estado de la transferencia | Obligatorio; valores permitidos: "pendiente", "confirmada" o "cancelada" |
 | transfer_date | date | Fecha de la transferencia | Obligatorio |
+| created_by | int | Usuario que registra la solicitud de transferencia | FK a USERS, obligatorio |
+| confirmed_by | int | Usuario que confirma la recepción en la bodega de destino | FK a USERS, obligatorio cuando status = "confirmada" |
 
 ## Relaciones entre entidades
 
@@ -173,17 +175,24 @@ Una bodega puede participar en varias transferencias, ya sea como origen o desti
 - FK: STOCK_TRANSFERS.source_warehouse_id
 - FK: STOCK_TRANSFERS.target_warehouse_id
 
-### 9. USERS - WAREHOUSES
-Un usuario puede ser responsable de varias bodegas, mientras que cada bodega puede tener un responsable.
+### 9. USERS - WAREHOUSES (responsable principal)
+Un usuario puede ser responsable principal de varias bodegas, mientras que cada bodega puede tener un responsable principal.
 
 - Cardinalidad: 1:N
 - FK: WAREHOUSES.responsable_id
 
-### 10. WAREHOUSES - USERS
-Una bodega puede tener varios usuarios asignados, mientras que cada usuario puede estar asignado a una bodega.
+### 10. WAREHOUSES - USERS (bodega operativa)
+Una bodega puede tener varios usuarios asignados operativamente, mientras que cada usuario puede estar asignado a una bodega.
 
 - Cardinalidad: 1:N
 - FK: USERS.assigned_warehouse_id
+
+### 11. USERS - STOCK_TRANSFERS
+Un usuario puede crear y confirmar varias transferencias. Cada transferencia registra el usuario creador y, al confirmarse, el usuario que recibe.
+
+- Cardinalidad: 1:N
+- FK: STOCK_TRANSFERS.created_by
+- FK: STOCK_TRANSFERS.confirmed_by
 
 
 ## Reglas de validación
@@ -192,9 +201,10 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 
 ### Productos
 - Cada producto debe tener un identificador único.
-- El SKU es obligatorio y único en toda la base de datos de productos.
+- El SKU es obligatorio y único en todo el catálogo de productos.
 - El nombre del producto es obligatorio.
 - Los precios de venta, costo y referencia, y el peso no pueden ser negativos.
+- `unit_price` se conserva solo como campo de compatibilidad con la plantilla base; las reglas de negocio usan `sale_price` y `cost_price`.
 - El estado del producto solo puede ser "activo" o "inactivo".
 - Cada producto debe estar asociado a una categoría existente.
 - Cada producto debe registrar el usuario que lo crea y el que lo modifica, junto con las marcas de tiempo `created_at` y `updated_at`.
@@ -211,7 +221,7 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 ### Stock
 - Las cantidades disponibles no pueden ser negativas.
 - Cada registro de stock debe estar asociado a un producto y una bodega.
-- El sistema debe identificar los productos cuyo stock disponible sea menor al mínimo establecido.
+- `min_stock_level` y `expiration_date` se reservan para iteraciones futuras; en esta iteración no se calculan alertas de stock mínimo ni controles de vencimiento.
 - Para este prototipo se mantendrá un registro de stock por producto y bodega; la combinación (`product_id`, `warehouse_id`) debe ser única.
 
 ### Movimientos de inventario
@@ -226,25 +236,27 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 
 ### Transferencias entre bodegas
 - Cada transferencia debe indicar un producto, una bodega de origen y una de destino.
+- Cada transferencia debe registrar el usuario que la crea (`created_by`).
 - El estado de la transferencia solo puede ser "pendiente", "confirmada" o "cancelada".
 - La bodega de origen debe ser distinta de la bodega de destino.
 - La cantidad transferida debe ser mayor que cero.
 - No se permitirá transferir más productos de los disponibles en la bodega de origen.
 - Al confirmar una transferencia, se descontará la cantidad de la bodega de origen y se agregará a la de destino.
-- Una transferencia confirmada no debe volver a actualizar el stock.
+- La confirmación debe registrar el usuario que recibe (`confirmed_by`).
+- Solo las transferencias pendientes pueden confirmarse; una transferencia confirmada no se modifica ni vuelve a actualizar el stock.
 
 ## Catálogos semilla y alcance de la iteración
 
-- `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES` e `INVENTORY_TRANSACTIONS` puedan referenciarlos; no se incluyen pantallas de administración de categorías ni de usuarios en esta iteración.
-- El módulo no requiere autenticación en esta iteración. El campo `USERS.role` es informativo y el usuario que registra movimientos se selecciona del catálogo.
-- Las alertas de stock mínimo (`STOCK.min_stock_level`) quedan fuera del alcance de esta iteración.
+- `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES`, `INVENTORY_TRANSACTIONS` y `STOCK_TRANSFERS` puedan referenciarlos; no se incluyen pantallas de administración de categorías ni de usuarios en esta iteración.
+- El módulo no requiere autenticación en esta iteración. El campo `USERS.role` es informativo y los usuarios que registran movimientos y transferencias se seleccionan del catálogo.
+- Las alertas de stock mínimo (`STOCK.min_stock_level`) y el control de vencimientos (`STOCK.expiration_date`) quedan fuera del alcance de esta iteración.
 
 ## Compatibilidad con la plantilla ERP
 
 El módulo se desarrollará utilizando la plantilla entregada por el profesor, que cuenta con estructuras generales llamadas Entity, Document y ModuleConfig.
 
 ### Entity
-La estructura Entity permite registrar datos maestros. En nuestro módulo se utilizará como referencia para gestionar los productos, manteniendo los identificadores y campos necesarios de la plantilla.
+La estructura Entity permite registrar datos maestros. En nuestro módulo se utilizará como referencia para gestionar los productos, manteniendo los identificadores y campos necesarios de la plantilla. El campo `unit_price` se conserva únicamente por compatibilidad y no participa en las reglas de venta ni de costo.
 
 ### Document
 La estructura Document permite registrar operaciones asociadas a una entidad. Se utilizará como referencia para los movimientos de inventario, considerando el producto, la cantidad, la fecha y el estado de la operación.
