@@ -224,7 +224,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Registro y Administración de Bodegas (Priority: P1)
+### Historia de Usuario 4 - Registro y Administración de Bodegas (Priority: P1)
 
 Como administrador, quiero registrar y administrar bodegas para organizar los lugares donde se almacenan los productos.
 
