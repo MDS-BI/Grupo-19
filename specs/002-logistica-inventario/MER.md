@@ -14,21 +14,33 @@ erDiagram
 
     PRODUCTS {
         int product_id PK
+        string sku
         string product_name
         string description
-        decimal unit_price
         int category_id FK
+        decimal sale_price
+        decimal cost_price
+        string unit_of_measure
+        string status
+        string supplier
+        decimal unit_price
         string dimensions_height
         string dimensions_width
         string dimensions_depth
         decimal weight
+        datetime created_at
+        datetime updated_at
+        int created_by FK
+        int updated_by FK
     }
 
     WAREHOUSES {
         int warehouse_id PK
         string name
         string location
+        string description
         int capacity
+        string status
         int responsable_id FK
     }
 
@@ -86,8 +98,11 @@ erDiagram
 ## Restricciones adicionales
 
 - `PRODUCTS.category_id` es obligatorio (cada producto debe pertenecer a una categoría existente).
+- `PRODUCTS.sku` es obligatorio y único.
+- `WAREHOUSES.name` es obligatorio y único.
+- `WAREHOUSES.status` solo admite los valores "activo" o "inactivo".
 - En `STOCK`, la combinación (`product_id`, `warehouse_id`) debe ser única; solo puede existir un registro por producto y bodega.
-- `INVENTORY_TRANSACTIONS.transaction_type` solo admite los valores "entrada" o "salida".
+- `INVENTORY_TRANSACTIONS.transaction_type` solo admite los valores "entrada", "salida", "ajuste_entrada" o "ajuste_salida".
 - `STOCK_TRANSFERS.status` solo admite los valores "pendiente", "confirmada" o "cancelada".
 
 ## Referencia visual

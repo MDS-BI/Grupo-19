@@ -22,14 +22,24 @@ Almacena la información de los productos de la empresa.
 | Campo | Tipo | Descripción | Restricciones |
 |---|---|---|---|
 | product_id | int | Identificador del producto | PK, obligatorio y único |
+| sku | string | Código de referencia único del producto | Obligatorio, único, no vacío |
 | product_name | string | Nombre del producto | Obligatorio, no vacío |
 | description | string | Descripción del producto | Opcional |
-| unit_price | decimal | Precio unitario | Mayor o igual a cero |
 | category_id | int | Categoría del producto | FK a PRODUCT_CATEGORIES, obligatorio |
+| sale_price | decimal | Precio de venta del producto | Mayor o igual a cero |
+| cost_price | decimal | Precio de costo del producto | Mayor o igual a cero |
+| unit_of_measure | string | Unidad de medida del producto (p. ej., unidad, caja, kg) | Opcional |
+| status | string | Estado del producto | Obligatorio; valores permitidos: "activo" o "inactivo" |
+| supplier | string | Proveedor del producto | Opcional |
+| unit_price | decimal | Precio unitario de referencia | Mayor o igual a cero |
 | dimensions_height | string | Altura del producto | Opcional |
 | dimensions_width | string | Ancho del producto | Opcional |
 | dimensions_depth | string | Profundidad del producto | Opcional |
 | weight | decimal | Peso del producto | Mayor o igual a cero |
+| created_at | datetime | Marca de tiempo de creación del producto | Obligatorio |
+| updated_at | datetime | Marca de tiempo de la última modificación | Obligatorio |
+| created_by | int | Usuario que creó el producto | FK a USERS, obligatorio |
+| updated_by | int | Usuario que modificó el producto por última vez | FK a USERS, obligatorio |
 
 
 ## Entidad: WAREHOUSES (Bodegas)
@@ -39,9 +49,11 @@ Almacena la información de las bodegas de la empresa, incluyendo su ubicación,
 | Campo | Tipo | Descripción | Restricciones |
 |---|---|---|---|
 | warehouse_id | int | Identificador de la bodega | PK, obligatorio y único |
-| name | string | Nombre de la bodega | Obligatorio, no vacío |
+| name | string | Nombre de la bodega | Obligatorio, único, no vacío |
 | location | string | Ubicación de la bodega | Obligatorio |
+| description | string | Descripción de la bodega | Opcional |
 | capacity | int | Capacidad de almacenamiento | Mayor o igual a cero |
+| status | string | Estado de la bodega | Obligatorio; valores permitidos: "activo" o "inactivo" |
 | responsable_id | int | Usuario responsable de la bodega | FK a USERS, puede ser nulo |
 
 ## Entidad: USERS (Usuarios)
@@ -82,14 +94,14 @@ Registra las cantidades disponibles de cada producto en las distintas bodegas.
 
 ## Entidad: INVENTORY_TRANSACTIONS (Movimientos de inventario)
 
-Registra las entradas y salidas de productos, manteniendo un historial de los movimientos realizados.
+Registra las entradas, salidas y ajustes de productos, manteniendo un historial inmutable de los movimientos realizados.
 
 | Campo | Tipo | Descripción | Restricciones |
 |---|---|---|---|
 | transaction_id | int | Identificador del movimiento | PK, obligatorio y único |
 | product_id | int | Producto involucrado | FK a PRODUCTS |
 | warehouse_id | int | Bodega donde ocurre el movimiento | FK a WAREHOUSES |
-| transaction_type | string | Tipo de movimiento | Obligatorio; valores permitidos: "entrada" o "salida" |
+| transaction_type | string | Tipo de movimiento | Obligatorio; valores permitidos: "entrada", "salida", "ajuste_entrada" o "ajuste_salida" |
 | quantity | int | Cantidad de productos movidos | Mayor que cero |
 | user_id | int | Usuario que registra el movimiento | FK a USERS |
 | transaction_date | date | Fecha del movimiento | Obligatorio |
@@ -180,9 +192,21 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 
 ### Productos
 - Cada producto debe tener un identificador único.
+- El SKU es obligatorio y único en toda la base de datos de productos.
 - El nombre del producto es obligatorio.
-- El precio y el peso no pueden ser negativos.
+- Los precios de venta, costo y referencia, y el peso no pueden ser negativos.
+- El estado del producto solo puede ser "activo" o "inactivo".
 - Cada producto debe estar asociado a una categoría existente.
+- Cada producto debe registrar el usuario que lo crea y el que lo modifica, junto con las marcas de tiempo `created_at` y `updated_at`.
+
+### Bodegas
+- Cada bodega debe tener un identificador único.
+- El nombre de la bodega es obligatorio y único.
+- La ubicación de la bodega es obligatoria.
+- La descripción es opcional.
+- La capacidad no puede ser negativa.
+- El estado de la bodega solo puede ser "activo" o "inactivo".
+- Una bodega inactiva no puede seleccionarse para nuevos movimientos ni transferencias.
 
 ### Stock
 - Las cantidades disponibles no pueden ser negativas.
@@ -192,12 +216,13 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 
 ### Movimientos de inventario
 - Cada movimiento debe indicar un producto, una bodega, una cantidad y un usuario responsable.
-- El tipo de movimiento solo puede ser "entrada" o "salida".
+- El tipo de movimiento solo puede ser "entrada", "salida", "ajuste_entrada" o "ajuste_salida".
 - La cantidad registrada debe ser mayor que cero.
-- Las entradas aumentan el stock disponible.
-- Las salidas disminuyen el stock disponible.
+- Las entradas y los ajustes de entrada aumentan el stock disponible.
+- Las salidas y los ajustes de salida disminuyen el stock disponible.
 - No se permitirá retirar una cantidad superior a la disponible.
 - Cada movimiento deberá quedar registrado con su fecha.
+- Los movimientos son inmutables: no se editan ni se eliminan; las correcciones se realizan con un nuevo movimiento de ajuste.
 
 ### Transferencias entre bodegas
 - Cada transferencia debe indicar un producto, una bodega de origen y una de destino.
@@ -207,6 +232,12 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 - No se permitirá transferir más productos de los disponibles en la bodega de origen.
 - Al confirmar una transferencia, se descontará la cantidad de la bodega de origen y se agregará a la de destino.
 - Una transferencia confirmada no debe volver a actualizar el stock.
+
+## Catálogos semilla y alcance de la iteración
+
+- `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES` e `INVENTORY_TRANSACTIONS` puedan referenciarlos; no se incluyen pantallas de administración de categorías ni de usuarios en esta iteración.
+- El módulo no requiere autenticación en esta iteración. El campo `USERS.role` es informativo y el usuario que registra movimientos se selecciona del catálogo.
+- Las alertas de stock mínimo (`STOCK.min_stock_level`) quedan fuera del alcance de esta iteración.
 
 ## Compatibilidad con la plantilla ERP
 

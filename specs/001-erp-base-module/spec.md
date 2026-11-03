@@ -9,6 +9,13 @@
 
 Este proyecto sirve como módulo base reutilizable para construir módulos ERP personalizados. Establece los patrones comunes que todo módulo ERP necesita: gestionar registros de datos maestros (**Entidades**) y sus **Documentos** transaccionales asociados, con navegación, validación, persistencia y búsqueda ya implementadas, de modo que los módulos personalizados solo necesiten definir sus campos y reglas específicos del dominio.
 
+## Clarifications
+
+### Session 2026-11-03
+
+- Q: ¿La sección "Entidades Clave" debe listar solo las 5 entidades nombradas o todas las entidades del data-model de 002? → A: Solo las 5: PRODUCTS, WAREHOUSES, STOCK, INVENTORY_TRANSACTIONS y USERS.
+- Q: ¿Debe eliminarse también ModuleConfig o conservarse junto a las 5 entidades reales? → A: Reemplazar Entidad/Documento por las 5 entidades reales y conservar ModuleConfig como contrato de extensibilidad.
+
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
 ### Historia de Usuario 1 - Crear y organizar entidades (Prioridad: P1)
@@ -305,8 +312,11 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 
 ### Entidades Clave *(incluir si la funcionalidad implica datos)*
 
-- **Entidad**: Un registro de datos maestros gestionado por el módulo, que incluye su nombre, código de negocio, detalles descriptivos, categoría de clasificación, una fecha objetivo opcional y un entity_id autogenerado. Los módulos personalizados definen qué representa una Entidad en el mundo real (p. ej., cliente, producto, activo).
-- **Documento**: Detalles transaccionales adjuntos a una entidad, vinculados a ella por el entity_id de la entidad. Los módulos personalizados definen qué representa un Documento (p. ej., pedido, factura, contrato).
+- **Producto (`PRODUCTS`)**: Artículo físico o bien gestionado en el inventario. Atributos clave: `product_id` (identificador único), `product_name` (obligatorio, no vacío), `description` (opcional), `unit_price` (mayor o igual a cero), `category_id` (referencia obligatoria a `PRODUCT_CATEGORIES`), `dimensions_height`, `dimensions_width` y `dimensions_depth` (opcionales) y `weight` (mayor o igual a cero).
+- **Bodega (`WAREHOUSES`)**: Ubicación física donde se almacenan los productos. Atributos clave: `warehouse_id` (identificador único), `name` (obligatorio, no vacío), `location` (obligatorio), `capacity` (mayor o igual a cero) y `responsable_id` (referencia opcional a `USERS`).
+- **Stock (`STOCK`)**: Existencias disponibles de cada producto por bodega. Atributos clave: `stock_id` (identificador único), `product_id` (referencia a `PRODUCTS`), `warehouse_id` (referencia a `WAREHOUSES`), `quantity_available` (mayor o igual a cero), `min_stock_level` (mayor o igual a cero), `expiration_date` (opcional) y `update_date` (obligatorio). La combinación `product_id` + `warehouse_id` es única.
+- **Movimiento de Inventario (`INVENTORY_TRANSACTIONS`)**: Registro histórico e inmutable de entradas y salidas. Atributos clave: `transaction_id` (identificador único), `product_id` (referencia a `PRODUCTS`), `warehouse_id` (referencia a `WAREHOUSES`), `transaction_type` (solo "entrada" o "salida"), `quantity` (mayor que cero), `user_id` (referencia obligatoria a `USERS`) y `transaction_date` (asignada automáticamente al guardar). Cada movimiento actualiza de inmediato `STOCK.quantity_available`; no se edita ni se elimina, y las correcciones se realizan con un nuevo movimiento.
+- **Usuario (`USERS`)**: Persona que opera el sistema y registra movimientos de inventario. Atributos clave: `user_id` (identificador único), `user_name` (obligatorio, no vacío), `role` (obligatorio), `email` (formato de correo válido) y `assigned_warehouse_id` (referencia opcional a `WAREHOUSES`).
 - **ModuleConfig**: El objeto de adaptación cargado al arrancar que define el nombre del módulo, las etiquetas de terminología, las definiciones de campos personalizados y el ciclo de vida de estados de documentos. Consulte data-model.md para su forma completa.
 
 ## Criterios de Éxito *(obligatorio)*

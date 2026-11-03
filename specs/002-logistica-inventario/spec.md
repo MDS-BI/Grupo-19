@@ -1,7 +1,7 @@
 # Especificación de la Funcionalidad: Módulo de Logística e Inventario
 
-**Rama de la funcionalidad**: 002-logistica-inventario
-**Creada**: 2026-10-29 
+**Rama de la funcionalidad**: 002-logistica-inventario  
+**Creada**: 2026-10-29  
 **Estado**: Borrador  
 **Entrada**: Descripción del usuario: "Desarrollar un módulo de Logística e Inventario para gestionar productos, bodegas y existencias, permitiendo registrar entradas y salidas de productos, realizar transferencias entre bodegas y generar alertas de stock mínimo".
 
@@ -19,9 +19,15 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Cómo se debe establecer la fecha del movimiento de inventario? → A: El sistema asigna automáticamente la fecha y hora al guardar; el usuario no puede modificarla.
 - Q: Cuando se registra una entrada de un producto con vencimiento, ¿cómo se debe manejar la fecha de vencimiento? → A: Queda fuera de HU-03; se difiere a una historia posterior de lotes o vencimientos.
 
+### Session 2026-11-03
+
+- Q: ¿Cómo debe resolverse la diferencia entre los campos que exige la HU-01 (SKU único, Precio de Venta, Precio de Costo, Unidad de Medida y Estado) y `PRODUCTS` del data-model, que solo define `unit_price`, dimensiones y peso? → A: Ampliar `PRODUCTS` en el data-model con `sku` único, `sale_price`, `cost_price`, `unit_of_measure`, `status` y `supplier`.
+- Q: ¿Cómo deben existir las categorías de producto y los usuarios que referencian `PRODUCTS`, `WAREHOUSES` e `INVENTORY_TRANSACTIONS`, si no hay una historia para administrarlos? → A: Precargan como catálogos semilla de categorías y usuarios; no hay pantallas de administración en esta iteración.
+- Q: ¿Cómo debe representarse el "movimiento de ajuste" que corrige un movimiento inmutable, si `INVENTORY_TRANSACTIONS.transaction_type` solo admite "entrada" o "salida"? → A: Se añaden los tipos "ajuste_entrada" y "ajuste_salida" a `transaction_type`, manteniendo cantidades positivas y la dirección explícita.
+- Q: ¿El módulo debe implementar inicio de sesión y control de acceso por rol, o los roles son solo etiquetas del catálogo de usuarios sin autenticación? → A: Sin autenticación en esta iteración; los roles son informativos y el usuario que registra movimientos se selecciona del catálogo `USERS`.
+- Q: ¿La spec debe conservar los bloques genéricos del módulo base y en qué orden debe quedar? → A: Conservar todos los bloques base y añadir los de cada historia, ordenando la spec con la misma disposición de `001-erp-base-module/spec.md` (una sección global de Requisitos, Criterios de Éxito y Suposiciones).
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
-
 
 ### Historia de Usuario 1 - Registro y Modificación de Productos (Prioridad: P1)
 
@@ -40,46 +46,6 @@ Como administrador del sistema, quiero registrar nuevos productos y modificar lo
 
 ---
 
-### Casos Límite
-
-* ¿Qué ocurre si un administrador intenta modificar el SKU de un producto que ya tiene historial de movimientos (entradas/salidas) asociados?
-* ¿Cómo se advierte al usuario si ingresa un "Precio de Costo" superior al "Precio de Venta"? (¿Se bloquea o solo alerta?).
-* ¿Qué sucede si un usuario intenta cambiar el estado de un producto a "Inactivo" pero este aún cuenta con stock físico en bodegas?
-* ¿Cómo maneja el sistema la importación o el copiado y pegado de texto que incluye espacios en blanco al inicio o final del SKU o el Nombre?
-
-## Requisitos *(obligatorio)*
-
-### Requisitos Funcionales
-
-* **FR-001**: El sistema DEBE permitir el registro de productos requiriendo como mínimo: Nombre, SKU (Código de Referencia Único), Precio de Venta, Categoría y Estado.
-* **FR-002**: El sistema DEBE permitir añadir campos opcionales como: Descripción, Precio de Costo, Proveedor y Unidad de Medida.
-* **FR-003**: El sistema DEBE garantizar que el campo SKU sea único en toda la base de datos de productos.
-* **FR-004**: El sistema DEBE validar que los valores numéricos ingresados en "Precio de Venta" y "Precio de Costo" sean mayores o iguales a 0.
-* **FR-005**: El sistema DEBE registrar automáticamente el usuario que crea/modifica el producto, así como las marcas de tiempo de creación (`created_at`) y actualización (`updated_at`).
-* **FR-006**: El sistema DEBE permitir alternar el estado del producto (Activo/Inactivo) para controlar su disponibilidad en los módulos operativos.
-* **FR-007**: El sistema DEBE sanitizar todos los campos de texto ingresados para prevenir ataques XSS antes de su renderizado.
-
-### Entidades Clave
-
-* **Producto**: Representa el artículo físico o bien gestionado en el inventario. Atributos clave: Identificador interno (`product_id`), SKU (único), Nombre, Descripción, Categoría, Precio de Venta, Precio de Costo, Unidad de Medida, Estado (Activo/Inactivo), Fecha de Creación, Fecha de Modificación.
-
-## Criterios de Éxito *(obligatorio)*
-
-### Resultados Medibles
-
-* **SC-001**: Los usuarios administradores pueden registrar un nuevo producto sin errores de navegación en menos de 1 minuto.
-* **SC-002**: El sistema detecta y bloquea intentos de duplicación de SKU en menos de 1 segundo tras la solicitud de guardado, sin que se caiga la aplicación.
-* **SC-003**: Las modificaciones realizadas a un producto se reflejan en el listado general inmediatamente sin necesidad de que el usuario fuerce la recarga del navegador.
-* **SC-004**: El 100% de los envíos con datos faltantes son atajados por la validación del front-end antes de llegar al servidor.
-
-## Suposiciones
-
-* El administrador cuenta con los privilegios de seguridad necesarios para la creación y edición del catálogo.
-* El SKU es un código alfanumérico estandarizado por la empresa; no se genera automáticamente en esta versión (el usuario lo digita).
-* No se contempla el manejo de imágenes múltiples de productos en esta iteración inicial; se trabajará únicamente con datos alfanuméricos.
-* La gestión de impuestos sobre el producto se considerará resuelta de manera global o en una capa de facturación posterior; el módulo almacena el valor neto.
-
-
 ### Historia de Usuario 2 - Control de Stock (Prioridad: P2)
 
 Como supervisor de inventario, quiero consultar las existencias de cada producto, para conocer las cantidades disponibles en las bodegas.
@@ -97,48 +63,6 @@ Como supervisor de inventario, quiero consultar las existencias de cada producto
 
 ---
 
-### Casos Límite
-
-* ¿Qué ocurre si un producto no tiene registro de stock en una bodega? (No se asume stock cero como registro existente; se indica la ausencia de existencias en esa bodega).
-* ¿Qué ocurre si un producto tiene registro de stock con `quantity_available` en 0? (Se muestra con cantidad 0, distinto de la ausencia de registro en esa bodega).
-* ¿Qué ocurre con el stock de una bodega que pasó a estado inactivo? (Se muestra solo para consulta, sin habilitar operaciones sobre ella).
-* ¿Qué ocurre si un producto está inactivo pero aún tiene existencias? (Se muestra su stock para consulta, indicando su estado).
-* ¿Qué ocurre cuando una búsqueda no devuelve coincidencias? (Se muestra un mensaje de estado vacío).
-
-## Requisitos *(obligatorio)*
-
-### Requisitos Funcionales
-
-* **FR-053**: El sistema DEBE permitir consultar las existencias de cada producto mostrando `quantity_available` por producto y bodega desde la tabla `STOCK`.
-* **FR-054**: El sistema DEBE calcular y mostrar el total de existencias de un producto sumando `quantity_available` de todas sus bodegas.
-* **FR-055**: El sistema DEBE permitir filtrar y buscar los registros de stock por producto y por bodega.
-* **FR-056**: El sistema DEBE mostrar un estado vacío claro cuando la búsqueda o el filtro no devuelvan resultados.
-* **FR-057**: El sistema DEBE tratar la consulta de stock como solo lectura, sin crear, modificar ni eliminar registros de `STOCK`, `PRODUCTS`, `WAREHOUSES` ni `INVENTORY_TRANSACTIONS`.
-* **FR-058**: El sistema DEBE mostrar el estado (Activo/Inactivo) del producto y de la bodega junto con sus existencias cuando corresponda.
-
-### Entidades Clave
-
-* **Stock (`STOCK`)**: Registro de existencias por producto y bodega. Atributos clave: `stock_id`, `product_id`, `warehouse_id`, `quantity_available`, `update_date` (`min_stock_level` existe en la tabla pero no se usa en esta historia).
-* **Producto (`PRODUCTS`)**: Artículo consultado. Atributos clave: `product_id`, `product_name`, `status` (Activo/Inactivo; campo a incorporar en el modelo de datos).
-* **Bodega (`WAREHOUSES`)**: Ubicación consultada. Atributos clave: `warehouse_id`, `name`, `location`, `status` (Activo/Inactivo; campo a incorporar en el modelo de datos).
-
-## Criterios de Éxito *(obligatorio)*
-
-### Resultados Medibles
-
-* **SC-054**: Los supervisores pueden consultar las existencias de un producto en todas sus bodegas en menos de 10 segundos.
-* **SC-055**: El total mostrado coincide con la suma de `quantity_available` de las bodegas del producto en el 100% de las consultas.
-* **SC-056**: Los filtros y búsquedas por producto y bodega devuelven resultados correctos en menos de 2 segundos para hasta 500 registros de stock.
-* **SC-057**: La consulta de stock no altera ningún dato almacenado (cero escrituras) en el 100% de las operaciones.
-
-## Suposiciones
-
-* Las existencias se derivan de los movimientos de HU-03 y de las transferencias confirmadas de HU-05, que también actualizan `STOCK` y pueden crear el registro en la bodega destino; esta historia no genera ni corrige stock.
-* Las alertas de stock mínimo (`min_stock_level`) se abordan en una historia posterior y quedan fuera de este alcance.
-* Los productos y bodegas provienen de HU-01 y HU-04 respectivamente; la consulta no crea ni edita esas entidades.
-* Las bodegas y productos inactivos se muestran solo para consulta de sus existencias, sin permitir operaciones sobre ellos.
-* El estado (Activo/Inactivo) de productos y bodegas proviene de HU-01 y HU-04; el modelo de datos deberá incluir ese campo en `PRODUCTS` y `WAREHOUSES`.
-
 ### Historia de Usuario 3 - Registrar entradas y salidas de inventario (Prioridad: P1)
 
 Como encargado de bodega, quiero registrar las entradas y salidas de productos, indicando el producto, la bodega y la cantidad correspondiente, para mantener actualizado el stock disponible y conservar un historial de los movimientos realizados.
@@ -152,7 +76,40 @@ Como encargado de bodega, quiero registrar las entradas y salidas de productos, 
 1. **Dado que** el encargado de bodega está en el formulario de movimiento, **cuando** registra una entrada seleccionando un producto, una bodega, un usuario existente y una cantidad mayor que cero, **entonces** el sistema crea o incrementa `quantity_available` en `STOCK` para esa combinación producto+bodega, guarda el movimiento en `INVENTORY_TRANSACTIONS` con `transaction_type` "entrada", `user_id` y `transaction_date` automática, y muestra un mensaje de éxito.
 2. **Dado que** existe stock disponible para un producto en una bodega, **cuando** el encargado registra una salida con una cantidad menor o igual al stock disponible, **entonces** el sistema descuenta inmediatamente esa cantidad de `quantity_available` y guarda el movimiento con `transaction_type` "salida" en el historial.
 3. **Dado que** no existe stock para la combinación producto+bodega o que la cantidad solicitada supera `quantity_available`, **cuando** el encargado intenta registrar una salida, **entonces** el sistema rechaza la operación con un mensaje claro, no crea el movimiento y no modifica el stock.
-4. **Dado que** un movimiento ya fue registrado, **cuando** el encargado intenta editarlo o eliminarlo, **entonces** el sistema no ofrece esas acciones y solo permite corregir la situación mediante un nuevo movimiento de entrada o salida que queda registrado en el historial.
+4. **Dado que** un movimiento ya fue registrado, **cuando** el encargado intenta editarlo o eliminarlo, **entonces** el sistema no ofrece esas acciones y solo permite corregir la situación mediante un nuevo movimiento de ajuste (`ajuste_entrada` o `ajuste_salida`) que queda registrado en el historial.
+
+---
+
+### Historia de Usuario 4 - Registro y Administración de Bodegas (Prioridad: P1)
+
+Como administrador, quiero registrar y administrar bodegas, para organizar los lugares donde se almacenan los productos.
+
+**Por qué es prioridad**: Es la funcionalidad central requerida para habilitar la estructura física del sistema de inventario. Sin bodegas registradas, no es posible asociar existencias, registrar entradas/salidas ni realizar transferencias entre ubicaciones.
+
+**Prueba Independiente**: Se puede probar registrando una nueva bodega con su información básica, modificando sus datos y cambiando su estado (activo/inactivo), verificando que cada cambio se refleje correctamente en el sistema.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** el administrador se encuentra en el módulo de configuración de bodegas, **Cuando** ingresa los datos de una nueva bodega (nombre y ubicación obligatorios, descripción opcional) y guarda los cambios, **Entonces** el sistema registra la bodega exitosamente y la muestra en el listado general con estado activo.
+2. **Dado que** una bodega ya se encuentra registrada en el sistema, **Cuando** el administrador edita sus detalles (por ejemplo, cambia el nombre o la ubicación) y confirma la actualización, **Entonces** el sistema guarda los nuevos datos de manera correcta.
+3. **Dado que** una bodega existe en el sistema, **Cuando** el administrador cambia su estado a inactivo, **Entonces** el sistema actualiza su disponibilidad y restringe la selección de esta bodega para nuevos movimientos operativos.
+
+---
+
+### Historia de Usuario 5 - Transferencias de Productos entre Bodegas (Prioridad: P2)
+
+Como encargado de bodega, quiero registrar transferencias de productos entre distintas bodegas, para controlar los traslados de mercadería, evitar pérdidas de stock y mantener la trazabilidad de los envíos.
+
+**Por qué es prioridad**: Las transferencias permiten balancear existencias entre distintas ubicaciones físicas sin alterar el balance global de inventario. Esta historia es clave para la operación multi-bodega y conecta directamente las entidades `WAREHOUSES`, `PRODUCTS` y la tabla transaccional `STOCK_TRANSFERS`.
+
+**Prueba Independiente**: Se puede probar generando una solicitud de traslado de 10 unidades del Producto A desde Bodega Origen hacia Bodega Destino. Se verifica que la orden quede en estado `"pendiente"`, que no permita seleccionar la misma bodega como origen y destino, y que al confirmarse actualice de forma simultánea el stock acumulado en la tabla `STOCK` de ambas ubicaciones.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** el encargado de bodega se encuentra en el formulario de "Nueva Transferencia", **Cuando** selecciona un producto válido, una bodega de origen con stock suficiente, una bodega de destino diferente y una cantidad mayor a cero, **Entonces** el sistema genera el registro con estado `"pendiente"` y asigna la fecha del día (`transfer_date`).
+2. **Dado que** existe una transferencia registrada en estado `"pendiente"`, **Cuando** el usuario confirma la recepción en la bodega de destino, **Entonces** el sistema cambia el estado a `"confirmada"`, descuenta las unidades de la bodega origen e incrementa el stock en la bodega destino.
+3. **Dado que** un usuario intenta registrar una transferencia, **Cuando** selecciona la misma bodega como origen y destino, **Entonces** el sistema bloquea el envío y muestra el mensaje de error: "La bodega de destino debe ser diferente a la bodega de origen".
+4. **Dado que** la cantidad a transferir supera el stock disponible en la bodega de origen (`quantity_available`), **Cuando** el usuario intenta guardar la solicitud, **Entonces** el sistema rechaza la transacción informando falta de existencias.
 
 ---
 
@@ -174,10 +131,28 @@ Como encargado de bodega, quiero registrar las entradas y salidas de productos, 
 - ¿Qué ocurre cuando el panel se abre con cero entidades o cero documentos (valores estadísticos)?
 - ¿Qué ocurre cuando el color de acento configurado no es un valor de color válido?
 - ¿Cómo mantiene la barra lateral contraída las etiquetas de módulo accesibles en ventanas gráficas estrechas?
+- ¿Qué ocurre si un administrador intenta modificar el SKU de un producto que ya tiene historial de movimientos (entradas/salidas) asociados?
+- ¿Cómo se advierte al usuario si ingresa un "Precio de Costo" superior al "Precio de Venta"? (¿Se bloquea o solo alerta?).
+- ¿Qué sucede si un usuario intenta cambiar el estado de un producto a "Inactivo" pero este aún cuenta con stock físico en bodegas?
+- ¿Cómo maneja el sistema la importación o el copiado y pegado de texto que incluye espacios en blanco al inicio o final del SKU o el Nombre?
+- ¿Qué ocurre si un producto no tiene registro de stock en una bodega? (No se asume stock cero como registro existente; se indica la ausencia de existencias en esa bodega).
+- ¿Qué ocurre si un producto tiene registro de stock con `quantity_available` en 0? (Se muestra con cantidad 0, distinto de la ausencia de registro en esa bodega).
+- ¿Qué ocurre con el stock de una bodega que pasó a estado inactivo? (Se muestra solo para consulta, sin habilitar operaciones sobre ella).
+- ¿Qué ocurre si un producto está inactivo pero aún tiene existencias? (Se muestra su stock para consulta, indicando su estado).
+- ¿Qué ocurre cuando una búsqueda no devuelve coincidencias? (Se muestra un mensaje de estado vacío).
 - ¿Qué ocurre cuando se registra una salida sin stock disponible para el producto y la bodega?
 - ¿Qué ocurre cuando se intenta editar o eliminar un movimiento de inventario ya registrado?
 - ¿Qué ocurre cuando se intenta registrar un movimiento con un usuario que no existe?
 - ¿Qué ocurre cuando se registra una entrada de un producto con fecha de vencimiento? (Se difiere a una historia posterior).
+- ¿Qué ocurre cuando se registra un ajuste (`ajuste_entrada` o `ajuste_salida`) sobre un movimiento ya registrado? (Se crea un nuevo movimiento inmutable; el original no se modifica).
+- ¿Qué sucede si el administrador intenta registrar una nueva bodega utilizando un nombre o identificador que ya existe en el sistema?
+- ¿Cómo maneja el sistema la desactivación o eliminación lógica de una bodega que aún contiene stock de productos o historial de movimientos activos?
+- ¿Qué ocurre si un usuario intenta realizar una operación seleccionando una bodega que ha sido marcada como inactiva?
+- ¿Qué ocurre si la bodega de destino pasa a estar inactiva mientras existe una transferencia en camino en estado 'pendiente'?
+- ¿Qué sucede si un usuario intenta cancelar o editar una transferencia que ya fue marcada como 'confirmada'? (El sistema bloquea la acción; los traslados confirmados son inmutables).
+- ¿Cómo reacciona el sistema si el registro de stock para el producto aún no existe en la bodega de destino al momento de confirmar la recepción? (El sistema crea automáticamente la entrada correspondiente en `STOCK`).
+- ¿Qué ocurre si no hay categorías semilla cargadas al intentar registrar un producto? (Se impide el registro porque `category_id` es obligatorio).
+- ¿Qué ocurre si no hay usuarios semilla cargados al intentar registrar un movimiento? (Se impide el registro porque `user_id` es obligatorio).
 
 ## Requisitos *(obligatorio)*
 
@@ -222,13 +197,40 @@ Como encargado de bodega, quiero registrar las entradas y salidas de productos, 
 - **FR-037**: La barra lateral DEBE resaltar visualmente el módulo activo en cada pantalla.
 - **FR-038**: La configuración PUEDE definir un color de acento; el sistema DEBE aplicarlo consistentemente en todo el marco y retroceder de forma segura a los valores integrados cuando esté ausente o sea inválido.
 - **FR-039**: En ventanas gráficas estrechas, la barra lateral DEBE contraerse a una columna de iconos manteniéndose operable.
-- **FR-040**: Al guardar un movimiento de inventario, el sistema DEBE actualizar inmediatamente `quantity_available` del registro de stock correspondiente al producto y la bodega.
-- **FR-041**: Si no existe un registro de stock para la combinación producto+bodega, una entrada DEBE crear el registro; una salida DEBE rechazarse.
-- **FR-042**: Una salida cuya cantidad supere el stock disponible DEBE rechazarse sin modificar el stock.
-- **FR-043**: El sistema DEBE impedir la edición y eliminación de movimientos de inventario ya registrados.
-- **FR-044**: El sistema DEBE permitir corregir un movimiento mediante un nuevo movimiento de ajuste que quede registrado en el historial.
-- **FR-045**: El formulario de movimiento DEBE exigir la selección de un usuario existente en USERS y guardar su `user_id`; el sistema DEBE rechazar el movimiento si el usuario no existe.
-- **FR-046**: El sistema DEBE asignar automáticamente la fecha y hora del movimiento al guardarlo y NO DEBE permitir que el usuario la modifique.
+- **FR-040**: El sistema DEBE permitir el registro de productos requiriendo como mínimo: Nombre, SKU (Código de Referencia Único), Precio de Venta, Categoría y Estado.
+- **FR-041**: El sistema DEBE permitir añadir campos opcionales como: Descripción, Precio de Costo, Proveedor y Unidad de Medida.
+- **FR-042**: El sistema DEBE garantizar que el campo SKU sea único en toda la base de datos de productos.
+- **FR-043**: El sistema DEBE validar que los valores numéricos ingresados en "Precio de Venta" y "Precio de Costo" sean mayores o iguales a 0.
+- **FR-044**: El sistema DEBE registrar automáticamente el usuario que crea/modifica el producto, así como las marcas de tiempo de creación (`created_at`) y actualización (`updated_at`).
+- **FR-045**: El sistema DEBE permitir alternar el estado del producto (Activo/Inactivo) para controlar su disponibilidad en los módulos operativos.
+- **FR-046**: El sistema DEBE sanitizar todos los campos de texto ingresados para prevenir ataques XSS antes de su renderizado.
+- **FR-047**: El sistema DEBE permitir consultar las existencias de cada producto mostrando `quantity_available` por producto y bodega desde la tabla `STOCK`.
+- **FR-048**: El sistema DEBE calcular y mostrar el total de existencias de un producto sumando `quantity_available` de todas sus bodegas.
+- **FR-049**: El sistema DEBE permitir filtrar y buscar los registros de stock por producto y por bodega.
+- **FR-050**: El sistema DEBE mostrar un estado vacío claro cuando la búsqueda o el filtro no devuelvan resultados.
+- **FR-051**: El sistema DEBE tratar la consulta de stock como solo lectura, sin crear, modificar ni eliminar registros de `STOCK`, `PRODUCTS`, `WAREHOUSES` ni `INVENTORY_TRANSACTIONS`.
+- **FR-052**: El sistema DEBE mostrar el estado (Activo/Inactivo) del producto y de la bodega junto con sus existencias cuando corresponda.
+- **FR-053**: Al guardar un movimiento de inventario, el sistema DEBE actualizar inmediatamente `quantity_available` del registro de stock correspondiente al producto y la bodega.
+- **FR-054**: Si no existe un registro de stock para la combinación producto+bodega, una entrada DEBE crear el registro; una salida DEBE rechazarse.
+- **FR-055**: Una salida cuya cantidad supere el stock disponible DEBE rechazarse sin modificar el stock.
+- **FR-056**: El sistema DEBE impedir la edición y eliminación de movimientos de inventario ya registrados.
+- **FR-057**: El sistema DEBE permitir corregir un movimiento mediante un nuevo movimiento de ajuste registrado con `transaction_type` "ajuste_entrada" o "ajuste_salida" que quede en el historial.
+- **FR-058**: El formulario de movimiento DEBE exigir la selección de un usuario existente en USERS y guardar su `user_id`; el sistema DEBE rechazar el movimiento si el usuario no existe.
+- **FR-059**: El sistema DEBE asignar automáticamente la fecha y hora del movimiento al guardarlo y NO DEBE permitir que el usuario la modifique.
+- **FR-060**: El sistema DEBE permitir registrar nuevas bodegas indicando nombre único, ubicación física y detalles opcionales.
+- **FR-061**: El sistema DEBE permitir al administrador modificar la información descriptiva y de ubicación de las bodegas existentes.
+- **FR-062**: El sistema DEBE permitir cambiar el estado de una bodega entre activo e inactivo.
+- **FR-063**: El sistema DEBE impedir la selección de bodegas inactivas para la realización de nuevos movimientos de inventario o transferencias.
+- **FR-064**: El sistema DEBE validar que no se dupliquen los nombres de las bodegas.
+- **FR-065**: El sistema DEBE permitir registrar solicitudes de transferencia entre bodegas requiriendo: Producto (`product_id`), Bodega Origen (`source_warehouse_id`), Bodega Destino (`target_warehouse_id`) y Cantidad (`quantity`).
+- **FR-066**: El sistema DEBE validar que la Bodega Origen y la Bodega Destino sean entidades distintas.
+- **FR-067**: El sistema DEBE verificar que la Bodega Origen disponga de `quantity_available` suficiente en `STOCK` antes de autorizar el registro.
+- **FR-068**: El sistema DEBE gestionar el estado de la transferencia permitiendo únicamente los valores: 'pendiente', 'confirmada' y 'cancelada'.
+- **FR-069**: El sistema DEBE actualizar los niveles de `STOCK` en origen y destino únicamente cuando la transferencia cambie a estado 'confirmada'.
+- **FR-070**: El sistema DEBE registrar la fecha de la transacción (`transfer_date`) de forma automática.
+- **FR-071**: El sistema DEBE disponer de catálogos semilla de categorías de producto y usuarios para que `PRODUCTS` e `INVENTORY_TRANSACTIONS` puedan referenciarlos; no se requieren pantallas de administración en esta iteración.
+- **FR-072**: El sistema DEBE registrar los ajustes de inventario con `transaction_type` "ajuste_entrada" o "ajuste_salida", manteniendo la cantidad positiva y actualizando `STOCK` según la dirección del ajuste.
+- **FR-073**: El sistema NO DEBE exigir autenticación en esta iteración; los roles de `USERS` son informativos y el usuario que registra movimientos se selecciona del catálogo.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
 
@@ -245,6 +247,13 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **Entidad**: Un registro de datos maestros gestionado por el módulo, que incluye su nombre, código de negocio, detalles descriptivos, categoría de clasificación, una fecha objetivo opcional y un entity_id autogenerado. Los módulos personalizados definen qué representa una Entidad en el mundo real (p. ej., cliente, producto, activo).
 - **Documento**: Detalles transaccionales adjuntos a una entidad, vinculados a ella por el entity_id de la entidad. Los módulos personalizados definen qué representa un Documento (p. ej., pedido, factura, contrato).
 - **ModuleConfig**: El objeto de adaptación cargado al arrancar que define el nombre del módulo, las etiquetas de terminología, las definiciones de campos personalizados y el ciclo de vida de estados de documentos. Consulte data-model.md para su forma completa.
+- **Producto (`PRODUCTS`)**: Artículo físico o bien gestionado en el inventario. Atributos clave: `product_id`, `sku` (único), `product_name`, `description`, `category_id` (FK a `PRODUCT_CATEGORIES`), `sale_price`, `cost_price`, `unit_of_measure`, `status` (activo/inactivo), `supplier`, `unit_price`, dimensiones y `weight`, además de `created_at`, `updated_at`, `created_by` y `updated_by` para auditoría.
+- **Categoría de Producto (`PRODUCT_CATEGORIES`)**: Catálogo semilla que clasifica los productos. Atributos clave: `category_id` y `category_name` (obligatorio, no vacío).
+- **Bodega (`WAREHOUSES`)**: Ubicación física donde se almacenan los productos. Atributos clave: `warehouse_id`, `name` (único y obligatorio), `location` (obligatorio), `capacity` (mayor o igual a cero), `status` (activo/inactivo) y `responsable_id` (FK opcional a `USERS`).
+- **Stock (`STOCK`)**: Existencias disponibles de cada producto por bodega. Atributos clave: `stock_id`, `product_id`, `warehouse_id`, `quantity_available` (mayor o igual a cero), `min_stock_level` (mayor o igual a cero), `expiration_date` (opcional) y `update_date` (obligatorio). La combinación `product_id` + `warehouse_id` es única.
+- **Movimiento de Inventario (`INVENTORY_TRANSACTIONS`)**: Registro histórico e inmutable de entradas, salidas y ajustes. Atributos clave: `transaction_id`, `product_id`, `warehouse_id`, `transaction_type` ("entrada", "salida", "ajuste_entrada" o "ajuste_salida"), `quantity` (mayor que cero), `user_id` (FK obligatoria a `USERS`) y `transaction_date` (automática). Cada movimiento actualiza de inmediato `STOCK.quantity_available`; no se edita ni se elimina.
+- **Transferencia de Stock (`STOCK_TRANSFERS`)**: Documento transaccional que traslada productos entre bodegas. Atributos clave: `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity` (mayor que cero), `status` ("pendiente", "confirmada" o "cancelada") y `transfer_date` (automática).
+- **Usuario (`USERS`)**: Persona que opera el sistema y registra movimientos. Atributos clave: `user_id`, `user_name`, `role`, `email` y `assigned_warehouse_id` (FK opcional a `WAREHOUSES`).
 
 ## Criterios de Éxito *(obligatorio)*
 
@@ -260,6 +269,25 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **SC-008**: Un desarrollador puede producir un módulo adaptado usando solo el archivo de configuración, con cero modificaciones en archivos fuente centrales.
 - **SC-009**: Cada pantalla presenta el mismo marco con marca, y los usuarios pueden identificar en qué módulo están de un vistazo.
 - **SC-010**: Las estadísticas de registros mostradas en el panel siempre coinciden con el número de entidades y documentos almacenados.
+- **SC-011**: Los usuarios administradores pueden registrar un nuevo producto sin errores de navegación en menos de 1 minuto.
+- **SC-012**: El sistema detecta y bloquea intentos de duplicación de SKU en menos de 1 segundo tras la solicitud de guardado, sin que se caiga la aplicación.
+- **SC-013**: Las modificaciones realizadas a un producto se reflejan en el listado general inmediatamente sin necesidad de que el usuario fuerce la recarga del navegador.
+- **SC-014**: El 100% de los envíos con datos faltantes son atajados por la validación del front-end antes de llegar al servidor.
+- **SC-015**: Los supervisores pueden consultar las existencias de un producto en todas sus bodegas en menos de 10 segundos.
+- **SC-016**: El total mostrado coincide con la suma de `quantity_available` de las bodegas del producto en el 100% de las consultas.
+- **SC-017**: Los filtros y búsquedas por producto y bodega devuelven resultados correctos en menos de 2 segundos para hasta 500 registros de stock.
+- **SC-018**: La consulta de stock no altera ningún dato almacenado (cero escrituras) en el 100% de las operaciones.
+- **SC-019**: Un movimiento de entrada, salida o ajuste se registra en menos de 30 segundos.
+- **SC-020**: El 100% de las salidas sin stock suficiente son rechazadas sin alterar `STOCK`.
+- **SC-021**: El 100% de los movimientos registrados conservan su usuario y fecha automática, sin opciones de edición ni eliminación.
+- **SC-022**: El stock mostrado coincide con el historial de movimientos en el 100% de las consultas.
+- **SC-023**: Los administradores pueden registrar una nueva bodega completa en menos de 1 minuto.
+- **SC-024**: El listado y la actualización de los datos de las bodegas se reflejan en la interfaz de usuario en menos de 2 segundos.
+- **SC-025**: El 100% de los intentos de realizar operaciones sobre bodegas inactivas son bloqueados correctamente por el sistema.
+- **SC-026**: El 100% de los registros de bodegas nuevas validan y previenen duplicidades de nombres o identificadores.
+- **SC-027**: Los usuarios pueden registrar una solicitud de transferencia en menos de 45 segundos.
+- **SC-028**: El 100% de los intentos de transferencia entre bodegas idénticas o sin stock suficiente son bloqueados por las validaciones.
+- **SC-029**: El stock de ambas bodegas se actualiza en la interfaz de forma inmediata al confirmar la recepción.
 
 ## Suposiciones
 
@@ -275,109 +303,20 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - Solo se muestra una pantalla a la vez; no hay diseño lado a lado del contenido de gestión y búsqueda.
 - La navegación entre pantallas se maneja dentro de la aplicación (p. ej., cambio de vistas), y el botón atrás del navegador debe comportarse de forma predecible.
 - Los datos siguen persistiéndose en el localStorage del navegador y no se ven afectados por la navegación entre pantallas.
-  ## Feature Specification: Gestión de Bodegas (HU-04)
-
-**Feature Branch**: `[004-warehouse-management]`
-
-**Created**: [2026-11-01]
-
-**Status**: Draft
-
-**Input**: User description based on User Story HU-04 (Gestión de bodegas).
-
-## User Scenarios & Testing *(mandatory)*
-
-### Historia de Usuario 4 - Registro y Administración de Bodegas (Prioridad: P1)
-
-Como administrador, quiero registrar y administrar bodegas, para organizar los lugares donde se almacenan los productos.
-
-**Por qué es prioridad**: Es la funcionalidad central requerida para habilitar la estructura física del sistema de inventario. Sin bodegas registradas, no es posible asociar existencias, registrar entradas/salidas ni realizar transferencias entre ubicaciones.
-
-**Prueba Independiente**: Se puede probar registrando una nueva bodega con su información básica, modificando sus datos y cambiando su estado (activo/inactivo), verificando que cada cambio se refleje correctamente en el sistema.
-
-**Escenarios de Aceptación**:
-
-1. **Dado que** el administrador se encuentra en el módulo de configuración de bodegas, **Cuando** ingresa los datos obligatorios de una nueva bodega (nombre, ubicación y descripción) y guarda los cambios, **Entonces** el sistema registra la bodega exitosamente y la muestra en el listado general con estado activo.
-2. **Dado que** una bodega ya se encuentra registrada en el sistema, **Cuando** el administrador edita sus detalles (por ejemplo, cambia el nombre o la ubicación) y confirma la actualización, **Entonces** el sistema guarda los nuevos datos de manera correcta.
-3. **Dado que** una bodega existe en el sistema, **Cuando** el administrador cambia su estado a inactivo, **Entonces** el sistema actualiza su disponibilidad y restringe la selección de esta bodega para nuevos movimientos operativos.
-
----
-
-### Edge Cases
-
-* ¿Qué sucede si el administrador intenta registrar una nueva bodega utilizando un nombre o identificador que ya existe en el sistema?
-* ¿Cómo maneja el sistema la desactivación o eliminación lógica de una bodega que aún contiene stock de productos o historial de movimientos activos?
-* ¿Qué ocurre si un usuario intenta realizar una operación seleccionando una bodega que ha sido marcada como inactiva?
-
-## Requirements *(mandatory)*
-
-### Functional Requirements
-
-* **FR-001**: El sistema MUST permitir registrar nuevas bodegas indicando nombre único, ubicación física y detalles opcionales.
-* **FR-002**: El sistema MUST permitir al administrador modificar la información descriptiva y de ubicación de las bodegas existentes.
-* **FR-003**: El sistema MUST permitir cambiar el estado de una bodega entre activo e inactivo.
-* **FR-004**: El sistema MUST impedir la selección de bodegas inactivas para la realización de nuevos movimientos de inventario o transferencias.
-* **FR-005**: El sistema MUST validar que no se dupliquen los nombres o códigos identificatorios de las bodegas.
-
-### Key Entities
-
-* **Bodega**: Representa la ubicación física o almacén donde se resguardan los productos. Atributos clave: Identificador único, Nombre, Ubicación/Dirección, Descripción, Estado (Activo/Inactivo), Fecha de creación.
-
-## Success Criteria *(mandatory)*
-
-### Measurable Outcomes
-
-* **SC-001**: Los administradores pueden registrar una nueva bodega completa en menos de 1 minuto.
-* **SC-002**: El listado y la actualización de los datos de las bodegas se reflejan en la interfaz de usuario en menos de 2 segundos.
-* **SC-003**: El 100% de los intentos de realizar operaciones sobre bodegas inactivas son bloqueados correctamente por el sistema.
-* **SC-004**: El 100% de los registros de bodegas nuevas validan y previenen duplicidades de nombres o identificadores.
-
-## Assumptions
-
-* El administrador cuenta con los privilegios de seguridad necesarios para crear, editar y cambiar el estado de las bodegas.
-* Una bodega representa una ubicación física real dentro de la operación logística de la organización.
-* Las validaciones de duplicidad de nombres de bodegas se realizan a nivel de base de datos o lógica de negocio central.
-- La pantalla de búsqueda se centra en encontrar y ver entidades; la edición permanece en la pantalla de gestión.
-- El contenido del usuario introducido por el usuario (nombres, descripciones, notas de documentos) DEBE sanitizarse antes de renderizarse en el DOM para prevenir ataques de inyección de scripts (XSS). El módulo base DEBE escapar HTML y atributos de eventos al mostrar datos de localStorage.
+- El contenido introducido por el usuario (nombres, descripciones, notas) DEBE sanitizarse antes de renderizarse en el DOM para prevenir ataques de inyección de scripts (XSS); el módulo base DEBE escapar HTML y atributos de eventos al mostrar datos de localStorage.
+- `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla; no hay pantallas de administración de categorías ni de usuarios en esta iteración.
+- El módulo no requiere autenticación en esta iteración; los roles de `USERS` son informativos y el usuario que registra movimientos se selecciona del catálogo.
+- Los usuarios con rol administrador cuentan con los privilegios de seguridad necesarios para crear, editar y cambiar el estado de productos y bodegas.
+- El SKU es un código alfanumérico estandarizado por la empresa; no se genera automáticamente en esta versión (el usuario lo digita).
+- No se contempla el manejo de imágenes múltiples de productos en esta iteración inicial; se trabajará únicamente con datos alfanuméricos.
+- La gestión de impuestos sobre el producto se considerará resuelta de manera global o en una capa de facturación posterior; el módulo almacena el valor neto.
+- Las existencias se derivan de los movimientos de HU-03 y de las transferencias confirmadas de HU-05, que también actualizan `STOCK` y pueden crear el registro en la bodega destino; la HU-02 no genera ni corrige stock.
+- Las alertas de stock mínimo (`min_stock_level`) se abordan en una historia posterior y quedan fuera de este alcance.
+- Los productos y bodegas provienen de HU-01 y HU-04 respectivamente; la consulta de stock no crea ni edita esas entidades.
+- Las bodegas y productos inactivos se muestran solo para consulta de sus existencias, sin permitir operaciones sobre ellos.
+- El estado (Activo/Inactivo) de productos y bodegas proviene de HU-01 y HU-04; el modelo de datos incluye ese campo en `PRODUCTS` y `WAREHOUSES`.
 - La fecha de vencimiento y el control por lotes quedan fuera de HU-03; se abordarán en una historia posterior.
-
-### Historia de Usuario 5 - Transferencias de Productos entre Bodegas (Prioridad: P2)
-
-Como encargado de bodega, quiero registrar transferencias de productos entre distintas bodegas, para controlar los traslados de mercadería, evitar pérdidas de stock y mantener la trazabilidad de los envíos.
-
-**Por qué es prioridad**: Las transferencias permiten balancear existencias entre distintas ubicaciones físicas sin alterar el balance global de inventario. Esta historia es clave para la operación multi-bodega y conecta directamente las entidades `WAREHOUSES`, `PRODUCTS` y la tabla transaccional `STOCK_TRANSFERS`.
-
-**Prueba Independiente**: Se puede probar generando una solicitud de traslado de 10 unidades del Producto A desde Bodega Origen hacia Bodega Destino. Se verifica que la orden quede en estado `"pendiente"`, que no permita seleccionar la misma bodega como origen y destino, y que al confirmarse actualice de forma simultánea el stock acumulado en la tabla `STOCK` de ambas ubicaciones.
-
-**Escenarios de Aceptación**:
-
-1. **Dado que** el encargado de bodega se encuentra en el formulario de "Nueva Transferencia", **Cuando** selecciona un producto válido, una bodega de origen con stock suficiente, una bodega de destino diferente y una cantidad mayor a cero, **Entonces** el sistema genera el registro con estado `"pendiente"` y asigna la fecha del día (`transfer_date`).
-2. **Dado que** existe una transferencia registrada en estado `"pendiente"`, **Cuando** el usuario confirma la recepción en la bodega de destino, **Entonces** el sistema cambia el estado a `"confirmada"`, descuenta las unidades de la bodega origen e incrementa el stock en la bodega destino.
-3. **Dado que** un usuario intenta registrar una transferencia, **Cuando** selecciona la misma bodega como origen y destino, **Entonces** el sistema bloquea el envío y muestra el mensaje de error: "La bodega de destino debe ser diferente a la bodega de origen".
-4. **Dado que** la cantidad a transferir supera el stock disponible en la bodega de origen (`quantity_available`), **Cuando** el usuario intenta guardar la solicitud, **Entonces** el sistema rechaza la transacción informando falta de existencias.
-
-**Casos Límite**: 
-* ¿Qué ocurre si la bodega de destino pasa a estar inactiva mientras existe una transferencia en camino en estado 'pendiente'?
-* ¿Qué sucede si un usuario intenta cancelar o editar una transferencia que ya fue marcada como 'confirmada'? (El sistema bloquea la acción; los traslados confirmados son inmutables).
-* ¿Cómo reacciona el sistema si el registro de stock para el producto aún no existe en la bodega de destino al momento de confirmar la recepción? (El sistema crea automáticamente la entrada correspondiente en `STOCK`).
-
-**Requisitos Funcionales**:
-* **FR-047**: El sistema DEBE permitir registrar solicitudes de transferencia entre bodegas requiriendo: Producto (`product_id`), Bodega Origen (`source_warehouse_id`), Bodega Destino (`target_warehouse_id`) y Cantidad (`quantity`).
-* **FR-048**: El sistema DEBE validar que la Bodega Origen y la Bodega Destino sean entidades distintas.
-* **FR-049**: El sistema DEBE verificar que la Bodega Origen disponga de `quantity_available` suficiente en `STOCK` antes de autorizar el registro.
-* **FR-050**: El sistema DEBE gestionar el estado de la transferencia permitiendo únicamente los valores: 'pendiente', 'confirmada' y 'cancelada'.
-* **FR-051**: El sistema DEBE actualizar los niveles de `STOCK` en origen y destino únicamente cuando la transferencia cambie a estado 'confirmada'.
-* **FR-052**: El sistema DEBE registrar la fecha de la transacción (`transfer_date`) de forma automática.
-
-**Entidades Clave**: 
-* **Transferencia de Stock (`STOCK_TRANSFERS`)**: Documento transaccional que enlaza `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity`, `status` y `transfer_date`.
-
-**Criterios de Éxito Medibles**: 
-* **SC-051**: Los usuarios pueden registrar una solicitud de transferencia en menos de 45 segundos.
-* **SC-052**: El 100% de los intentos de transferencia entre bodegas idénticas o sin stock suficiente son bloqueados por las validaciones.
-* **SC-053**: El stock de ambas bodegas se actualiza en la interfaz de forma inmediata al confirmar la recepción.
-
-**Suposiciones**: 
-* Ambas bodegas participantes deben estar en estado activo al momento de crear la solicitud.
-* Las transferencias confirmadas no vuelven a actualizar el stock para evitar duplicaciones.
-   
+- Una bodega representa una ubicación física real dentro de la operación logística de la organización.
+- Las validaciones de duplicidad de nombres de bodegas se realizan a nivel de base de datos o lógica de negocio central.
+- Ambas bodegas participantes deben estar en estado activo al momento de crear la solicitud de transferencia.
+- Las transferencias confirmadas no vuelven a actualizar el stock para evitar duplicaciones.
