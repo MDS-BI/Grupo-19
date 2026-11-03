@@ -80,6 +80,64 @@ Como administrador del sistema, quiero registrar nuevos productos y modificar lo
 * La gestión de impuestos sobre el producto se considerará resuelta de manera global o en una capa de facturación posterior; el módulo almacena el valor neto.
 
 
+### Historia de Usuario 2 - Control de Stock (Prioridad: P2)
+
+Como supervisor de inventario, quiero consultar las existencias de cada producto, para conocer las cantidades disponibles en las bodegas.
+
+**Por qué es prioridad**: Es una funcionalidad de solo lectura que da visibilidad sobre las existencias registradas en la tabla `STOCK` (`quantity_available`). Depende de HU-01 (productos), HU-04 (bodegas), HU-03 (entradas y salidas) y HU-05 (transferencias confirmadas); las existencias se derivan de los movimientos de HU-03 y de las transferencias confirmadas de HU-05, que también actualizan `STOCK` y pueden crear el registro en la bodega destino. Habilita la consulta operativa del inventario sin alterar los datos. Las alertas de stock mínimo quedan fuera de esta historia.
+
+**Prueba Independiente**: Se puede probar con un conjunto de datos de prueba (productos, bodegas y movimientos), consultando las existencias de un producto y verificando que la cantidad por bodega coincide con `quantity_available` de `STOCK`, que el total corresponde a la suma entre bodegas y que los filtros por producto y bodega devuelven los registros esperados, sin modificar ningún dato.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** el supervisor de inventario se encuentra en la pantalla de "Control de Stock" y existen registros en `STOCK`, **Cuando** consulta un producto, **Entonces** el sistema muestra la cantidad disponible de ese producto en cada bodega.
+2. **Dado que** un producto tiene existencias en más de una bodega, **Cuando** el supervisor consulta su detalle, **Entonces** el sistema muestra el total de existencias sumando `quantity_available` de todas las bodegas.
+3. **Dado que** el supervisor se encuentra en la pantalla de "Control de Stock", **Cuando** aplica un filtro o búsqueda por producto o por bodega, **Entonces** el sistema muestra únicamente los registros de stock que coinciden con el criterio.
+4. **Dado que** se aplica un filtro o búsqueda, **Cuando** no existe ningún registro que coincida, **Entonces** el sistema muestra un estado vacío indicando que no se encontraron resultados.
+
+---
+
+### Casos Límite
+
+* ¿Qué ocurre si un producto no tiene registro de stock en una bodega? (No se asume stock cero como registro existente; se indica la ausencia de existencias en esa bodega).
+* ¿Qué ocurre si un producto tiene registro de stock con `quantity_available` en 0? (Se muestra con cantidad 0, distinto de la ausencia de registro en esa bodega).
+* ¿Qué ocurre con el stock de una bodega que pasó a estado inactivo? (Se muestra solo para consulta, sin habilitar operaciones sobre ella).
+* ¿Qué ocurre si un producto está inactivo pero aún tiene existencias? (Se muestra su stock para consulta, indicando su estado).
+* ¿Qué ocurre cuando una búsqueda no devuelve coincidencias? (Se muestra un mensaje de estado vacío).
+
+## Requisitos *(obligatorio)*
+
+### Requisitos Funcionales
+
+* **FR-053**: El sistema DEBE permitir consultar las existencias de cada producto mostrando `quantity_available` por producto y bodega desde la tabla `STOCK`.
+* **FR-054**: El sistema DEBE calcular y mostrar el total de existencias de un producto sumando `quantity_available` de todas sus bodegas.
+* **FR-055**: El sistema DEBE permitir filtrar y buscar los registros de stock por producto y por bodega.
+* **FR-056**: El sistema DEBE mostrar un estado vacío claro cuando la búsqueda o el filtro no devuelvan resultados.
+* **FR-057**: El sistema DEBE tratar la consulta de stock como solo lectura, sin crear, modificar ni eliminar registros de `STOCK`, `PRODUCTS`, `WAREHOUSES` ni `INVENTORY_TRANSACTIONS`.
+* **FR-058**: El sistema DEBE mostrar el estado (Activo/Inactivo) del producto y de la bodega junto con sus existencias cuando corresponda.
+
+### Entidades Clave
+
+* **Stock (`STOCK`)**: Registro de existencias por producto y bodega. Atributos clave: `stock_id`, `product_id`, `warehouse_id`, `quantity_available`, `update_date` (`min_stock_level` existe en la tabla pero no se usa en esta historia).
+* **Producto (`PRODUCTS`)**: Artículo consultado. Atributos clave: `product_id`, `product_name`, `status` (Activo/Inactivo; campo a incorporar en el modelo de datos).
+* **Bodega (`WAREHOUSES`)**: Ubicación consultada. Atributos clave: `warehouse_id`, `name`, `location`, `status` (Activo/Inactivo; campo a incorporar en el modelo de datos).
+
+## Criterios de Éxito *(obligatorio)*
+
+### Resultados Medibles
+
+* **SC-054**: Los supervisores pueden consultar las existencias de un producto en todas sus bodegas en menos de 10 segundos.
+* **SC-055**: El total mostrado coincide con la suma de `quantity_available` de las bodegas del producto en el 100% de las consultas.
+* **SC-056**: Los filtros y búsquedas por producto y bodega devuelven resultados correctos en menos de 2 segundos para hasta 500 registros de stock.
+* **SC-057**: La consulta de stock no altera ningún dato almacenado (cero escrituras) en el 100% de las operaciones.
+
+## Suposiciones
+
+* Las existencias se derivan de los movimientos de HU-03 y de las transferencias confirmadas de HU-05, que también actualizan `STOCK` y pueden crear el registro en la bodega destino; esta historia no genera ni corrige stock.
+* Las alertas de stock mínimo (`min_stock_level`) se abordan en una historia posterior y quedan fuera de este alcance.
+* Los productos y bodegas provienen de HU-01 y HU-04 respectivamente; la consulta no crea ni edita esas entidades.
+* Las bodegas y productos inactivos se muestran solo para consulta de sus existencias, sin permitir operaciones sobre ellos.
+* El estado (Activo/Inactivo) de productos y bodegas proviene de HU-01 y HU-04; el modelo de datos deberá incluir ese campo en `PRODUCTS` y `WAREHOUSES`.
 
 ### Historia de Usuario 3 - Registrar entradas y salidas de inventario (Prioridad: P1)
 
