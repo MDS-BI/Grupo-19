@@ -85,11 +85,16 @@ Como administrador del sistema, quiero registrar nuevos productos y modificar lo
 
 Como encargado de bodega, quiero registrar las entradas y salidas de productos, indicando el producto, la bodega y la cantidad correspondiente, para mantener actualizado el stock disponible y conservar un historial de los movimientos realizados.
 
-- **Actualización de stock**: al guardar un movimiento, el stock se actualiza inmediatamente. Si no existe un registro de stock para la combinación producto+bodega, una entrada lo crea con la cantidad indicada y una salida se rechaza.
-- **Historial inmutable**: los movimientos registrados no se editan ni eliminan; las correcciones se realizan con un nuevo movimiento de entrada o salida que queda en el historial.
-- **Usuario responsable**: el formulario de movimiento exige seleccionar un usuario existente de USERS; el sistema guarda su `user_id` y rechaza el movimiento si el usuario no existe.
-- **Fecha automática**: la fecha y hora del movimiento se asignan automáticamente al guardar y no son editables por el usuario.
-- **Vencimientos fuera de alcance**: HU-03 no captura fechas de vencimiento ni lotes; se abordan en una historia posterior.
+**Por qué es prioridad**: Los movimientos de inventario son la operación central del módulo: son los que modifican `STOCK.quantity_available` y generan el historial en `INVENTORY_TRANSACTIONS`. Sin esta historia, los productos y bodegas quedarían registrados pero no reflejarían existencias reales, y no podrían funcionar las alertas de stock mínimo ni las transferencias entre bodegas. Por ello es la base operativa del MVP.
+
+**Prueba Independiente**: Con productos, bodegas y usuarios de ejemplo cargados, registrar una entrada crea o incrementa el stock de la combinación producto+bodega; registrar una salida con existencias lo disminuye; una salida sin stock suficiente se rechaza sin alterar el inventario; y el historial muestra el movimiento con su usuario y fecha automática, sin acciones de edición ni eliminación.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** el encargado de bodega está en el formulario de movimiento, **cuando** registra una entrada seleccionando un producto, una bodega, un usuario existente y una cantidad mayor que cero, **entonces** el sistema crea o incrementa `quantity_available` en `STOCK` para esa combinación producto+bodega, guarda el movimiento en `INVENTORY_TRANSACTIONS` con `transaction_type` "entrada", `user_id` y `transaction_date` automática, y muestra un mensaje de éxito.
+2. **Dado que** existe stock disponible para un producto en una bodega, **cuando** el encargado registra una salida con una cantidad menor o igual al stock disponible, **entonces** el sistema descuenta inmediatamente esa cantidad de `quantity_available` y guarda el movimiento con `transaction_type` "salida" en el historial.
+3. **Dado que** no existe stock para la combinación producto+bodega o que la cantidad solicitada supera `quantity_available`, **cuando** el encargado intenta registrar una salida, **entonces** el sistema rechaza la operación con un mensaje claro, no crea el movimiento y no modifica el stock.
+4. **Dado que** un movimiento ya fue registrado, **cuando** el encargado intenta editarlo o eliminarlo, **entonces** el sistema no ofrece esas acciones y solo permite corregir la situación mediante un nuevo movimiento de entrada o salida que queda registrado en el historial.
 
 ---
 
