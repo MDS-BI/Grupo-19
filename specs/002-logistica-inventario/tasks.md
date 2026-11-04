@@ -7,7 +7,7 @@
 ## Formato: `[ID] [P?] [Historia] Descripción`
 
 - **[P]**: Puede ejecutarse en paralelo (archivos distintos, sin dependencias pendientes)
-- **[Historia]**: Historia de usuario a la que pertenece la tarea (US1, US2, US3, US4, US5)
+- **[Historia]**: Historia de usuario a la que pertenece la tarea (US1, US2, US3, US4, US5, US6)
 - Incluir rutas de archivo exactas en las descripciones
 
 ## Convenciones de Rutas
@@ -167,20 +167,45 @@
 - [ ] T052 [US2] Distinguir la ausencia de registro de una cantidad cero y mostrar los estados de producto/bodega en `src/components/stock-list.js`
 - [ ] T053 [US2] Añadir los estilos de la pantalla de stock en `src/styles.css`
 
-**Punto de control**: Las cinco historias son funcionales e independientes.
+**Punto de control**: Las seis historias son funcionales e independientes.
 
 ---
 
-## Fase 8: Pulido y Preocupaciones Transversales
+## Fase 8: Historia de Usuario 6 - Alertas de Stock Mínimo (Prioridad: P2)
+
+**Objetivo**: Configurar el nivel mínimo por producto+bodega y consultar alertas cuando `quantity_available` cae en o por debajo de `min_stock_level`, incluyendo un indicador en Control de Stock.
+
+**Prueba Independiente**: Configurar un `min_stock_level` para una combinación producto+bodega, registrar movimientos hasta que `quantity_available` sea menor o igual al mínimo, verificar la alerta en la pantalla dedicada y en el indicador de Control de Stock, y confirmar que desaparece automáticamente al reponer el stock por encima del mínimo.
+
+### Pruebas para la Historia de Usuario 6
+
+- [ ] T054 [P] [US6] Añadir pruebas unitarias del umbral inclusivo, mínimo cero o sin configurar, ausencia de registro de stock, cálculo del déficit, filtros y solo lectura en `tests/unit/alerts.test.js`
+- [ ] T055 [P] [US6] Añadir pruebas de integración de la pantalla de alertas, filtros, estado vacío y el indicador visual en Control de Stock en `tests/integration/alerts.test.js`
+
+### Implementación de la Historia de Usuario 6
+
+- [ ] T056 [P] [US6] Implementar el servicio de alertas derivado de `STOCK` (comparación `quantity_available` menor o igual a `min_stock_level` con mínimo mayor que cero, déficit y filtros) en `src/domain/alerts.js`
+- [ ] T057 [P] [US6] Crear el formulario/acción de configuración de `min_stock_level` (mayor o igual a cero) por producto+bodega para administradores en `src/components/stock-config.js`
+- [ ] T058 [P] [US6] Crear el listado dedicado de alertas con producto, bodega, cantidad actual, mínimo configurado, déficit, filtros y estado vacío en `src/components/alert-list.js`
+- [ ] T059 [US6] Añadir la entrada de barra lateral, el contenedor y la ruta de la pantalla de alertas y conectar la configuración de mínimos con la retroalimentación de validación en `index.html`, `src/components/shell.js` y `src/app.js`
+- [ ] T060 [US6] Mostrar el indicador visual de alerta en el listado de Control de Stock en `src/components/stock-list.js` y `src/app.js`
+- [ ] T061 [US6] Recalcular las alertas automáticamente tras movimientos, transferencias confirmadas y cambios de `min_stock_level`, sin persistir una tabla de alertas, en `src/domain/alerts.js` y `src/app.js`
+- [ ] T062 [US6] Añadir los estilos de la pantalla de alertas y del indicador de stock en `src/styles.css`
+
+**Punto de control**: Las alertas se derivan de `STOCK`, reflejan el umbral inclusivo y desaparecen solas al superar el mínimo.
+
+---
+
+## Fase 9: Pulido y Preocupaciones Transversales
 
 **Propósito**: Asegurar calidad, accesibilidad, rendimiento y documentación.
 
-- [ ] T054 [P] Actualizar `README.md` con el módulo de logística, semillas, pantallas y claves de persistencia
-- [ ] T055 [P] Añadir refinamientos de accesibilidad (etiquetas, orden de foco, `aria-current` y semántica de tablas) en `src/styles.css` y los componentes de `src/components/`
-- [ ] T056 [P] Verificar el rendimiento de listados y búsquedas con 500 registros en `src/domain/products.js` y `src/domain/stock.js`
-- [ ] T057 Ejecutar `npx vitest run` y `npm run build` en la raíz del repositorio para verificar que no hay regresiones
-- [ ] T058 Validar manualmente los escenarios de aceptación de US1–US5 usando `specs/002-logistica-inventario/spec.md` y registrar los resultados en `specs/002-logistica-inventario/tasks.md`
-- [ ] T059 [P] Reconciliar `specs/002-logistica-inventario/plan.md` y `specs/002-logistica-inventario/tasks.md` con la estructura final implementada
+- [ ] T063 [P] Actualizar `README.md` con el módulo de logística, semillas, pantallas y claves de persistencia
+- [ ] T064 [P] Añadir refinamientos de accesibilidad (etiquetas, orden de foco, `aria-current` y semántica de tablas) en `src/styles.css` y los componentes de `src/components/`
+- [ ] T065 [P] Verificar el rendimiento de listados y búsquedas con 500 registros en `src/domain/products.js`, `src/domain/stock.js` y `src/domain/alerts.js`
+- [ ] T066 Ejecutar `npx vitest run` y `npm run build` en la raíz del repositorio para verificar que no hay regresiones
+- [ ] T067 Validar manualmente los escenarios de aceptación de US1–US6 usando `specs/002-logistica-inventario/spec.md` y registrar los resultados en `specs/002-logistica-inventario/tasks.md`
+- [ ] T068 [P] Reconciliar `specs/002-logistica-inventario/plan.md` y `specs/002-logistica-inventario/tasks.md` con la estructura final implementada
 
 ---
 
@@ -195,7 +220,8 @@
 - US3 (Fase 5): depende de US1 y US4.
 - US5 (Fase 6): depende de US1 y US4.
 - US2 (Fase 7): depende de US1, US3, US4 y US5.
-- Pulido (Fase 8): depende de todas las historias deseadas.
+- US6 (Fase 8): depende de US1, US2, US3, US4 y US5.
+- Pulido (Fase 9): depende de todas las historias deseadas.
 
 ### Dependencias entre Historias
 
@@ -204,6 +230,7 @@
 - **US3 (P1)**: requiere productos y bodegas registrados.
 - **US5 (P2)**: requiere productos y bodegas registrados.
 - **US2 (P2)**: requiere movimientos y transferencias confirmadas para reflejar existencias.
+- **US6 (P2)**: requiere productos, bodegas, movimientos y transferencias confirmadas para evaluar alertas, y la pantalla de stock para mostrar el indicador visual.
 
 ### Dentro de Cada Historia
 
@@ -219,6 +246,7 @@
 - Las pruebas y los componentes de cada historia pueden ejecutarse en paralelo.
 - US1 y US4 pueden desarrollarse simultáneamente tras la Fase 2.
 - US5 puede iniciarse cuando US1 y US4 estén completas.
+- US6 puede iniciarse cuando US1, US2, US3, US4 y US5 estén completas; sus pruebas y componentes pueden desarrollarse en paralelo.
 
 ---
 
@@ -255,7 +283,8 @@ Task: "Crear el listado de productos en src/components/product-list.js"
 4. US3 → validar → demostrar (flujo operativo).
 5. US5 → validar → demostrar (multi-bodega).
 6. US2 → validar → demostrar (consulta de existencias).
-7. Pulido → verificación final.
+7. US6 → validar → demostrar (alertas de stock mínimo).
+8. Pulido → verificación final.
 
 ### Estrategia de Equipo Paralelo
 
@@ -266,7 +295,7 @@ Task: "Crear el listado de productos en src/components/product-list.js"
 3. Al completarse US1 y US4:
    - Desarrollador A: US3 Movimientos.
    - Desarrollador B: US5 Transferencias.
-4. US2 y pulido al final.
+4. US2, US6 y pulido al final.
 
 ---
 
