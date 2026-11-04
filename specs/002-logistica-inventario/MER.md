@@ -111,7 +111,7 @@ erDiagram
 - `STOCK_TRANSFERS.created_by` es obligatorio y registra al usuario que crea la solicitud.
 - `STOCK_TRANSFERS.confirmed_by` es obligatorio cuando la transferencia pasa a estado "confirmada".
 - `PRODUCTS.unit_price` se conserva solo por compatibilidad con la plantilla base; las reglas de negocio usan `sale_price` y `cost_price`.
-- `STOCK.min_stock_level` y `STOCK.expiration_date` quedan reservados para iteraciones futuras; no se calculan alertas ni vencimientos en esta iteración.
+- `STOCK.min_stock_level` se configura por producto y bodega y genera alertas cuando `quantity_available` es menor o igual al mínimo (con mínimo mayor que cero); `STOCK.expiration_date` queda reservado para una iteración futura de vencimientos.
 - `WAREHOUSES.responsable_id` identifica al responsable principal de la bodega; `USERS.assigned_warehouse_id` identifica la bodega operativa asignada al usuario.
 
 ## Referencia visual

@@ -31,9 +31,16 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 
 - Q: ¿Qué conceptos de la plantilla base deben figurar en Entidades Clave? → A: Se excluyen las entidades genéricas "Entidad" y "Documento"; se conserva `ModuleConfig` como contrato de extensibilidad y se listan solo las entidades reales del módulo, siguiendo `001`.
 - Q: ¿Qué hacer con `PRODUCTS.unit_price`? → A: Se conserva solo como campo de compatibilidad con la plantilla base; las reglas de negocio usan `sale_price` y `cost_price`.
-- Q: ¿Qué alcance tienen `STOCK.min_stock_level` y `STOCK.expiration_date`? → A: Se mantienen como campos reservados para iteraciones futuras; las alertas y el control de vencimientos quedan fuera de esta spec.
+- Q: ¿Qué alcance tienen `STOCK.min_stock_level` y `STOCK.expiration_date`? → A: `min_stock_level` se incorpora en la HU-06 para las alertas de stock mínimo (ver sesión "Alertas de Stock Mínimo"); `expiration_date` se mantiene reservado para control de vencimientos futuro.
 - Q: ¿Cómo se audita una transferencia? → A: Se registra `created_by` al crear la solicitud y `confirmed_by` al confirmar la recepción, ambos seleccionados del catálogo `USERS`.
 - Q: ¿Cómo se distinguen las relaciones entre `USERS` y `WAREHOUSES`? → A: `responsable_id` identifica al responsable principal de la bodega; `assigned_warehouse_id` identifica la bodega operativa asignada al usuario.
+
+### Session 2026-11-03 — Alertas de Stock Mínimo
+
+- Q: ¿Cuál es el alcance de la Historia de Usuario 6? → A: Alertas de stock mínimo: generar y consultar alertas cuando `quantity_available` cae en o por debajo de `min_stock_level`.
+- Q: ¿Dónde y cómo debe ver el usuario las alertas de stock mínimo? → A: En una pantalla dedicada de alertas y, además, mediante un indicador visual en la pantalla de Control de Stock (HU-02).
+- Q: ¿Quién define el nivel mínimo y con qué granularidad? → A: `min_stock_level` se configura por combinación producto+bodega en `STOCK` y solo el administrador puede editarlo.
+- Q: ¿Qué ocurre con una alerta cuando el stock vuelve a estar sobre el mínimo o el usuario la revisa? → A: La alerta se recalcula automáticamente y desaparece sola cuando el stock supera el mínimo; no requiere reconocimiento manual.
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
@@ -58,7 +65,7 @@ Como administrador del sistema, quiero registrar nuevos productos y modificar lo
 
 Como supervisor de inventario, quiero consultar las existencias de cada producto, para conocer las cantidades disponibles en las bodegas.
 
-**Por qué es prioridad**: Es una funcionalidad de solo lectura que da visibilidad sobre las existencias registradas en la tabla `STOCK` (`quantity_available`). Depende de HU-01 (productos), HU-04 (bodegas), HU-03 (entradas y salidas) y HU-05 (transferencias confirmadas); las existencias se derivan de los movimientos de HU-03 y de las transferencias confirmadas de HU-05, que también actualizan `STOCK` y pueden crear el registro en la bodega destino. Habilita la consulta operativa del inventario sin alterar los datos. Las alertas de stock mínimo quedan fuera de esta historia.
+**Por qué es prioridad**: Es una funcionalidad de solo lectura que da visibilidad sobre las existencias registradas en la tabla `STOCK` (`quantity_available`). Depende de HU-01 (productos), HU-04 (bodegas), HU-03 (entradas y salidas) y HU-05 (transferencias confirmadas); las existencias se derivan de los movimientos de HU-03 y de las transferencias confirmadas de HU-05, que también actualizan `STOCK` y pueden crear el registro en la bodega destino. Habilita la consulta operativa del inventario sin alterar los datos. Las alertas de stock mínimo se abordan en la HU-06.
 
 **Prueba Independiente**: Se puede probar con un conjunto de datos de prueba (productos, bodegas y movimientos), consultando las existencias de un producto y verificando que la cantidad por bodega coincide con `quantity_available` de `STOCK`, que el total corresponde a la suma entre bodegas y que los filtros por producto y bodega devuelven los registros esperados, sin modificar ningún dato.
 
@@ -121,6 +128,24 @@ Como encargado de bodega, quiero registrar transferencias de productos entre dis
 
 ---
 
+### Historia de Usuario 6 - Alertas de Stock Mínimo (Prioridad: P2)
+
+Como supervisor de inventario, quiero recibir alertas cuando las existencias de un producto en una bodega caigan en o por debajo del nivel mínimo configurado, para reabastecer a tiempo y evitar quiebres de stock.
+
+**Por qué es prioridad**: Las alertas convierten el control de existencias de HU-02 en una herramienta de reposición proactiva. Dependen de HU-01 (productos), HU-03 (movimientos), HU-04 (bodegas) y HU-05 (transferencias confirmadas), y se derivan de comparar `STOCK.quantity_available` con `STOCK.min_stock_level`; no crean ni modifican registros y no bloquean operaciones. Sin esta historia, el nivel mínimo queda como un dato sin efecto operativo.
+
+**Prueba Independiente**: Se puede probar configurando un `min_stock_level` para una combinación producto+bodega, registrando movimientos hasta que `quantity_available` sea menor o igual al mínimo, verificando que la alerta aparece en la pantalla dedicada y en el indicador de Control de Stock, y confirmando que desaparece automáticamente al reponer el stock por encima del mínimo.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** el administrador se encuentra en la configuración de existencias de un producto en una bodega, **Cuando** establece o modifica `min_stock_level` con un valor mayor o igual a cero y guarda, **Entonces** el sistema persiste el mínimo en `STOCK` y lo usa para evaluar las alertas.
+2. **Dado que** existe un registro de `STOCK` con `min_stock_level` mayor que cero, **Cuando** `quantity_available` es menor o igual a `min_stock_level`, **Entonces** el sistema muestra una alerta en la pantalla dedicada indicando producto, bodega, cantidad actual, mínimo configurado y déficit.
+3. **Dado que** existe una alerta activa, **Cuando** el supervisor consulta la pantalla de Control de Stock (HU-02), **Entonces** el sistema resalta o indica visualmente el registro en alerta junto con sus existencias.
+4. **Dado que** una combinación producto+bodega está en alerta, **Cuando** se registra una entrada, un ajuste de entrada o una transferencia confirmada que deja `quantity_available` por encima de `min_stock_level`, **Entonces** la alerta desaparece automáticamente sin requerir una acción manual.
+5. **Dado que** el supervisor se encuentra en la pantalla de alertas, **Cuando** aplica un filtro por producto o por bodega, **Entonces** el sistema muestra solo las alertas que coinciden; si no hay coincidencias, muestra un estado vacío indicando que no se encontraron alertas.
+
+---
+
 ### Casos Límite
 
 - ¿Qué ocurre cuando un usuario intenta guardar una entidad sin nombre o código obligatorio?
@@ -161,6 +186,12 @@ Como encargado de bodega, quiero registrar transferencias de productos entre dis
 - ¿Cómo reacciona el sistema si el registro de stock para el producto aún no existe en la bodega de destino al momento de confirmar la recepción? (El sistema crea automáticamente la entrada correspondiente en `STOCK`).
 - ¿Qué ocurre si no hay categorías semilla cargadas al intentar registrar un producto? (Se impide el registro porque `category_id` es obligatorio).
 - ¿Qué ocurre si no hay usuarios semilla cargados al intentar registrar un movimiento? (Se impide el registro porque `user_id` es obligatorio).
+- ¿Qué ocurre cuando `quantity_available` es exactamente igual a `min_stock_level`? (Se genera la alerta; el umbral es inclusivo).
+- ¿Qué ocurre cuando `min_stock_level` es cero o no está configurado? (No se genera alerta para ese registro de stock).
+- ¿Qué ocurre cuando no existe registro de `STOCK` para una combinación producto+bodega? (No hay mínimo que evaluar; no se genera alerta).
+- ¿Qué ocurre con las alertas de productos o bodegas inactivos? (Se muestran solo como información para consulta, sin habilitar operaciones).
+- ¿Qué ocurre cuando se modifica `min_stock_level` o se repone el stock? (Las alertas se recalculan de inmediato; la alerta desaparece si el stock supera el mínimo).
+- ¿Qué ocurre al consultar las alertas? (La consulta no modifica `STOCK`, productos, bodegas ni movimientos).
 
 ## Requisitos *(obligatorio)*
 
@@ -241,6 +272,15 @@ Como encargado de bodega, quiero registrar transferencias de productos entre dis
 - **FR-073**: El sistema NO DEBE exigir autenticación en esta iteración; los roles de `USERS` son informativos y el usuario que registra movimientos se selecciona del catálogo.
 - **FR-074**: El sistema DEBE registrar el usuario que crea la solicitud de transferencia en `created_by` y DEBE rechazar la solicitud si el usuario no existe.
 - **FR-075**: El sistema DEBE registrar el usuario que confirma la recepción en `confirmed_by` y DEBE rechazar la confirmación si el usuario no existe.
+- **FR-076**: El sistema DEBE permitir al administrador configurar y editar `min_stock_level` (mayor o igual a cero) por cada combinación producto+bodega en `STOCK`.
+- **FR-077**: El sistema DEBE generar una alerta cuando `quantity_available` sea menor o igual a `min_stock_level` y `min_stock_level` sea mayor que cero.
+- **FR-078**: El sistema DEBE mostrar las alertas en una pantalla dedicada indicando producto, bodega, cantidad disponible, mínimo configurado y déficit.
+- **FR-079**: El sistema DEBE resaltar o indicar visualmente en la pantalla de Control de Stock los registros de `STOCK` que se encuentren en alerta.
+- **FR-080**: El sistema DEBE recalcular las alertas automáticamente tras cada movimiento de inventario, transferencia confirmada o cambio de `min_stock_level`, sin requerir una acción manual.
+- **FR-081**: El sistema DEBE retirar la alerta cuando `quantity_available` supere `min_stock_level`.
+- **FR-082**: El sistema DEBE permitir filtrar y buscar las alertas por producto y por bodega, y mostrar un estado vacío cuando no haya coincidencias.
+- **FR-083**: El sistema DEBE tratar las alertas como informativas: NO DEBEN bloquear movimientos ni transferencias, ni modificar `STOCK`, `PRODUCTS`, `WAREHOUSES` o `INVENTORY_TRANSACTIONS`.
+- **FR-084**: El sistema NO DEBE generar alertas para registros de `STOCK` sin mínimo configurado o con `min_stock_level` igual a cero.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
 
@@ -257,7 +297,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **Producto (`PRODUCTS`)**: Artículo físico o bien gestionado en el inventario. Atributos clave: `product_id`, `sku` (único), `product_name`, `description`, `category_id` (FK a `PRODUCT_CATEGORIES`), `sale_price`, `cost_price`, `unit_of_measure`, `status` (activo/inactivo), `supplier`, dimensiones, `weight`, `created_at`, `updated_at`, `created_by` y `updated_by` para auditoría. `unit_price` se conserva solo como campo de compatibilidad con la plantilla base, sin reglas de negocio.
 - **Categoría de Producto (`PRODUCT_CATEGORIES`)**: Catálogo semilla que clasifica los productos. Atributos clave: `category_id` y `category_name` (obligatorio, no vacío).
 - **Bodega (`WAREHOUSES`)**: Ubicación física donde se almacenan los productos. Atributos clave: `warehouse_id`, `name` (único y obligatorio), `location` (obligatorio), `description` (opcional), `capacity` (mayor o igual a cero), `status` (activo/inactivo) y `responsable_id` (FK opcional a `USERS`; identifica al responsable principal de la bodega).
-- **Stock (`STOCK`)**: Existencias disponibles de cada producto por bodega. Atributos clave: `stock_id`, `product_id`, `warehouse_id`, `quantity_available` (mayor o igual a cero), `min_stock_level` (reservado para alertas futuras; sin reglas en esta iteración), `expiration_date` (reservado para control de vencimientos futuro; opcional) y `update_date` (obligatorio). La combinación `product_id` + `warehouse_id` es única.
+- **Stock (`STOCK`)**: Existencias disponibles de cada producto por bodega. Atributos clave: `stock_id`, `product_id`, `warehouse_id`, `quantity_available` (mayor o igual a cero), `min_stock_level` (nivel mínimo configurable por producto+bodega; genera alerta cuando `quantity_available` es menor o igual a `min_stock_level` y `min_stock_level` es mayor que cero), `expiration_date` (reservado para control de vencimientos futuro; opcional) y `update_date` (obligatorio). La combinación `product_id` + `warehouse_id` es única.
 - **Movimiento de Inventario (`INVENTORY_TRANSACTIONS`)**: Registro histórico e inmutable de entradas, salidas y ajustes. Atributos clave: `transaction_id`, `product_id`, `warehouse_id`, `transaction_type` ("entrada", "salida", "ajuste_entrada" o "ajuste_salida"), `quantity` (mayor que cero), `user_id` (FK obligatoria a `USERS`) y `transaction_date` (automática). Cada movimiento actualiza de inmediato `STOCK.quantity_available`; no se edita ni se elimina.
 - **Transferencia de Stock (`STOCK_TRANSFERS`)**: Documento transaccional que traslada productos entre bodegas. Atributos clave: `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity` (mayor que cero), `status` ("pendiente", "confirmada" o "cancelada"), `transfer_date` (automática), `created_by` (FK obligatoria a `USERS`; usuario que registra la solicitud) y `confirmed_by` (FK a `USERS`; obligatoria al confirmar la recepción).
 - **Usuario (`USERS`)**: Persona que opera el sistema y registra movimientos y transferencias. Atributos clave: `user_id`, `user_name`, `role`, `email` y `assigned_warehouse_id` (FK opcional a `WAREHOUSES`; identifica la bodega operativa asignada al usuario).
@@ -296,6 +336,11 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **SC-027**: Los usuarios pueden registrar una solicitud de transferencia en menos de 45 segundos.
 - **SC-028**: El 100% de los intentos de transferencia entre bodegas idénticas o sin stock suficiente son bloqueados por las validaciones.
 - **SC-029**: El stock de ambas bodegas se actualiza en la interfaz de forma inmediata al confirmar la recepción.
+- **SC-030**: El administrador puede configurar o actualizar `min_stock_level` de un producto en una bodega en menos de 30 segundos.
+- **SC-031**: El 100% de los registros de `STOCK` con `quantity_available` menor o igual a `min_stock_level` (y mínimo mayor que cero) aparecen como alerta.
+- **SC-032**: El 100% de las alertas desaparecen automáticamente en menos de 2 segundos después de que el stock supere el mínimo.
+- **SC-033**: Los filtros de alertas por producto y bodega devuelven resultados correctos en menos de 2 segundos para hasta 500 registros de stock.
+- **SC-034**: El 0% de las consultas de alertas modifica existencias o movimientos.
 
 ## Suposiciones
 
@@ -319,7 +364,11 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - No se contempla el manejo de imágenes múltiples de productos en esta iteración inicial; se trabajará únicamente con datos alfanuméricos.
 - La gestión de impuestos sobre el producto se considerará resuelta de manera global o en una capa de facturación posterior; el módulo almacena el valor neto.
 - Las existencias se derivan de los movimientos de HU-03 y de las transferencias confirmadas de HU-05, que también actualizan `STOCK` y pueden crear el registro en la bodega destino; la HU-02 no genera ni corrige stock.
-- Las alertas de stock mínimo (`min_stock_level`) se abordan en una historia posterior y quedan fuera de este alcance.
+- Las alertas de stock mínimo (HU-06) se derivan al consultar `STOCK` comparando `quantity_available` con `min_stock_level`; no se persiste una tabla de alertas.
+- `min_stock_level` se configura por combinación producto+bodega y solo el administrador puede modificarlo.
+- El umbral de alerta es inclusivo: se genera alerta cuando `quantity_available` es igual o menor que `min_stock_level`.
+- Las alertas son informativas y no bloquean movimientos ni transferencias; no se envían notificaciones externas en esta iteración.
+- Un registro de `STOCK` sin mínimo configurado o con `min_stock_level` igual a cero no genera alerta.
 - Los productos y bodegas provienen de HU-01 y HU-04 respectivamente; la consulta de stock no crea ni edita esas entidades.
 - Las bodegas y productos inactivos se muestran solo para consulta de sus existencias, sin permitir operaciones sobre ellos.
 - El estado (Activo/Inactivo) de productos y bodegas proviene de HU-01 y HU-04; el modelo de datos incluye ese campo en `PRODUCTS` y `WAREHOUSES`.

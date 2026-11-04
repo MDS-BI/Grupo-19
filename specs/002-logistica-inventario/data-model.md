@@ -86,7 +86,7 @@ Registra las cantidades disponibles de cada producto en las distintas bodegas.
 | product_id | int | Producto almacenado | FK a PRODUCTS, forma parte de la restricción única (product_id, warehouse_id) |
 | warehouse_id | int | Bodega donde se almacena | FK a WAREHOUSES, forma parte de la restricción única (product_id, warehouse_id) |
 | quantity_available | int | Cantidad disponible del producto | Mayor o igual a cero |
-| min_stock_level | int | Cantidad mínima de stock permitida; reservada para alertas futuras | Mayor o igual a cero; sin reglas en esta iteración |
+| min_stock_level | int | Nivel mínimo configurable por producto y bodega; genera alerta cuando quantity_available es menor o igual a este valor | Mayor o igual a cero; la alerta solo aplica si es mayor que cero |
 | expiration_date | date | Fecha de vencimiento del producto; reservada para control de lotes y vencimientos futuro | Opcional; sin reglas en esta iteración |
 | update_date | date | Fecha de última actualización del stock | Obligatorio |
 
@@ -221,7 +221,7 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 ### Stock
 - Las cantidades disponibles no pueden ser negativas.
 - Cada registro de stock debe estar asociado a un producto y una bodega.
-- `min_stock_level` y `expiration_date` se reservan para iteraciones futuras; en esta iteración no se calculan alertas de stock mínimo ni controles de vencimiento.
+- `min_stock_level` se configura por producto y bodega y genera alertas cuando `quantity_available` es menor o igual al mínimo (con mínimo mayor que cero); `expiration_date` se reserva para una iteración futura de control de vencimientos.
 - Para este prototipo se mantendrá un registro de stock por producto y bodega; la combinación (`product_id`, `warehouse_id`) debe ser única.
 
 ### Movimientos de inventario
@@ -249,7 +249,7 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 
 - `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES`, `INVENTORY_TRANSACTIONS` y `STOCK_TRANSFERS` puedan referenciarlos; no se incluyen pantallas de administración de categorías ni de usuarios en esta iteración.
 - El módulo no requiere autenticación en esta iteración. El campo `USERS.role` es informativo y los usuarios que registran movimientos y transferencias se seleccionan del catálogo.
-- Las alertas de stock mínimo (`STOCK.min_stock_level`) y el control de vencimientos (`STOCK.expiration_date`) quedan fuera del alcance de esta iteración.
+- Las alertas de stock mínimo (`STOCK.min_stock_level`) forman parte de la HU-06 y se derivan al consultar `STOCK`; el control de vencimientos (`STOCK.expiration_date`) queda fuera del alcance de esta iteración.
 
 ## Compatibilidad con la plantilla ERP
 
