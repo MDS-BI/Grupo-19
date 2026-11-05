@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { clearAll, loadEntities, addEntity, updateEntity, deleteEntity, validateEntity, searchEntities, loadDocuments, addDocument, updateDocument, deleteDocument, deleteDocumentsForEntity, validateDocument } from '../../src/storage.js';
+import {
+  clearAll, loadEntities, addEntity, updateEntity, deleteEntity, validateEntity, searchEntities, loadDocuments, addDocument, updateDocument, deleteDocument, deleteDocumentsForEntity, validateDocument,
+  loadProductCategories, loadUsers, loadProducts, loadWarehouses, loadStock, loadMovements, loadTransfers,
+  seedLogisticsCatalogs, nextProductId, nextWarehouseId, nextStockId, nextMovementId, nextTransferId,
+  escapeHtml, isNonEmptyText, isNonNegativeNumber, isPositiveInteger, isValidDate
+} from '../../src/storage.js';
 import { setActiveConfig } from '../../src/module-config.js';
 
 const store = new Map();
@@ -326,3 +331,75 @@ describe('clearAll', () => {
     expect(loadDocuments().length).toBe(0);
   });
 });
+
+describe('logistics storage: schemas, repository helpers and seed loading', () => {
+  it('starts with empty logistics collections', () => {
+    expect(loadProductCategories()).toEqual([]);
+    expect(loadProducts()).toEqual([]);
+    expect(loadWarehouses()).toEqual([]);
+    expect(loadUsers()).toEqual([]);
+    expect(loadStock()).toEqual([]);
+    expect(loadMovements()).toEqual([]);
+    expect(loadTransfers()).toEqual([]);
+  });
+
+  it('seeds product categories and users idempotently (FR-071)', () => {
+    seedLogisticsCatalogs();
+    const categories = loadProductCategories();
+    const users = loadUsers();
+    expect(categories.length).toBeGreaterThan(0);
+    expect(users.length).toBeGreaterThan(0);
+    expect(categories.every(c => c.category_id && c.category_name)).toBe(true);
+    expect(users.every(u => u.user_id && u.user_name && u.role)).toBe(true);
+
+    seedLogisticsCatalogs();
+    expect(loadProductCategories().length).toBe(categories.length);
+    expect(loadUsers().length).toBe(users.length);
+  });
+
+  it('does not reseed when catalogs already have custom data', () => {
+    seedLogisticsCatalogs();
+    const before = loadProductCategories().length;
+    saveProductCategoriesForTest([{ category_id: 99, category_name: 'Custom' }]);
+    seedLogisticsCatalogs();
+    expect(loadProductCategories()).toEqual([{ category_id: 99, category_name: 'Custom' }]);
+    expect(before).toBeGreaterThan(0);
+  });
+
+  it('generates sequential integer ids per entity', () => {
+    expect(nextProductId()).toBe(1);
+    expect(nextWarehouseId()).toBe(1);
+    expect(nextStockId()).toBe(1);
+    expect(nextMovementId()).toBe(1);
+    expect(nextTransferId()).toBe(1);
+  });
+
+  it('escapes HTML-sensitive characters to prevent unwanted script execution (FR-046, FR-092)', () => {
+    expect(escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(escapeHtml('Tom & Jerry')).toBe('Tom &amp; Jerry');
+    expect(escapeHtml(undefined)).toBe('');
+  });
+
+  it('validates required text, non-negative numbers and positive integers', () => {
+    expect(isNonEmptyText('  hola  ')).toBe(true);
+    expect(isNonEmptyText('   ')).toBe(false);
+    expect(isNonEmptyText(undefined)).toBe(false);
+
+    expect(isNonNegativeNumber(0)).toBe(true);
+    expect(isNonNegativeNumber(-1)).toBe(false);
+    expect(isNonNegativeNumber('')).toBe(false);
+
+    expect(isPositiveInteger(3)).toBe(true);
+    expect(isPositiveInteger(0)).toBe(false);
+    expect(isPositiveInteger(2.5)).toBe(false);
+  });
+
+  it('reuses the base isValidDate helper', () => {
+    expect(isValidDate('2026-11-05')).toBe(true);
+    expect(isValidDate('2026-13-01')).toBe(false);
+  });
+});
+
+function saveProductCategoriesForTest(list){
+  localStorage.setItem('logistics:product_categories', JSON.stringify(list));
+}

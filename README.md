@@ -56,3 +56,27 @@ If the configuration is invalid (unknown types, bad keys, transitions referencin
 - Data is persisted to `localStorage` under the keys `erp_base_module:entities` and `erp_base_module:documents`.
 - Deleting an entity also deletes its documents (cascade).
 - This project intentionally uses vanilla HTML, CSS, and JavaScript for simplicity.
+
+## Logística e Inventario
+
+On top of the generic Entity/Document base, this feature adds six dedicated screens reachable from the sidebar: **Productos**, **Bodegas**, **Stock**, **Movimientos**, **Transferencias** and **Alertas**. See `specs/002-logistica-inventario/` (`spec.md`, `plan.md`, `data-model.md`, `MER.md`, `contracts/`) for the full specification.
+
+### Domain layer
+
+- `src/domain/products.js`, `warehouses.js`, `stock.js`, `movements.js`, `transfers.js`, `alerts.js` — business rules per user story, decoupled from the UI.
+- `src/domain/seed.js` — raw seed data for the `PRODUCT_CATEGORIES` and `USERS` catalogs.
+- `src/storage.js` — extended with the logistics storage keys, sequential-id helpers, `escapeHtml`/validation helpers, and `seedLogisticsCatalogs()` (idempotent).
+
+### Storage keys
+
+`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`.
+
+### Seed catalogs
+
+`PRODUCT_CATEGORIES` and `USERS` are preloaded on first boot (no admin screens for them in this iteration). There is no authentication: every form that records who performed an action (products, movements, transfers) requires picking an existing user from a dropdown instead.
+
+### Business rules worth knowing
+
+- Inventory movements (`entrada`/`salida`/`ajuste_entrada`/`ajuste_salida`) are immutable — corrections are made with a new adjustment movement, never by editing history.
+- A warehouse transfer only moves stock when **confirmed**; it can be **cancelled** while still `pendiente` without touching `STOCK`.
+- Minimum-stock alerts are derived on the fly by comparing `STOCK.quantity_available` to `STOCK.min_stock_level` — there is no separate alerts table.

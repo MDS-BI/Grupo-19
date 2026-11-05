@@ -121,6 +121,7 @@ Registra los traslados de productos desde una bodega de origen hacia una bodega 
 | transfer_date | date | Fecha de la transferencia | Obligatorio |
 | created_by | int | Usuario que registra la solicitud de transferencia | FK a USERS, obligatorio |
 | confirmed_by | int | Usuario que confirma la recepción en la bodega de destino | FK a USERS, obligatorio cuando status = "confirmada" |
+| cancelled_by | int | Usuario que cancela la transferencia | FK a USERS, obligatorio cuando status = "cancelada" |
 
 ## Relaciones entre entidades
 
@@ -188,11 +189,12 @@ Una bodega puede tener varios usuarios asignados operativamente, mientras que ca
 - FK: USERS.assigned_warehouse_id
 
 ### 11. USERS - STOCK_TRANSFERS
-Un usuario puede crear y confirmar varias transferencias. Cada transferencia registra el usuario creador y, al confirmarse, el usuario que recibe.
+Un usuario puede crear, confirmar y cancelar varias transferencias. Cada transferencia registra el usuario creador y, según su desenlace, el usuario que recibe o el usuario que cancela.
 
 - Cardinalidad: 1:N
 - FK: STOCK_TRANSFERS.created_by
 - FK: STOCK_TRANSFERS.confirmed_by
+- FK: STOCK_TRANSFERS.cancelled_by
 
 
 ## Reglas de validación
@@ -244,6 +246,8 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 - Al confirmar una transferencia, se descontará la cantidad de la bodega de origen y se agregará a la de destino.
 - La confirmación debe registrar el usuario que recibe (`confirmed_by`).
 - Solo las transferencias pendientes pueden confirmarse; una transferencia confirmada no se modifica ni vuelve a actualizar el stock.
+- Solo las transferencias pendientes pueden cancelarse; al cancelarse se registra `cancelled_by` y no se modifica `STOCK`.
+- La confirmación de una transferencia pendiente se rechaza si la bodega de origen o la de destino está inactiva en ese momento.
 
 ## Catálogos semilla y alcance de la iteración
 

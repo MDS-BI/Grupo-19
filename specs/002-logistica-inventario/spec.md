@@ -42,6 +42,15 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Quién define el nivel mínimo y con qué granularidad? → A: `min_stock_level` se configura por combinación producto+bodega en `STOCK` y solo el administrador puede editarlo.
 - Q: ¿Qué ocurre con una alerta cuando el stock vuelve a estar sobre el mínimo o el usuario la revisa? → A: La alerta se recalcula automáticamente y desaparece sola cuando el stock supera el mínimo; no requiere reconocimiento manual.
 
+### Session 2026-11-05 — Resolución de Casos Límite Abiertos
+
+- Q: ¿Quién puede cancelar una transferencia en estado "pendiente" y qué ocurre con el stock? → A: Cualquier usuario del catálogo `USERS` puede cancelarla seleccionando su `user_id` como `cancelled_by`; el estado pasa a "cancelada" y el stock no se modifica porque no fue descontado hasta la confirmación. Solo las transferencias "pendientes" pueden cancelarse.
+- Q: ¿Se puede cambiar el estado de un producto a "Inactivo" si todavía tiene stock físico en bodegas? → A: Sí, se permite; el stock existente se conserva y se muestra solo para consulta, igual que para una bodega inactiva.
+- Q: ¿Se puede modificar el SKU de un producto que ya tiene movimientos de inventario asociados? → A: Sí, el SKU puede editarse porque los movimientos referencian `product_id`, no `sku`; debe mantenerse la validación de unicidad del nuevo valor.
+- Q: ¿Qué ocurre si el "Precio de Costo" ingresado es mayor al "Precio de Venta"? → A: El sistema permite guardar el producto y muestra una advertencia no bloqueante; no se impide el registro.
+- Q: ¿Qué ocurre si la bodega de origen o de destino de una transferencia "pendiente" pasa a estado inactivo antes de confirmarse? → A: El sistema impide confirmar la transferencia mientras cualquiera de las dos bodegas esté inactiva; la solicitud permanece "pendiente" hasta que ambas vuelvan a estar activas o se cancele.
+- Q: ¿Se solicita el campo Estado al crear un producto o se asigna por defecto? → A: Se asigna automáticamente como "activo" al crear; el campo Estado no se solicita en el formulario de creación y solo se modifica después mediante la acción de cambio de estado (FR-045).
+
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
 ### Historia de Usuario 1 - Registro y Modificación de Productos (Prioridad: P1)
@@ -125,6 +134,7 @@ Como encargado de bodega, quiero registrar transferencias de productos entre dis
 2. **Dado que** existe una transferencia registrada en estado `"pendiente"`, **Cuando** el usuario confirma la recepción en la bodega de destino seleccionando el usuario que confirma, **Entonces** el sistema cambia el estado a `"confirmada"`, registra `confirmed_by`, descuenta las unidades de la bodega origen e incrementa el stock en la bodega destino.
 3. **Dado que** un usuario intenta registrar una transferencia, **Cuando** selecciona la misma bodega como origen y destino, **Entonces** el sistema bloquea el envío y muestra el mensaje de error: "La bodega de destino debe ser diferente a la bodega de origen".
 4. **Dado que** la cantidad a transferir supera el stock disponible en la bodega de origen (`quantity_available`), **Cuando** el usuario intenta guardar la solicitud, **Entonces** el sistema rechaza la transacción informando falta de existencias.
+5. **Dado que** existe una transferencia en estado `"pendiente"`, **Cuando** un usuario del catálogo `USERS` la cancela, **Entonces** el sistema cambia el estado a `"cancelada"`, registra `cancelled_by` y no modifica `STOCK` en ninguna de las dos bodegas; si la transferencia ya está `"confirmada"` o `"cancelada"`, el sistema bloquea la acción.
 
 ---
 
@@ -164,9 +174,9 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 - ¿Qué ocurre cuando el panel se abre con cero entidades o cero documentos (valores estadísticos)?
 - ¿Qué ocurre cuando el color de acento configurado no es un valor de color válido?
 - ¿Cómo mantiene la barra lateral contraída las etiquetas de módulo accesibles en ventanas gráficas estrechas?
-- ¿Qué ocurre si un administrador intenta modificar el SKU de un producto que ya tiene historial de movimientos (entradas/salidas) asociados?
-- ¿Cómo se advierte al usuario si ingresa un "Precio de Costo" superior al "Precio de Venta"? (¿Se bloquea o solo alerta?).
-- ¿Qué sucede si un usuario intenta cambiar el estado de un producto a "Inactivo" pero este aún cuenta con stock físico en bodegas?
+- ¿Qué ocurre si un administrador intenta modificar el SKU de un producto que ya tiene historial de movimientos (entradas/salidas) asociados? (Se permite editarlo; los movimientos referencian `product_id`, no `sku`, y se revalida la unicidad del nuevo valor).
+- ¿Cómo se advierte al usuario si ingresa un "Precio de Costo" superior al "Precio de Venta"? (Se permite guardar y se muestra una advertencia no bloqueante; no se impide el registro).
+- ¿Qué sucede si un usuario intenta cambiar el estado de un producto a "Inactivo" pero este aún cuenta con stock físico en bodegas? (Se permite el cambio; el stock existente se conserva y se muestra solo para consulta).
 - ¿Cómo maneja el sistema la importación o el copiado y pegado de texto que incluye espacios en blanco al inicio o final del SKU o el Nombre?
 - ¿Qué ocurre si un producto no tiene registro de stock en una bodega? (No se asume stock cero como registro existente; se indica la ausencia de existencias en esa bodega).
 - ¿Qué ocurre si un producto tiene registro de stock con `quantity_available` en 0? (Se muestra con cantidad 0, distinto de la ausencia de registro en esa bodega).
@@ -181,7 +191,7 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 - ¿Qué sucede si el administrador intenta registrar una nueva bodega utilizando un nombre o identificador que ya existe en el sistema?
 - ¿Cómo maneja el sistema la desactivación o eliminación lógica de una bodega que aún contiene stock de productos o historial de movimientos activos?
 - ¿Qué ocurre si un usuario intenta realizar una operación seleccionando una bodega que ha sido marcada como inactiva?
-- ¿Qué ocurre si la bodega de destino pasa a estar inactiva mientras existe una transferencia en camino en estado 'pendiente'?
+- ¿Qué ocurre si la bodega de origen o de destino pasa a estar inactiva mientras existe una transferencia en camino en estado 'pendiente'? (El sistema impide confirmarla mientras alguna de las dos esté inactiva; la solicitud permanece pendiente hasta que ambas estén activas o se cancele).
 - ¿Qué sucede si un usuario intenta cancelar o editar una transferencia que ya fue marcada como 'confirmada'? (El sistema bloquea la acción; los traslados confirmados son inmutables).
 - ¿Cómo reacciona el sistema si el registro de stock para el producto aún no existe en la bodega de destino al momento de confirmar la recepción? (El sistema crea automáticamente la entrada correspondiente en `STOCK`).
 - ¿Qué ocurre si no hay categorías semilla cargadas al intentar registrar un producto? (Se impide el registro porque `category_id` es obligatorio).
@@ -281,6 +291,14 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 - **FR-082**: El sistema DEBE permitir filtrar y buscar las alertas por producto y por bodega, y mostrar un estado vacío cuando no haya coincidencias.
 - **FR-083**: El sistema DEBE tratar las alertas como informativas: NO DEBEN bloquear movimientos ni transferencias, ni modificar `STOCK`, `PRODUCTS`, `WAREHOUSES` o `INVENTORY_TRANSACTIONS`.
 - **FR-084**: El sistema NO DEBE generar alertas para registros de `STOCK` sin mínimo configurado o con `min_stock_level` igual a cero.
+- **FR-085**: El sistema DEBE permitir cancelar una transferencia en estado "pendiente", exigiendo la selección de un usuario existente en `USERS` como `cancelled_by` y sin modificar `STOCK` en ninguna bodega.
+- **FR-086**: El sistema DEBE rechazar la cancelación de una transferencia que no se encuentre en estado "pendiente".
+- **FR-087**: El sistema DEBE impedir confirmar una transferencia "pendiente" si la bodega de origen o la bodega de destino se encuentra inactiva en el momento de la confirmación.
+- **FR-088**: El sistema DEBE permitir modificar el SKU de un producto aunque tenga movimientos de inventario asociados, revalidando su unicidad; los movimientos conservan la referencia por `product_id`.
+- **FR-089**: El sistema DEBE permitir guardar un producto cuando el Precio de Costo sea mayor al Precio de Venta, mostrando una advertencia no bloqueante.
+- **FR-090**: El sistema DEBE permitir cambiar el estado de un producto a "Inactivo" aunque tenga stock físico registrado en una o más bodegas; el stock existente se conserva y se muestra solo para consulta.
+- **FR-091**: El sistema DEBE asignar automáticamente el Estado "activo" al crear un producto sin solicitarlo en el formulario de creación.
+- **FR-092**: El sistema DEBE tratar los campos de texto de productos, bodegas, movimientos y transferencias de la misma forma que FR-046, escapando su contenido antes de mostrarlo en listados y formularios.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
 
@@ -299,7 +317,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **Bodega (`WAREHOUSES`)**: Ubicación física donde se almacenan los productos. Atributos clave: `warehouse_id`, `name` (único y obligatorio), `location` (obligatorio), `description` (opcional), `capacity` (mayor o igual a cero), `status` (activo/inactivo) y `responsable_id` (FK opcional a `USERS`; identifica al responsable principal de la bodega).
 - **Stock (`STOCK`)**: Existencias disponibles de cada producto por bodega. Atributos clave: `stock_id`, `product_id`, `warehouse_id`, `quantity_available` (mayor o igual a cero), `min_stock_level` (nivel mínimo configurable por producto+bodega; genera alerta cuando `quantity_available` es menor o igual a `min_stock_level` y `min_stock_level` es mayor que cero), `expiration_date` (reservado para control de vencimientos futuro; opcional) y `update_date` (obligatorio). La combinación `product_id` + `warehouse_id` es única.
 - **Movimiento de Inventario (`INVENTORY_TRANSACTIONS`)**: Registro histórico e inmutable de entradas, salidas y ajustes. Atributos clave: `transaction_id`, `product_id`, `warehouse_id`, `transaction_type` ("entrada", "salida", "ajuste_entrada" o "ajuste_salida"), `quantity` (mayor que cero), `user_id` (FK obligatoria a `USERS`) y `transaction_date` (automática). Cada movimiento actualiza de inmediato `STOCK.quantity_available`; no se edita ni se elimina.
-- **Transferencia de Stock (`STOCK_TRANSFERS`)**: Documento transaccional que traslada productos entre bodegas. Atributos clave: `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity` (mayor que cero), `status` ("pendiente", "confirmada" o "cancelada"), `transfer_date` (automática), `created_by` (FK obligatoria a `USERS`; usuario que registra la solicitud) y `confirmed_by` (FK a `USERS`; obligatoria al confirmar la recepción).
+- **Transferencia de Stock (`STOCK_TRANSFERS`)**: Documento transaccional que traslada productos entre bodegas. Atributos clave: `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity` (mayor que cero), `status` ("pendiente", "confirmada" o "cancelada"), `transfer_date` (automática), `created_by` (FK obligatoria a `USERS`; usuario que registra la solicitud), `confirmed_by` (FK a `USERS`; obligatoria al confirmar la recepción) y `cancelled_by` (FK a `USERS`; obligatoria al cancelar una transferencia pendiente).
 - **Usuario (`USERS`)**: Persona que opera el sistema y registra movimientos y transferencias. Atributos clave: `user_id`, `user_name`, `role`, `email` y `assigned_warehouse_id` (FK opcional a `WAREHOUSES`; identifica la bodega operativa asignada al usuario).
 - **ModuleConfig**: El objeto de adaptación cargado al arrancar que define el nombre del módulo, las etiquetas de terminología, las definiciones de campos personalizados y el ciclo de vida de estados de documentos. Consulte `specs/001-erp-base-module/data-model.md` para su forma completa.
 
@@ -377,3 +395,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - Las validaciones de duplicidad de nombres de bodegas se realizan a nivel del catálogo de bodegas o de la lógica de negocio central.
 - Ambas bodegas participantes deben estar en estado activo al momento de crear la solicitud de transferencia.
 - Las transferencias confirmadas no vuelven a actualizar el stock para evitar duplicaciones.
+- Una transferencia solo puede cancelarse mientras está en estado "pendiente"; al cancelarse no se modifica `STOCK` porque los descuentos solo ocurren al confirmar.
+- Confirmar una transferencia requiere que tanto la bodega de origen como la de destino estén activas en ese momento.
+- El SKU de un producto puede modificarse en cualquier momento, incluso con movimientos asociados, porque estos referencian `product_id` y no `sku`.
+- Un producto puede desactivarse aunque tenga stock físico; el stock se conserva y se muestra solo para consulta, igual que para una bodega inactiva.

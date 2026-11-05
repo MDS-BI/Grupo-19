@@ -24,7 +24,7 @@
 
 **Propósito**: Restaurar la plantilla base, alinear la documentación y preparar la configuración del módulo logístico.
 
-- [ ] T001 Actualizar `specs/002-logistica-inventario/plan.md` con el dominio de logística, la pila técnica y la estructura final de `src/domain/` y `src/components/`
+- [x] T001 Actualizar `specs/002-logistica-inventario/plan.md` con el dominio de logística, la pila técnica y la estructura final de `src/domain/` y `src/components/`
 - [ ] T002 Restaurar `index.html`, `src/` y `vitest.config.mjs` desde el commit `a0062c0^` en la raíz del repositorio
 - [ ] T003 Verificar que la suite base pasa con `npx vitest run` en `tests/` antes de modificar el dominio
 - [ ] T004 [P] Configurar el nombre, etiquetas, ciclo de vida y color de acento del módulo en `src/module-config.js`
@@ -44,8 +44,8 @@
 - [ ] T009 Implementar la carga idempotente de los catálogos semilla en `src/storage.js`
 - [ ] T010 [P] Añadir las entradas de barra lateral y los contenedores de las pantallas Productos, Bodegas, Stock, Movimientos y Transferencias en `index.html` y `src/components/shell.js`
 - [ ] T011 Registrar las rutas y vistas de las cinco pantallas logísticas en `src/app.js`
-- [ ] T012 [P] Añadir los helpers compartidos de saneamiento y validación (obligatorio, numérico no negativo, único y fecha) en `src/storage.js`
-- [ ] T013 [P] Añadir pruebas unitarias de esquemas, repositorio y carga de semillas en `tests/unit/storage.test.js`
+- [ ] T012 [P] Añadir los helpers compartidos de saneamiento y validación (obligatorio, numérico no negativo, único, fecha y escape de texto/HTML para prevenir la ejecución de contenido no deseado) en `src/storage.js`, aplicados en los formularios y listados de productos, bodegas, movimientos y transferencias (FR-046, FR-092)
+- [ ] T013 [P] Añadir pruebas unitarias de esquemas, repositorio, carga de semillas y saneamiento/escape de texto en `tests/unit/storage.test.js`
 
 **Punto de control**: La base está lista y las historias pueden implementarse en paralelo.
 
@@ -59,16 +59,16 @@
 
 ### Pruebas para la Historia de Usuario 1
 
-- [ ] T014 [P] [US1] Añadir pruebas unitarias de campos obligatorios, SKU único, precios no negativos, FK de categoría y marcas de tiempo en `tests/unit/products.test.js`
+- [ ] T014 [P] [US1] Añadir pruebas unitarias de campos obligatorios, SKU único (incluida su edición cuando el producto ya tiene movimientos asociados), precios no negativos con advertencia no bloqueante cuando el costo supere el precio de venta, FK de categoría, Estado por defecto "activo" y marcas de tiempo en `tests/unit/products.test.js` (FR-088, FR-089, FR-091)
 - [ ] T015 [P] [US1] Añadir pruebas de integración para crear y editar productos, conflicto de SKU y retroalimentación de validación en `tests/integration/products.test.js`
 
 ### Implementación de la Historia de Usuario 1
 
 - [ ] T016 [P] [US1] Implementar el servicio de productos (crear, actualizar, listar, buscar y validar SKU/precios) en `src/domain/products.js`
-- [ ] T017 [P] [US1] Crear el formulario de producto con campos obligatorios, opcionales y selector de categoría en `src/components/product-form.js`
+- [ ] T017 [P] [US1] Crear el formulario de producto con campos obligatorios, opcionales, selector de categoría y Estado asignado por defecto a "activo" (no solicitado en creación) en `src/components/product-form.js` (FR-091)
 - [ ] T018 [P] [US1] Crear el listado de productos con estado, precios, categoría y acción de edición en `src/components/product-list.js`
 - [ ] T019 [US1] Conectar crear, editar, listar y buscar productos con la retroalimentación de validación en `src/app.js`
-- [ ] T020 [US1] Aplicar la validación de categoría existente y el estado activo/inactivo en `src/domain/products.js`
+- [ ] T020 [US1] Aplicar la validación de categoría existente y el estado activo/inactivo, incluida la desactivación con stock existente (mostrado solo para consulta), en `src/domain/products.js` (FR-090)
 - [ ] T021 [US1] Implementar la búsqueda y el filtro por nombre, SKU y categoría en `src/domain/products.js` y `src/app.js`
 - [ ] T022 [US1] Añadir los estilos de la pantalla de productos en `src/styles.css`
 
@@ -132,16 +132,16 @@
 
 ### Pruebas para la Historia de Usuario 5
 
-- [ ] T039 [P] [US5] Añadir pruebas unitarias de bodegas distintas, stock suficiente en origen, estados `pendiente`/`confirmada`/`cancelada`, `created_by`/`confirmed_by` y ausencia de doble actualización en `tests/unit/transfers.test.js`
-- [ ] T040 [P] [US5] Añadir pruebas de integración para solicitar y confirmar una transferencia en `tests/integration/transfers.test.js`
+- [ ] T039 [P] [US5] Añadir pruebas unitarias de bodegas distintas, stock suficiente en origen, estados `pendiente`/`confirmada`/`cancelada`, `created_by`/`confirmed_by`/`cancelled_by`, bloqueo de confirmación con bodega de origen o destino inactiva y ausencia de doble actualización en `tests/unit/transfers.test.js` (FR-085, FR-086, FR-087)
+- [ ] T040 [P] [US5] Añadir pruebas de integración para solicitar, confirmar y cancelar una transferencia en `tests/integration/transfers.test.js`
 
 ### Implementación de la Historia de Usuario 5
 
-- [ ] T041 [P] [US5] Implementar el servicio de transferencias con solicitud, confirmación, cancelación y actualización atómica de `STOCK` en `src/domain/transfers.js`
+- [ ] T041 [P] [US5] Implementar el servicio de transferencias con solicitud, confirmación, cancelación (con `cancelled_by`, solo permitida desde estado `pendiente`, sin modificar `STOCK`) y actualización atómica de `STOCK` en `src/domain/transfers.js` (FR-085, FR-086)
 - [ ] T042 [P] [US5] Crear el formulario de transferencia con producto, bodega origen, bodega destino, cantidad y usuario creador en `src/components/transfer-form.js`
 - [ ] T043 [P] [US5] Crear el listado de transferencias con estado y acciones de confirmar/cancelar en `src/components/transfer-list.js`
 - [ ] T044 [US5] Conectar la pantalla de transferencias y la retroalimentación de validación en `src/app.js`
-- [ ] T045 [US5] Impedir modificaciones a transferencias confirmadas y bloquear bodegas inactivas en `src/domain/transfers.js`
+- [ ] T045 [US5] Impedir modificaciones a transferencias confirmadas o canceladas y bloquear la confirmación cuando la bodega de origen o destino esté inactiva en `src/domain/transfers.js` (FR-087)
 - [ ] T046 [US5] Añadir los estilos de la pantalla de transferencias en `src/styles.css`
 
 **Punto de control**: Las transferencias actualizan el stock solo al confirmarse y son inmutables después.
@@ -202,7 +202,7 @@
 
 - [ ] T063 [P] Actualizar `README.md` con el módulo de logística, semillas, pantallas y claves de persistencia
 - [ ] T064 [P] Añadir refinamientos de accesibilidad (etiquetas, orden de foco, `aria-current` y semántica de tablas) en `src/styles.css` y los componentes de `src/components/`
-- [ ] T065 [P] Verificar el rendimiento de listados y búsquedas con 500 registros en `src/domain/products.js`, `src/domain/stock.js` y `src/domain/alerts.js`
+- [ ] T065 [P] Verificar el rendimiento de listados y búsquedas con 500 registros en `src/domain/products.js`, `src/domain/warehouses.js`, `src/domain/movements.js`, `src/domain/transfers.js`, `src/domain/stock.js` y `src/domain/alerts.js`
 - [ ] T066 Ejecutar `npx vitest run` y `npm run build` en la raíz del repositorio para verificar que no hay regresiones
 - [ ] T067 Validar manualmente los escenarios de aceptación de US1–US6 usando `specs/002-logistica-inventario/spec.md` y registrar los resultados en `specs/002-logistica-inventario/tasks.md`
 - [ ] T068 [P] Reconciliar `specs/002-logistica-inventario/plan.md` y `specs/002-logistica-inventario/tasks.md` con la estructura final implementada

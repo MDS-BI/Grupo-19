@@ -98,10 +98,11 @@ describe('module-config', () => {
     expect(config.statusLifecycle).toBeNull();
   });
 
-  it('loadModuleConfig reflects the userConfig slot (null by default)', async () => {
+  it('loadModuleConfig reflects the userConfig slot (Logística e Inventario branding)', async () => {
     const { config, errors } = await loadModuleConfig();
     expect(errors).toEqual([]);
-    expect(config.moduleName).toBe(DEFAULT_CONFIG.moduleName);
+    expect(config.moduleName).toBe('Logística e Inventario');
+    expect(config.theme.accentColor).toBe('#0f766e');
   });
 
   it('exposes active config and label helpers after setActiveConfig', () => {
