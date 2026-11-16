@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Módulo Base ERP</title>
+    <title>Logística e Inventario · ERP</title>
   </head>
   <body>
     <div id="config-errors" class="config-error" role="alert" hidden></div>
@@ -12,25 +12,32 @@
       <header class="topbar">
         <div class="brand">
           <span id="logo-mark" class="logo-mark" aria-hidden="true"></span>
-          <span id="brand-name" class="brand-name">Módulo Base ERP</span>
+          <span class="brand-copy">
+            <span id="brand-name" class="brand-name">Logística e Inventario</span>
+            <span class="brand-tagline">ERP · Control de inventario y bodegas</span>
+          </span>
         </div>
         <div class="active-user-panel" aria-label="Usuario activo simulado">
-          <label for="active-user-select" class="active-user-label">Usuario activo (simulación)</label>
-          <select id="active-user-select" aria-describedby="active-user-note"></select>
+          <span class="active-user-dot" aria-hidden="true"></span>
+          <div class="active-user-copy">
+            <label for="active-user-select" class="active-user-label">Usuario activo (simulación)</label>
+            <select id="active-user-select" aria-describedby="active-user-note"></select>
+            <small id="active-user-note" class="muted">Selector de perfil sin autenticación real ni seguridad.</small>
+          </div>
           <span id="active-user-role" class="status-badge" aria-live="polite"></span>
-          <small id="active-user-note" class="muted">Selector de perfil sin autenticación real ni seguridad.</small>
         </div>
       </header>
 
       <aside class="sidebar">
         <nav class="side-nav" aria-label="Módulos">
+          <p class="nav-section-title nav-section-title--top">Operación</p>
           <button type="button" class="nav-module active" data-module="dashboard" id="nav-dashboard" aria-current="page">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="11" y="3" width="6" height="6" rx="1"></rect><rect x="3" y="11" width="6" height="6" rx="1"></rect><rect x="11" y="11" width="6" height="6" rx="1"></rect></svg>
             <span class="nav-label" id="nav-dashboard-label">Panel</span>
           </button>
           <div id="nav-advanced-section" class="nav-advanced" hidden>
             <hr class="nav-separator" />
-            <p class="nav-section-title" id="nav-advanced-title">Sección avanzada (módulo base)</p>
+            <p class="nav-section-title" id="nav-advanced-title">Administración avanzada</p>
             <button type="button" class="nav-module" data-module="entities" id="nav-entities">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 3.5 6v8L10 17.5 16.5 14V6L10 2.5z"></path><path d="M3.5 6 10 9.5 16.5 6"></path><path d="M10 9.5v8"></path></svg>
               <span class="nav-label" id="nav-entities-label">Entidades</span>
@@ -69,52 +76,195 @@
             <span class="nav-label">Alertas</span>
           </button>
         </nav>
+        <div class="sidebar-foot">
+          <span class="sidebar-foot-title">Estado del sistema</span>
+          <span class="sidebar-foot-text">localStorage · datos locales</span>
+        </div>
       </aside>
 
       <main class="content" id="app">
         <div id="access-notice" class="config-error" role="status" aria-live="polite" hidden></div>
 
         <section id="view-dashboard" aria-labelledby="dashboard-heading">
-          <h1 id="dashboard-heading">Módulo Base ERP</h1>
-          <p id="dashboard-subtitle" class="muted">Gestiona tus entidades y documentos en un solo lugar.</p>
-
-          <div class="stat-grid">
-            <div class="stat-card">
-              <span class="stat-value" id="stat-entities">0</span>
-              <span class="stat-label" id="stat-entities-label">Entidades</span>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Panel de control</p>
+              <h1 id="dashboard-heading">Logística e Inventario</h1>
+              <p id="dashboard-subtitle" class="page-subtitle muted">Controla productos, bodegas, existencias y movimientos del inventario en un solo lugar.</p>
             </div>
-            <div class="stat-card">
-              <span class="stat-value" id="stat-documents">0</span>
-              <span class="stat-label" id="stat-documents-label">Documentos</span>
+            <div class="page-head-meta">
+              <span class="status-badge status-active" id="dashboard-environment">Datos locales</span>
+              <span class="muted" id="dashboard-last-update"></span>
             </div>
           </div>
 
-          <h2 id="quick-actions-heading">Acciones rápidas</h2>
-          <div class="action-grid">
-            <button type="button" class="action-card" id="action-new-entity">
-              <strong id="action-new-entity-title">Nueva Entidad</strong>
-              <span class="muted" id="action-new-entity-sub">Crear un registro de entidad</span>
-            </button>
-            <button type="button" class="action-card" id="action-new-document">
-              <strong id="action-new-document-title">Nuevo Documento</strong>
-              <span class="muted" id="action-new-document-sub">Registrar un registro de documento</span>
-            </button>
-            <button type="button" class="action-card" id="action-open-entities">
-              <strong id="action-open-entities-title">Entidades</strong>
-              <span class="muted" id="action-open-entities-sub">Abrir la gestión de entidades</span>
-            </button>
-            <button type="button" class="action-card" id="action-find">
-              <strong id="action-find-title">Buscar registros</strong>
-              <span class="muted" id="action-find-sub">Buscar entidades</span>
-            </button>
+          <div class="stat-grid stat-grid--dashboard">
+            <article class="stat-card">
+              <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="1.5"></rect><path d="M3 8h14"></path></svg></span>
+                <span class="stat-label">Productos registrados</span>
+              </div>
+              <span class="stat-value" id="stat-products">0</span>
+              <span class="stat-foot">Catálogo total</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8 10 3l7.5 5v8h-15z"></path><path d="M7.5 16v-5h5v5"></path></svg></span>
+                <span class="stat-label">Bodegas activas</span>
+              </div>
+              <span class="stat-value" id="stat-warehouses">0</span>
+              <span class="stat-foot">Ubicaciones operativas</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6v9h14V6"></path><path d="M3 6 10 2l7 4"></path><path d="M3 6h14"></path></svg></span>
+                <span class="stat-label">Unidades disponibles</span>
+              </div>
+              <span class="stat-value" id="stat-units">0</span>
+              <span class="stat-foot">Stock total en bodegas</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h8"></path><path d="M9 6l3 4-3 4"></path><path d="M16 6v8"></path></svg></span>
+                <span class="stat-label">Movimientos</span>
+              </div>
+              <span class="stat-value" id="stat-movements">0</span>
+              <span class="stat-foot">Historial registrado</span>
+            </article>
+            <article class="stat-card stat-card--warning">
+              <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h10"></path><path d="M10 4l3 3-3 3"></path><path d="M17 13H7"></path><path d="M10 16l-3-3 3-3"></path></svg></span>
+                <span class="stat-label">Transferencias pendientes</span>
+              </div>
+              <span class="stat-value" id="stat-transfers">0</span>
+              <span class="stat-foot">Por revisar</span>
+            </article>
+            <article class="stat-card stat-card--alert">
+              <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 2.5 16h15z"></path><path d="M10 8v4"></path><circle cx="10" cy="13.5" r="0.75" fill="currentColor" stroke="none"></circle></svg></span>
+                <span class="stat-label">Alertas de stock mínimo</span>
+              </div>
+              <span class="stat-value" id="stat-alerts">0</span>
+              <span class="stat-foot">Requieren reposición</span>
+            </article>
+          </div>
+
+          <div class="dashboard-layout">
+            <div class="dashboard-main">
+              <section class="card" aria-labelledby="quick-actions-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="quick-actions-heading">Acciones rápidas</h2>
+                    <p class="card-subtitle">Atajos disponibles según el perfil activo.</p>
+                  </div>
+                  <span class="pill" id="dashboard-role-pill">Perfil</span>
+                </div>
+                <div class="action-grid" id="dashboard-quick-actions"></div>
+              </section>
+
+              <section class="card" aria-labelledby="dashboard-activity-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="dashboard-activity-heading">Actividad reciente de inventario</h2>
+                    <p class="card-subtitle">Últimos movimientos registrados en el sistema.</p>
+                  </div>
+                  <button type="button" class="secondary subtle" data-goto="movements">Ver todo</button>
+                </div>
+                <div id="dashboard-activity" class="activity-list"></div>
+              </section>
+
+              <section class="card" aria-labelledby="dashboard-low-stock-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="dashboard-low-stock-heading">Productos con stock bajo</h2>
+                    <p class="card-subtitle">Existencias en o bajo el nivel mínimo configurado.</p>
+                  </div>
+                  <button type="button" class="secondary subtle" data-goto="alerts">Ver alertas</button>
+                </div>
+                <div id="dashboard-low-stock" class="mini-list"></div>
+              </section>
+            </div>
+
+            <aside class="dashboard-side">
+              <section class="card" aria-labelledby="dashboard-transfers-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="dashboard-transfers-heading">Transferencias pendientes</h2>
+                    <p class="card-subtitle">Solicitudes que esperan revisión.</p>
+                  </div>
+                  <span class="count-badge" id="dashboard-pending-count">0</span>
+                </div>
+                <div id="dashboard-transfers" class="mini-list"></div>
+              </section>
+
+              <section class="card demo-card" id="demo-data-card" aria-labelledby="demo-data-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="demo-data-heading">Datos de demostración</h2>
+                    <p class="card-subtitle">Contenido de prueba claramente identificado.</p>
+                  </div>
+                  <span class="pill">Opcional</span>
+                </div>
+                <p class="demo-copy">Carga categorías, productos, bodegas, existencias, movimientos y transferencias coherentes para recorrer las seis historias de usuario. No reemplaza ni borra datos existentes y evita duplicados si se ejecuta nuevamente.</p>
+                <button type="button" id="load-demo-data" class="primary">Cargar datos de demostración</button>
+                <p id="demo-data-status" class="demo-status muted" aria-live="polite"></p>
+              </section>
+
+              <section class="card" id="base-module-card" aria-labelledby="base-module-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="base-module-heading">Módulo base</h2>
+                    <p class="card-subtitle">Sección avanzada del administrador.</p>
+                  </div>
+                  <span class="pill">Avanzado</span>
+                </div>
+                <div class="stat-grid stat-grid--compact">
+                  <div class="stat-card stat-card--soft">
+                    <span class="stat-value" id="stat-entities">0</span>
+                    <span class="stat-label" id="stat-entities-label">Entidades</span>
+                  </div>
+                  <div class="stat-card stat-card--soft">
+                    <span class="stat-value" id="stat-documents">0</span>
+                    <span class="stat-label" id="stat-documents-label">Documentos</span>
+                  </div>
+                </div>
+                <div class="action-grid action-grid--compact">
+                  <button type="button" class="action-card" id="action-new-entity">
+                    <strong id="action-new-entity-title">Nueva Entidad</strong>
+                    <span class="muted" id="action-new-entity-sub">Crear un registro de entidad</span>
+                  </button>
+                  <button type="button" class="action-card" id="action-new-document">
+                    <strong id="action-new-document-title">Nuevo Documento</strong>
+                    <span class="muted" id="action-new-document-sub">Registrar un registro de documento</span>
+                  </button>
+                  <button type="button" class="action-card" id="action-open-entities">
+                    <strong id="action-open-entities-title">Entidades</strong>
+                    <span class="muted" id="action-open-entities-sub">Abrir la gestión de entidades</span>
+                  </button>
+                  <button type="button" class="action-card" id="action-find">
+                    <strong id="action-find-title">Buscar registros</strong>
+                    <span class="muted" id="action-find-sub">Buscar entidades</span>
+                  </button>
+                </div>
+              </section>
+            </aside>
           </div>
         </section>
 
         <section id="view-entities" aria-labelledby="entities-view-heading" hidden>
-          <h1 id="entities-view-heading">Entidades</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Administración avanzada</p>
+              <h1 id="entities-view-heading">Entidades</h1>
+              <p class="page-subtitle muted">Gestiona las entidades del módulo base y sus documentos asociados.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="entity-form-heading">
-            <h2 id="entity-form-heading">Agregar / Editar Entidad</h2>
+            <div class="card-head">
+              <h2 id="entity-form-heading">Agregar / Editar Entidad</h2>
+              <span class="pill">Módulo base</span>
+            </div>
             <form id="entity-form">
               <input type="hidden" id="entity-id" />
               <div>
@@ -149,10 +299,6 @@
                 <input id="category" name="category" />
               </div>
               <div>
-                <label for="description">Descripción</label>
-                <textarea id="description" name="description" rows="3"></textarea>
-              </div>
-              <div>
                 <label for="targetDate">Fecha objetivo</label>
                 <input id="targetDate" name="targetDate" type="date" />
                 <div class="error" id="error-targetDate" aria-live="polite"></div>
@@ -166,7 +312,11 @@
                 <label for="paymentTerms">Condiciones de pago</label>
                 <input id="paymentTerms" name="paymentTerms" placeholder="p. ej., contado, neto 30" />
               </div>
-              <div id="entity-custom-fields"></div>
+              <div class="field-full">
+                <label for="description">Descripción</label>
+                <textarea id="description" name="description" rows="3"></textarea>
+              </div>
+              <div id="entity-custom-fields" class="field-full"></div>
               <div class="form-actions">
                 <button type="submit" id="submit-button" class="primary">Guardar</button>
                 <button type="button" id="cancel-edit" class="secondary" hidden>Cancelar edición</button>
@@ -175,7 +325,9 @@
           </section>
 
           <section class="card" aria-labelledby="edit-entity-heading">
-            <h2 id="edit-entity-heading">Editar o eliminar la entidad</h2>
+            <div class="card-head">
+              <h2 id="edit-entity-heading">Editar o eliminar la entidad</h2>
+            </div>
             <div>
               <label for="edit-entity">Selecciona una entidad</label>
               <select id="edit-entity"></select>
@@ -188,10 +340,19 @@
         </section>
 
         <section id="view-documents" aria-labelledby="documents-view-heading" hidden>
-          <h1 id="documents-view-heading">Documentos</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Administración avanzada</p>
+              <h1 id="documents-view-heading">Documentos</h1>
+              <p class="page-subtitle muted">Registra documentos vinculados a las entidades del módulo base.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="document-form-heading">
-            <h2 id="document-form-heading">Agregar / Editar Documento</h2>
+            <div class="card-head">
+              <h2 id="document-form-heading">Agregar / Editar Documento</h2>
+              <span class="pill">Módulo base</span>
+            </div>
             <form id="document-form">
               <input type="hidden" id="document-id" />
               <input type="hidden" id="document-entity-id" />
@@ -248,18 +409,18 @@
               </div>
               <div>
                 <label for="currency">Moneda</label>
-                <input id="currency" name="currency" placeholder="p. ej., MXN" />
+                <input id="currency" name="currency" placeholder="p. ej., CLP" />
               </div>
               <div>
                 <label for="docPaymentTerms">Condiciones de pago</label>
                 <input id="docPaymentTerms" name="docPaymentTerms" placeholder="p. ej., contado, neto 30" />
               </div>
-              <div>
+              <div class="field-full">
                 <label for="notes">Notas</label>
                 <textarea id="notes" name="notes" rows="2"></textarea>
               </div>
-              <div id="document-status-control"></div>
-              <div id="document-custom-fields"></div>
+              <div id="document-status-control" class="field-full"></div>
+              <div id="document-custom-fields" class="field-full"></div>
               <div class="form-actions">
                 <button type="submit" id="document-submit-button" class="primary">Guardar Documento</button>
                 <button type="button" id="document-cancel-edit" class="secondary" hidden>Cancelar edición</button>
@@ -268,7 +429,9 @@
           </section>
 
           <section class="card" aria-labelledby="edit-document-heading">
-            <h2 id="edit-document-heading">Editar o eliminar el documento</h2>
+            <div class="card-head">
+              <h2 id="edit-document-heading">Editar o eliminar el documento</h2>
+            </div>
             <div>
               <label for="edit-document">Selecciona un documento</label>
               <select id="edit-document"></select>
@@ -281,40 +444,61 @@
         </section>
 
         <section id="view-search" aria-labelledby="search-view-heading" hidden>
-          <h1 id="search-view-heading">Buscar Entidades</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Administración avanzada</p>
+              <h1 id="search-view-heading">Buscar Entidades</h1>
+              <p class="page-subtitle muted">Encuentra entidades por nombre, código, categoría o datos de contacto.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="search-heading">
-            <h2 id="search-heading">Buscar una entidad</h2>
-            <input id="search-input" name="search-input" placeholder="Buscar por nombre, código, categoría..." aria-label="Buscar entidades" />
+            <div class="card-head">
+              <h2 id="search-heading">Buscar una entidad</h2>
+            </div>
+            <div class="search-field">
+              <input id="search-input" name="search-input" placeholder="Buscar por nombre, código, categoría..." aria-label="Buscar entidades" />
+            </div>
           </section>
 
           <section class="card" aria-labelledby="results-heading">
-            <h2 id="results-heading">Resultados</h2>
+            <div class="card-head">
+              <h2 id="results-heading">Resultados</h2>
+            </div>
             <div id="search-empty" class="empty" hidden>Sin coincidencias para tu búsqueda.</div>
             <ul id="search-results-list" aria-live="polite"></ul>
           </section>
         </section>
 
         <section id="view-products" aria-labelledby="products-view-heading" hidden>
-          <h1 id="products-view-heading">Productos</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Catálogo</p>
+              <h1 id="products-view-heading">Productos</h1>
+              <p class="page-subtitle muted">Administra el catálogo, precios en pesos chilenos, unidades de medida y proveedores.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="product-form-heading">
-            <h2 id="product-form-heading">Agregar / Editar Producto</h2>
+            <div class="card-head">
+              <h2 id="product-form-heading">Agregar / Editar Producto</h2>
+              <span class="pill">Catálogo</span>
+            </div>
             <form id="product-form">
               <input type="hidden" id="product-id" />
               <div class="field-row">
                 <div>
                   <label for="product-sku">SKU *</label>
-                  <input id="product-sku" required />
+                  <input id="product-sku" required placeholder="p. ej., LAP-001" />
                   <div class="error" id="error-product-sku" aria-live="polite"></div>
                 </div>
                 <div>
                   <label for="product-name">Nombre *</label>
-                  <input id="product-name" required />
+                  <input id="product-name" required placeholder="Nombre comercial del producto" />
                   <div class="error" id="error-product-productName" aria-live="polite"></div>
                 </div>
               </div>
-              <div>
+              <div class="field-full">
                 <label for="product-description">Descripción</label>
                 <textarea id="product-description" rows="2"></textarea>
               </div>
@@ -323,28 +507,24 @@
                 <select id="product-category" required></select>
                 <div class="error" id="error-product-categoryId" aria-live="polite"></div>
               </div>
-              <div class="field-row">
-                <div>
-                  <label for="product-sale-price">Precio de Venta *</label>
-                  <input id="product-sale-price" type="number" min="0" step="0.01" required />
-                  <div class="error" id="error-product-salePrice" aria-live="polite"></div>
-                </div>
-                <div>
-                  <label for="product-cost-price">Precio de Costo</label>
-                  <input id="product-cost-price" type="number" min="0" step="0.01" />
-                  <div class="error" id="error-product-costPrice" aria-live="polite"></div>
-                  <div class="warning" id="warning-product-costPrice" role="status" aria-live="polite"></div>
-                </div>
+              <div>
+                <label for="product-unit">Unidad de Medida</label>
+                <input id="product-unit" placeholder="p. ej., unidad, caja, kg" />
               </div>
-              <div class="field-row">
-                <div>
-                  <label for="product-unit">Unidad de Medida</label>
-                  <input id="product-unit" placeholder="p. ej., unidad, caja, kg" />
-                </div>
-                <div>
-                  <label for="product-supplier">Proveedor</label>
-                  <input id="product-supplier" />
-                </div>
+              <div>
+                <label for="product-sale-price">Precio de Venta (CLP) *</label>
+                <input id="product-sale-price" type="number" min="0" step="0.01" required />
+                <div class="error" id="error-product-salePrice" aria-live="polite"></div>
+              </div>
+              <div>
+                <label for="product-cost-price">Precio de Costo (CLP)</label>
+                <input id="product-cost-price" type="number" min="0" step="0.01" />
+                <div class="error" id="error-product-costPrice" aria-live="polite"></div>
+                <div class="warning" id="warning-product-costPrice" role="status" aria-live="polite"></div>
+              </div>
+              <div>
+                <label for="product-supplier">Proveedor</label>
+                <input id="product-supplier" placeholder="Razón social del proveedor" />
               </div>
               <div>
                 <label for="product-weight">Peso</label>
@@ -363,36 +543,51 @@
           </section>
 
           <section class="card" aria-labelledby="products-list-heading">
-            <h2 id="products-list-heading">Catálogo de productos</h2>
-            <input id="product-search" placeholder="Buscar por nombre, SKU o categoría..." aria-label="Buscar productos" />
+            <div class="card-head">
+              <div>
+                <h2 id="products-list-heading">Catálogo de productos</h2>
+                <p class="card-subtitle">Búsqueda por nombre, SKU, categoría o proveedor.</p>
+              </div>
+              <span class="count-badge" id="product-count">0</span>
+            </div>
+            <div class="toolbar">
+              <input id="product-search" placeholder="Buscar por nombre, SKU o categoría..." aria-label="Buscar productos" />
+            </div>
             <div id="product-list-empty" class="empty" hidden aria-live="polite">No se encontraron productos.</div>
-            <table class="data-table">
-              <thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Precio Venta</th><th>Estado</th><th>Acciones</th></tr></thead>
-              <tbody id="product-list-body"></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>SKU</th><th>Producto</th><th>Categoría</th><th>Precio venta</th><th>Unidad</th><th>Proveedor</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="product-list-body"></tbody>
+              </table>
+            </div>
           </section>
         </section>
 
         <section id="view-warehouses" aria-labelledby="warehouses-view-heading" hidden>
-          <h1 id="warehouses-view-heading">Bodegas</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Infraestructura</p>
+              <h1 id="warehouses-view-heading">Bodegas</h1>
+              <p class="page-subtitle muted">Organiza ubicaciones, capacidades, responsables y estado operativo de cada bodega.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="warehouse-form-heading">
-            <h2 id="warehouse-form-heading">Agregar / Editar Bodega</h2>
+            <div class="card-head">
+              <h2 id="warehouse-form-heading">Agregar / Editar Bodega</h2>
+              <span class="pill">Infraestructura</span>
+            </div>
             <form id="warehouse-form">
               <input type="hidden" id="warehouse-id" />
               <div>
                 <label for="warehouse-name">Nombre *</label>
-                <input id="warehouse-name" required />
+                <input id="warehouse-name" required placeholder="p. ej., Bodega Central Santiago" />
                 <div class="error" id="error-warehouse-name" aria-live="polite"></div>
               </div>
               <div>
                 <label for="warehouse-location">Ubicación *</label>
-                <input id="warehouse-location" required />
+                <input id="warehouse-location" required placeholder="Dirección o comuna" />
                 <div class="error" id="error-warehouse-location" aria-live="polite"></div>
-              </div>
-              <div>
-                <label for="warehouse-description">Descripción</label>
-                <textarea id="warehouse-description" rows="2"></textarea>
               </div>
               <div>
                 <label for="warehouse-capacity">Capacidad</label>
@@ -404,6 +599,10 @@
                 <select id="warehouse-responsable"></select>
                 <div class="error" id="error-warehouse-responsableId" aria-live="polite"></div>
               </div>
+              <div class="field-full">
+                <label for="warehouse-description">Descripción</label>
+                <textarea id="warehouse-description" rows="2"></textarea>
+              </div>
               <div class="form-actions">
                 <button type="submit" id="warehouse-submit-button" class="primary">Guardar</button>
                 <button type="button" id="warehouse-cancel-edit" class="secondary" hidden>Cancelar edición</button>
@@ -412,22 +611,41 @@
           </section>
 
           <section class="card" aria-labelledby="warehouses-list-heading">
-            <h2 id="warehouses-list-heading">Listado de bodegas</h2>
-            <input id="warehouse-search" placeholder="Buscar por nombre o ubicación..." aria-label="Buscar bodegas" />
+            <div class="card-head">
+              <div>
+                <h2 id="warehouses-list-heading">Listado de bodegas</h2>
+                <p class="card-subtitle">Consulta ubicación, capacidad, responsable y estado.</p>
+              </div>
+              <span class="count-badge" id="warehouse-count">0</span>
+            </div>
+            <div class="toolbar">
+              <input id="warehouse-search" placeholder="Buscar por nombre o ubicación..." aria-label="Buscar bodegas" />
+            </div>
             <div id="warehouse-list-empty" class="empty" hidden aria-live="polite">No se encontraron bodegas.</div>
-            <table class="data-table">
-              <thead><tr><th>Nombre</th><th>Ubicación</th><th>Capacidad</th><th>Estado</th><th>Acciones</th></tr></thead>
-              <tbody id="warehouse-list-body"></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Bodega</th><th>Ubicación</th><th>Capacidad</th><th>Responsable</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="warehouse-list-body"></tbody>
+              </table>
+            </div>
           </section>
         </section>
 
         <section id="view-stock" aria-labelledby="stock-view-heading" hidden>
-          <h1 id="stock-view-heading">Control de Stock</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Inventario</p>
+              <h1 id="stock-view-heading">Control de Stock</h1>
+              <p class="page-subtitle muted">Consulta existencias por producto y bodega, niveles mínimos y alertas de reposición.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="stock-filters-heading">
-            <h2 id="stock-filters-heading">Filtrar existencias</h2>
-            <div class="field-row">
+            <div class="card-head">
+              <h2 id="stock-filters-heading">Filtrar existencias</h2>
+              <div class="inline-total">Total producto: <strong id="stock-product-total">—</strong></div>
+            </div>
+            <div class="filter-grid">
               <div>
                 <label for="stock-filter-product">Producto</label>
                 <select id="stock-filter-product"></select>
@@ -437,24 +655,40 @@
                 <select id="stock-filter-warehouse"></select>
               </div>
             </div>
-            <p class="muted">Total del producto filtrado: <strong id="stock-product-total">—</strong></p>
           </section>
 
           <section class="card" aria-labelledby="stock-list-heading">
-            <h2 id="stock-list-heading">Existencias por producto y bodega</h2>
+            <div class="card-head">
+              <div>
+                <h2 id="stock-list-heading">Existencias por producto y bodega</h2>
+                <p class="card-subtitle">Las filas destacadas requieren reposición.</p>
+              </div>
+              <span class="count-badge" id="stock-count">0</span>
+            </div>
             <div id="stock-list-empty" class="empty" hidden aria-live="polite">No se encontraron registros de stock.</div>
-            <table class="data-table">
-              <thead><tr><th>Producto</th><th>Bodega</th><th>Disponible</th><th>Estado Producto</th><th>Estado Bodega</th><th>Mínimo</th></tr></thead>
-              <tbody id="stock-list-body"></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Producto</th><th>Bodega</th><th>Disponible</th><th>Estado producto</th><th>Estado bodega</th><th>Nivel mínimo</th></tr></thead>
+                <tbody id="stock-list-body"></tbody>
+              </table>
+            </div>
           </section>
         </section>
 
         <section id="view-movements" aria-labelledby="movements-view-heading" hidden>
-          <h1 id="movements-view-heading">Movimientos de Inventario</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Operaciones</p>
+              <h1 id="movements-view-heading">Movimientos de Inventario</h1>
+              <p class="page-subtitle muted">Registra entradas, salidas y ajustes. El historial conserva el usuario responsable.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="movement-form-heading">
-            <h2 id="movement-form-heading">Registrar Entrada / Salida / Ajuste</h2>
+            <div class="card-head">
+              <h2 id="movement-form-heading">Registrar Entrada / Salida / Ajuste</h2>
+              <span class="pill">Operación</span>
+            </div>
             <form id="movement-form">
               <div>
                 <label for="movement-type">Tipo de movimiento *</label>
@@ -481,7 +715,9 @@
                 <input id="movement-quantity" type="number" min="1" step="1" required />
                 <div class="error" id="error-movement-quantity" aria-live="polite"></div>
               </div>
-              <div class="error" id="error-movement-userId" aria-live="polite"></div>
+              <div class="field-full">
+                <div class="error" id="error-movement-userId" aria-live="polite"></div>
+              </div>
               <div class="form-actions">
                 <button type="submit" id="movement-submit-button" class="primary">Registrar movimiento</button>
               </div>
@@ -489,8 +725,14 @@
           </section>
 
           <section class="card" aria-labelledby="movements-list-heading">
-            <h2 id="movements-list-heading">Historial de movimientos</h2>
-            <div class="field-row">
+            <div class="card-head">
+              <div>
+                <h2 id="movements-list-heading">Historial de movimientos</h2>
+                <p class="card-subtitle">Registros inmutables con fecha, tipo, producto, bodega y responsable.</p>
+              </div>
+              <span class="count-badge" id="movement-count">0</span>
+            </div>
+            <div class="filter-grid">
               <div>
                 <label for="movement-filter-product">Filtrar por producto</label>
                 <select id="movement-filter-product"></select>
@@ -501,18 +743,29 @@
               </div>
             </div>
             <div id="movement-list-empty" class="empty" hidden aria-live="polite">No se encontraron movimientos.</div>
-            <table class="data-table">
-              <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Bodega</th><th>Cantidad</th><th>Usuario</th><th>Ajustar</th></tr></thead>
-              <tbody id="movement-list-body"></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Bodega</th><th>Cantidad</th><th>Usuario</th><th>Ajustar</th></tr></thead>
+                <tbody id="movement-list-body"></tbody>
+              </table>
+            </div>
           </section>
         </section>
 
         <section id="view-transfers" aria-labelledby="transfers-view-heading" hidden>
-          <h1 id="transfers-view-heading">Transferencias entre Bodegas</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Operaciones</p>
+              <h1 id="transfers-view-heading">Transferencias entre Bodegas</h1>
+              <p class="page-subtitle muted">Solicita, confirma o cancela el traslado de existencias entre bodegas activas.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="transfer-form-heading">
-            <h2 id="transfer-form-heading">Nueva Transferencia</h2>
+            <div class="card-head">
+              <h2 id="transfer-form-heading">Nueva Transferencia</h2>
+              <span class="pill">Operación</span>
+            </div>
             <form id="transfer-form">
               <div>
                 <label for="transfer-product">Producto *</label>
@@ -536,7 +789,9 @@
                 <input id="transfer-quantity" type="number" min="1" step="1" required />
                 <div class="error" id="error-transfer-quantity" aria-live="polite"></div>
               </div>
-              <div class="error" id="error-transfer-createdBy" aria-live="polite"></div>
+              <div class="field-full">
+                <div class="error" id="error-transfer-createdBy" aria-live="polite"></div>
+              </div>
               <div class="form-actions">
                 <button type="submit" id="transfer-submit-button" class="primary">Crear solicitud</button>
               </div>
@@ -544,21 +799,38 @@
           </section>
 
           <section class="card" aria-labelledby="transfers-list-heading">
-            <h2 id="transfers-list-heading">Transferencias registradas</h2>
+            <div class="card-head">
+              <div>
+                <h2 id="transfers-list-heading">Transferencias registradas</h2>
+                <p class="card-subtitle">Pendientes, confirmadas y canceladas con su trazabilidad de usuarios.</p>
+              </div>
+              <span class="count-badge" id="transfer-count">0</span>
+            </div>
             <div id="transfer-list-empty" class="empty" hidden aria-live="polite">No se encontraron transferencias.</div>
-            <table class="data-table">
-              <thead><tr><th>Producto</th><th>Ruta</th><th>Cantidad</th><th>Estado</th><th>Usuarios</th><th>Acciones</th></tr></thead>
-              <tbody id="transfer-list-body"></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Producto</th><th>Ruta</th><th>Cantidad</th><th>Estado</th><th>Usuarios</th><th>Acciones</th></tr></thead>
+                <tbody id="transfer-list-body"></tbody>
+              </table>
+            </div>
           </section>
         </section>
 
         <section id="view-alerts" aria-labelledby="alerts-view-heading" hidden>
-          <h1 id="alerts-view-heading">Alertas de Stock Mínimo</h1>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Reposición</p>
+              <h1 id="alerts-view-heading">Alertas de Stock Mínimo</h1>
+              <p class="page-subtitle muted">Productos que requieren reposición y déficit calculado contra el nivel mínimo.</p>
+            </div>
+          </div>
 
           <section class="card" aria-labelledby="alert-filters-heading">
-            <h2 id="alert-filters-heading">Filtrar alertas</h2>
-            <div class="field-row">
+            <div class="card-head">
+              <h2 id="alert-filters-heading">Filtrar alertas</h2>
+              <span class="pill alert-pill" id="alert-count">0 alertas</span>
+            </div>
+            <div class="filter-grid">
               <div>
                 <label for="alert-filter-product">Producto</label>
                 <select id="alert-filter-product"></select>
@@ -571,12 +843,20 @@
           </section>
 
           <section class="card" aria-labelledby="alerts-list-heading">
-            <h2 id="alerts-list-heading">Productos bajo el mínimo</h2>
+            <div class="card-head">
+              <div>
+                <h2 id="alerts-list-heading">Productos en nivel mínimo o inferior</h2>
+                <p class="card-subtitle">El déficit indica cuántas unidades faltan para alcanzar el mínimo.</p>
+              </div>
+              <span class="count-badge count-badge--alert" id="alert-row-count">0</span>
+            </div>
             <div id="alert-list-empty" class="empty" hidden aria-live="polite">No se encontraron alertas.</div>
-            <table class="data-table">
-              <thead><tr><th>Producto</th><th>Bodega</th><th>Disponible</th><th>Mínimo</th><th>Déficit</th></tr></thead>
-              <tbody id="alert-list-body"></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Producto</th><th>Bodega</th><th>Disponible</th><th>Mínimo</th><th>Déficit</th></tr></thead>
+                <tbody id="alert-list-body"></tbody>
+              </table>
+            </div>
           </section>
         </section>
       </main>

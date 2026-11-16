@@ -8,6 +8,7 @@ import { renderLogo, applyShellLabels, setActiveModule, applyNavigationPermissio
 import { renderDashboard } from './components/dashboard.js';
 import { setupSearchBar, renderSearchResults } from './components/search-bar.js';
 import { canAccessModule, canPerform, resolveActiveUser, setActiveUserId, roleLabel } from './domain/permissions.js';
+import { loadDemoData } from './domain/demo-data.js';
 
 import { createProduct, updateProduct, setProductStatus, searchProducts } from './domain/products.js';
 import { createWarehouse, updateWarehouse, setWarehouseStatus, listActiveWarehouses, searchWarehouses } from './domain/warehouses.js';
@@ -96,7 +97,7 @@ function showModule(name, opts = {}){
   MODULES.forEach(m => { const el = qs(VIEWS[m]); if(el) el.hidden = m !== name; });
   setActiveModule(name);
 
-  if(name === 'dashboard') renderDashboard();
+  if(name === 'dashboard') renderDashboard(getActiveRole());
   if(name === 'entities'){
     populateDocumentEntitySelect();
     populateEditEntitySelect();
@@ -502,6 +503,8 @@ function applyLabels(config){
 
   qs('dashboard-heading').textContent = config.moduleName;
   qs('dashboard-subtitle').textContent = `Gestiona inventario, bodegas y operaciones logísticas. (Módulo base disponible en sección avanzada para administrador)`;
+  qs('stat-entities-label').textContent = entities;
+  qs('stat-documents-label').textContent = documents;
   qs('action-new-entity-title').textContent = `${femEntity ? 'Nueva' : 'Nuevo'} ${entity}`;
   qs('action-new-entity-sub').textContent = `Crear un registro de ${entity.toLowerCase()}`;
   qs('action-new-document-title').textContent = `${femDocument ? 'Nueva' : 'Nuevo'} ${document_}`;
@@ -566,6 +569,11 @@ function applyPermissionUiState(){
       el.hidden = !allowed;
       el.disabled = !allowed;
     });
+
+  const baseCard = qs('base-module-card');
+  if(baseCard) baseCard.hidden = !canBase;
+  const demoCard = qs('demo-data-card');
+  if(demoCard) demoCard.hidden = !canBase;
 
   // Base advanced forms
   setSectionDisabled('#view-entities .card[aria-labelledby="entity-form-heading"]', !canBase);
@@ -635,6 +643,43 @@ function wireEvents(){
   document.querySelectorAll('.nav-module').forEach(btn => {
     btn.addEventListener('click', () => showModule(btn.dataset.module));
   });
+
+  const dashboardView = qs('view-dashboard');
+  if(dashboardView){
+    dashboardView.addEventListener('click', (ev) => {
+      const trigger = ev.target.closest('[data-goto]');
+      if(!trigger || trigger.disabled) return;
+      const opts = trigger.dataset.newRecord === 'true' ? { newRecord: true, focusForm: true } : {};
+      showModule(trigger.dataset.goto, opts);
+    });
+  }
+
+  const demoButton = qs('load-demo-data');
+  if(demoButton){
+    demoButton.addEventListener('click', () => {
+      if(!guardAction('base.manage', 'Solo el administrador puede cargar datos de demostración.')) return;
+      const result = loadDemoData();
+      if(!result.success){
+        const status = qs('demo-data-status');
+        if(status){
+          status.textContent = result.error || 'No fue posible cargar los datos de demostración.';
+          status.classList.add('is-error');
+        }
+        return;
+      }
+      renderDashboard(getActiveRole());
+      if(result.message){
+        const status = qs('demo-data-status');
+        const summary = result.summary;
+        if(status && summary){
+          status.textContent = `${result.message} Productos: ${summary.products} · Bodegas: ${summary.warehouses} · Movimientos: ${summary.movements} · Transferencias: ${summary.transfers}.`;
+        } else if(status){
+          status.textContent = result.message;
+        }
+      }
+    });
+  }
+
   qs('action-new-entity').addEventListener('click', () => { if(guardAction('base.manage')) showModule('entities', { newRecord: true, focusForm: true }); });
   qs('action-new-document').addEventListener('click', () => { if(guardAction('base.manage')) showModule('documents', { newRecord: true, focusForm: true }); });
   qs('action-open-entities').addEventListener('click', () => { if(guardAction('base.manage')) showModule('entities'); });
