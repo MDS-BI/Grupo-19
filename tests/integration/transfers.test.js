@@ -33,7 +33,6 @@ function setupProductAndWarehouses(){
   qs('movement-product').value = '1';
   qs('movement-warehouse').value = '1';
   qs('movement-quantity').value = '10';
-  qs('movement-user').value = '1';
   submit(qs('movement-form'));
 }
 
@@ -63,7 +62,6 @@ function fillTransfer({ quantity = '4' } = {}){
   qs('transfer-source').value = '1';
   qs('transfer-target').value = '2';
   qs('transfer-quantity').value = quantity;
-  qs('transfer-created-by').value = '1';
 }
 
 describe('User Story 5 - transfer products between warehouses', () => {
@@ -81,8 +79,7 @@ describe('User Story 5 - transfer products between warehouses', () => {
     qs('transfer-source').value = '1';
     qs('transfer-target').value = '1';
     qs('transfer-quantity').value = '1';
-    qs('transfer-created-by').value = '1';
-    submit(qs('transfer-form'));
+      submit(qs('transfer-form'));
     expect(loadTransfers().length).toBe(0);
     expect(qs('error-transfer-targetWarehouseId').textContent).toContain('diferente');
   });
@@ -96,8 +93,6 @@ describe('User Story 5 - transfer products between warehouses', () => {
   it('confirms a pending transfer and moves stock between warehouses simultaneously (FR-068, FR-069)', () => {
     fillTransfer({ quantity: '4' });
     submit(qs('transfer-form'));
-    const select = qs('transfer-list-body').querySelector('select.transfer-user-select');
-    select.value = '1';
     const confirmBtn = [...qs('transfer-list-body').querySelectorAll('button')].find(b => b.textContent === 'Confirmar');
     confirmBtn.click();
     expect(loadTransfers()[0].status).toBe('confirmada');
@@ -111,8 +106,6 @@ describe('User Story 5 - transfer products between warehouses', () => {
   it('cancels a pending transfer without touching STOCK (FR-085)', () => {
     fillTransfer({ quantity: '4' });
     submit(qs('transfer-form'));
-    const select = qs('transfer-list-body').querySelector('select.transfer-user-select');
-    select.value = '1';
     const cancelBtn = [...qs('transfer-list-body').querySelectorAll('button')].find(b => b.textContent === 'Cancelar');
     cancelBtn.click();
     expect(loadTransfers()[0].status).toBe('cancelada');
@@ -123,8 +116,6 @@ describe('User Story 5 - transfer products between warehouses', () => {
   it('offers no confirm/cancel actions once a transfer is no longer pending', () => {
     fillTransfer({ quantity: '4' });
     submit(qs('transfer-form'));
-    const select = qs('transfer-list-body').querySelector('select.transfer-user-select');
-    select.value = '1';
     [...qs('transfer-list-body').querySelectorAll('button')].find(b => b.textContent === 'Confirmar').click();
     const actionsCell = qs('transfer-list-body').querySelector('tr').lastElementChild;
     expect(actionsCell.textContent).toBe('—');

@@ -24,7 +24,7 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Cómo debe resolverse la diferencia entre los campos que exige la HU-01 (SKU único, Precio de Venta, Precio de Costo, Unidad de Medida y Estado) y `PRODUCTS` del data-model, que solo define `unit_price`, dimensiones y peso? → A: Ampliar `PRODUCTS` en el data-model con `sku` único, `sale_price`, `cost_price`, `unit_of_measure`, `status` y `supplier`.
 - Q: ¿Cómo deben existir las categorías de producto y los usuarios que referencian `PRODUCTS`, `WAREHOUSES` e `INVENTORY_TRANSACTIONS`, si no hay una historia para administrarlos? → A: Precargan como catálogos semilla de categorías y usuarios; no hay pantallas de administración en esta iteración.
 - Q: ¿Cómo debe representarse el "movimiento de ajuste" que corrige un movimiento inmutable, si `INVENTORY_TRANSACTIONS.transaction_type` solo admite "entrada" o "salida"? → A: Se añaden los tipos "ajuste_entrada" y "ajuste_salida" a `transaction_type`, manteniendo cantidades positivas y la dirección explícita.
-- Q: ¿El módulo debe implementar inicio de sesión y control de acceso por rol, o los roles son solo etiquetas del catálogo de usuarios sin autenticación? → A: Sin autenticación en esta iteración; los roles son informativos y el usuario que registra movimientos se selecciona del catálogo `USERS`.
+- Q: ¿El módulo debe implementar inicio de sesión y control de acceso por rol, o los roles son solo etiquetas del catálogo de usuarios sin autenticación? → A: Sin autenticación en esta iteración; los roles son informativos y el usuario que registra operaciones se toma del usuario activo seleccionado en la parte superior del ERP (catálogo `USERS`).
 - Q: ¿La spec debe conservar las secciones del módulo base y en qué orden debe quedar? → A: Conservar todas las secciones base y añadir las de cada historia, ordenando la spec con la misma disposición de `001-erp-base-module/spec.md` (una sección global de Requisitos, Criterios de Éxito y Suposiciones).
 
 ### Session 2026-11-03 — Ajustes de Entidades Clave
@@ -264,14 +264,14 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 - **FR-055**: Una salida cuya cantidad supere el stock disponible DEBE rechazarse sin modificar el stock.
 - **FR-056**: El sistema DEBE impedir la edición y eliminación de movimientos de inventario ya registrados.
 - **FR-057**: El sistema DEBE permitir corregir un movimiento mediante un nuevo movimiento de ajuste registrado con `transaction_type` "ajuste_entrada" o "ajuste_salida" que quede en el historial.
-- **FR-058**: El formulario de movimiento DEBE exigir la selección de un usuario existente en USERS y guardar su `user_id`; el sistema DEBE rechazar el movimiento si el usuario no existe.
+- **FR-058**: El sistema DEBE usar automáticamente el usuario activo seleccionado en la parte superior del ERP para el movimiento y guardar su `user_id`; DEBE impedir registrar el movimiento y mostrar un error si no existe un usuario activo válido.
 - **FR-059**: El sistema DEBE asignar automáticamente la fecha y hora del movimiento al guardarlo y NO DEBE permitir que el usuario la modifique.
 - **FR-060**: El sistema DEBE permitir registrar nuevas bodegas indicando nombre único, ubicación física y detalles opcionales.
 - **FR-061**: El sistema DEBE permitir al administrador modificar la información descriptiva y de ubicación de las bodegas existentes.
 - **FR-062**: El sistema DEBE permitir cambiar el estado de una bodega entre activo e inactivo.
 - **FR-063**: El sistema DEBE impedir la selección de bodegas inactivas para la realización de nuevos movimientos de inventario o transferencias.
 - **FR-064**: El sistema DEBE validar que no se dupliquen los nombres de las bodegas.
-- **FR-065**: El sistema DEBE permitir registrar solicitudes de transferencia entre bodegas requiriendo: Producto (`product_id`), Bodega Origen (`source_warehouse_id`), Bodega Destino (`target_warehouse_id`), Cantidad (`quantity`) y Usuario que registra (`created_by`).
+- **FR-065**: El sistema DEBE permitir registrar solicitudes de transferencia entre bodegas requiriendo: Producto (`product_id`), Bodega Origen (`source_warehouse_id`), Bodega Destino (`target_warehouse_id`) y Cantidad (`quantity`), registrando automáticamente en `created_by` el usuario activo del ERP.
 - **FR-066**: El sistema DEBE validar que la Bodega Origen y la Bodega Destino sean entidades distintas.
 - **FR-067**: El sistema DEBE verificar que la Bodega Origen disponga de `quantity_available` suficiente en `STOCK` antes de autorizar el registro.
 - **FR-068**: El sistema DEBE gestionar el estado de la transferencia permitiendo únicamente los valores: 'pendiente', 'confirmada' y 'cancelada'.
@@ -279,9 +279,9 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 - **FR-070**: El sistema DEBE registrar la fecha de la transacción (`transfer_date`) de forma automática.
 - **FR-071**: El sistema DEBE disponer de catálogos semilla de categorías de producto y usuarios para que `PRODUCTS` e `INVENTORY_TRANSACTIONS` puedan referenciarlos; no se requieren pantallas de administración en esta iteración.
 - **FR-072**: El sistema DEBE registrar los ajustes de inventario con `transaction_type` "ajuste_entrada" o "ajuste_salida", manteniendo la cantidad positiva y actualizando `STOCK` según la dirección del ajuste.
-- **FR-073**: El sistema NO DEBE exigir autenticación en esta iteración; los roles de `USERS` son informativos y el usuario que registra movimientos se selecciona del catálogo.
-- **FR-074**: El sistema DEBE registrar el usuario que crea la solicitud de transferencia en `created_by` y DEBE rechazar la solicitud si el usuario no existe.
-- **FR-075**: El sistema DEBE registrar el usuario que confirma la recepción en `confirmed_by` y DEBE rechazar la confirmación si el usuario no existe.
+- **FR-073**: El sistema NO DEBE implementar autenticación real en esta iteración. Los roles `administrador`, `supervisor_inventario` y `encargado_bodega` determinan permisos simulados; el usuario activo se selecciona desde la interfaz y los movimientos y transferencias utilizan automáticamente su `user_id`. Al utilizar `localStorage`, este control no constituye seguridad real.
+- **FR-074**: El sistema DEBE registrar automáticamente en `created_by` el usuario activo que crea la solicitud de transferencia y DEBE rechazarla si no existe un usuario activo válido.
+- **FR-075**: El sistema DEBE registrar automáticamente en `confirmed_by` el usuario activo que confirma la recepción y DEBE rechazar la confirmación si no existe un usuario activo válido.
 - **FR-076**: El sistema DEBE permitir al administrador configurar y editar `min_stock_level` (mayor o igual a cero) por cada combinación producto+bodega en `STOCK`.
 - **FR-077**: El sistema DEBE generar una alerta cuando `quantity_available` sea menor o igual a `min_stock_level` y `min_stock_level` sea mayor que cero.
 - **FR-078**: El sistema DEBE mostrar las alertas en una pantalla dedicada indicando producto, bodega, cantidad disponible, mínimo configurado y déficit.
@@ -291,7 +291,7 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 - **FR-082**: El sistema DEBE permitir filtrar y buscar las alertas por producto y por bodega, y mostrar un estado vacío cuando no haya coincidencias.
 - **FR-083**: El sistema DEBE tratar las alertas como informativas: NO DEBEN bloquear movimientos ni transferencias, ni modificar `STOCK`, `PRODUCTS`, `WAREHOUSES` o `INVENTORY_TRANSACTIONS`.
 - **FR-084**: El sistema NO DEBE generar alertas para registros de `STOCK` sin mínimo configurado o con `min_stock_level` igual a cero.
-- **FR-085**: El sistema DEBE permitir cancelar una transferencia en estado "pendiente", exigiendo la selección de un usuario existente en `USERS` como `cancelled_by` y sin modificar `STOCK` en ninguna bodega.
+- **FR-085**: El sistema DEBE permitir cancelar una transferencia en estado "pendiente", registrando automáticamente en `cancelled_by` el usuario activo válido y sin modificar `STOCK` en ninguna bodega.
 - **FR-086**: El sistema DEBE rechazar la cancelación de una transferencia que no se encuentre en estado "pendiente".
 - **FR-087**: El sistema DEBE impedir confirmar una transferencia "pendiente" si la bodega de origen o la bodega de destino se encuentra inactiva en el momento de la confirmación.
 - **FR-088**: El sistema DEBE permitir modificar el SKU de un producto aunque tenga movimientos de inventario asociados, revalidando su unicidad; los movimientos conservan la referencia por `product_id`.

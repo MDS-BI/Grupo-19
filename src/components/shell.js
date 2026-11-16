@@ -1,4 +1,5 @@
 import { getConfig } from '../module-config.js';
+import { canAccessModule } from '../domain/permissions.js';
 
 function escapeHtml(s){ return String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
@@ -34,4 +35,19 @@ export function setActiveModule(name){
     if(active) btn.setAttribute('aria-current', 'page');
     else btn.removeAttribute('aria-current');
   });
+}
+
+export function applyNavigationPermissions(role){
+  document.querySelectorAll('.nav-module').forEach(btn => {
+    const mod = btn.dataset.module;
+    const allowed = canAccessModule(role, mod);
+    btn.hidden = !allowed;
+    btn.disabled = !allowed;
+    btn.setAttribute('aria-hidden', allowed ? 'false' : 'true');
+  });
+  const advanced = document.getElementById('nav-advanced-section');
+  if(advanced){
+    const showAdvanced = ['entities', 'documents', 'search'].some(m => canAccessModule(role, m));
+    advanced.hidden = !showAdvanced;
+  }
 }

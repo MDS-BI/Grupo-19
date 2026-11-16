@@ -14,7 +14,7 @@ export function registerMovement({ type, productId, warehouseId, quantity, userI
     errors.warehouseId = 'Selecciona una bodega activa';
   }
   if(!isPositiveInteger(quantity)) errors.quantity = 'La cantidad debe ser un entero mayor que cero';
-  if(!userId || !loadUsers().some(u => u.user_id === Number(userId))) errors.userId = 'Selecciona un usuario existente';
+  if(!userId || !loadUsers().some(u => u.user_id === Number(userId))) errors.userId = 'No existe un usuario activo válido para registrar el movimiento';
   if(Object.keys(errors).length > 0) return { success: false, errors };
 
   const pId = Number(productId);

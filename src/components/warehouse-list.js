@@ -1,6 +1,6 @@
 import { escapeHtml } from '../storage.js';
 
-export function renderWarehouseList(tbody, emptyEl, warehouses, { onEdit, onToggleStatus }){
+export function renderWarehouseList(tbody, emptyEl, warehouses, { onEdit, onToggleStatus, canManage = true }){
   tbody.innerHTML = '';
   if(!warehouses || warehouses.length === 0){
     emptyEl.hidden = false;
@@ -16,18 +16,23 @@ export function renderWarehouseList(tbody, emptyEl, warehouses, { onEdit, onTogg
       <td><span class="status-badge ${w.status === 'activo' ? 'status-active' : 'status-inactive'}">${escapeHtml(w.status)}</span></td>
     `;
     const actionsTd = document.createElement('td');
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'secondary';
-    editBtn.textContent = 'Editar';
-    editBtn.addEventListener('click', () => onEdit(w));
-    const toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.className = 'secondary';
-    toggleBtn.textContent = w.status === 'activo' ? 'Desactivar' : 'Activar';
-    toggleBtn.addEventListener('click', () => onToggleStatus(w));
-    actionsTd.appendChild(editBtn);
-    actionsTd.appendChild(toggleBtn);
+    if(canManage){
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'secondary';
+      editBtn.textContent = 'Editar';
+      editBtn.addEventListener('click', () => onEdit(w));
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'secondary';
+      toggleBtn.textContent = w.status === 'activo' ? 'Desactivar' : 'Activar';
+      toggleBtn.addEventListener('click', () => onToggleStatus(w));
+      actionsTd.appendChild(editBtn);
+      actionsTd.appendChild(toggleBtn);
+    } else {
+      actionsTd.textContent = 'Solo lectura';
+      actionsTd.className = 'muted';
+    }
     tr.appendChild(actionsTd);
     tbody.appendChild(tr);
   }

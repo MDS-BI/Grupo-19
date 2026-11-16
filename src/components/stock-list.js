@@ -3,7 +3,7 @@ import { isInAlert } from '../domain/alerts.js';
 import { renderMinStockEditor } from './stock-config.js';
 
 /** Distingue ausencia de registro de stock de una cantidad 0 (Casos Límite) y muestra el estado del producto/bodega. */
-export function renderStockList(tbody, emptyEl, stockEntries, { onSaveMinLevel }){
+export function renderStockList(tbody, emptyEl, stockEntries, { onSaveMinLevel, canConfigureMin = true }){
   tbody.innerHTML = '';
   if(!stockEntries || stockEntries.length === 0){
     emptyEl.hidden = false;
@@ -21,7 +21,13 @@ export function renderStockList(tbody, emptyEl, stockEntries, { onSaveMinLevel }
       <td><span class="status-badge ${s.warehouse_status === 'activo' ? 'status-active' : 'status-inactive'}">${escapeHtml(s.warehouse_status)}</span></td>
     `;
     const minTd = document.createElement('td');
-    minTd.appendChild(renderMinStockEditor(s, onSaveMinLevel));
+    if(canConfigureMin){
+      minTd.appendChild(renderMinStockEditor(s, onSaveMinLevel));
+    } else {
+      minTd.textContent = String(s.min_stock_level ?? 0);
+      minTd.className = 'muted';
+      minTd.title = 'Solo lectura: configurar mínimo requiere perfil administrador';
+    }
     tr.appendChild(minTd);
     tbody.appendChild(tr);
   }

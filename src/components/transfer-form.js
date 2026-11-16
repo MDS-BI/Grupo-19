@@ -1,4 +1,4 @@
-import { loadProducts, loadUsers } from '../storage.js';
+import { loadProducts } from '../storage.js';
 import { listActiveWarehouses } from '../domain/warehouses.js';
 
 function qs(id){ return document.getElementById(id); }
@@ -30,7 +30,7 @@ export function populateTransferWarehouseSelects(){
 }
 
 export function populateTransferUserSelect(){
-  populateSelect(qs('transfer-created-by'), loadUsers().map(u => [String(u.user_id), u.user_name]), '-- Selecciona un usuario --');
+  // Usuario activo del ERP: el selector manual fue eliminado (HU-05).
 }
 
 const ERROR_FIELDS = ['productId', 'sourceWarehouseId', 'targetWarehouseId', 'quantity', 'createdBy'];
@@ -40,7 +40,6 @@ export function clearTransferForm(){
   qs('transfer-source').value = '';
   qs('transfer-target').value = '';
   qs('transfer-quantity').value = '';
-  qs('transfer-created-by').value = '';
   clearTransferErrors();
 }
 
@@ -53,8 +52,7 @@ export function collectTransferPayload(){
     productId: qs('transfer-product').value,
     sourceWarehouseId: qs('transfer-source').value,
     targetWarehouseId: qs('transfer-target').value,
-    quantity: qs('transfer-quantity').value,
-    createdBy: qs('transfer-created-by').value
+    quantity: qs('transfer-quantity').value
   };
 }
 

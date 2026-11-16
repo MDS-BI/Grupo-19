@@ -10,6 +10,8 @@ function userExists(userId){
   return loadUsers().some(u => u.user_id === Number(userId));
 }
 
+const INVALID_ACTIVE_USER_MSG = 'No existe un usuario activo válido para realizar esta operación';
+
 /** Crea una solicitud de transferencia en estado "pendiente" (FR-065 a FR-067, FR-074). */
 export function requestTransfer({ productId, sourceWarehouseId, targetWarehouseId, quantity, createdBy }){
   const errors = {};
@@ -20,7 +22,7 @@ export function requestTransfer({ productId, sourceWarehouseId, targetWarehouseI
     errors.targetWarehouseId = 'La bodega de destino debe ser diferente a la bodega de origen';
   }
   if(!isPositiveInteger(quantity)) errors.quantity = 'La cantidad debe ser un entero mayor que cero';
-  if(!createdBy || !userExists(createdBy)) errors.createdBy = 'Selecciona un usuario existente';
+  if(!createdBy || !userExists(createdBy)) errors.createdBy = INVALID_ACTIVE_USER_MSG;
 
   if(Object.keys(errors).length === 0){
     const stock = getStockRecord(Number(productId), Number(sourceWarehouseId));
@@ -55,7 +57,7 @@ export function confirmTransfer(transferId, confirmedBy){
   if(idx === -1) return { success: false, error: 'Transferencia no encontrada' };
   const transfer = list[idx];
   if(transfer.status !== 'pendiente') return { success: false, error: 'Solo las transferencias pendientes pueden confirmarse' };
-  if(!confirmedBy || !userExists(confirmedBy)) return { success: false, error: 'Selecciona un usuario existente para confirmar' };
+  if(!confirmedBy || !userExists(confirmedBy)) return { success: false, error: INVALID_ACTIVE_USER_MSG };
   if(!isActiveWarehouse(transfer.source_warehouse_id) || !isActiveWarehouse(transfer.target_warehouse_id)){
     return { success: false, error: 'No es posible confirmar: la bodega de origen o destino está inactiva' };
   }
@@ -75,7 +77,7 @@ export function cancelTransfer(transferId, cancelledBy){
   if(idx === -1) return { success: false, error: 'Transferencia no encontrada' };
   const transfer = list[idx];
   if(transfer.status !== 'pendiente') return { success: false, error: 'Solo las transferencias pendientes pueden cancelarse' };
-  if(!cancelledBy || !userExists(cancelledBy)) return { success: false, error: 'Selecciona un usuario existente para cancelar' };
+  if(!cancelledBy || !userExists(cancelledBy)) return { success: false, error: INVALID_ACTIVE_USER_MSG };
 
   list[idx] = { ...transfer, status: 'cancelada', cancelled_by: Number(cancelledBy) };
   saveTransfers(list);

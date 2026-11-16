@@ -36,12 +36,10 @@ function setupData(){
   qs('movement-product').value = '1';
   qs('movement-warehouse').value = '1';
   qs('movement-quantity').value = '10';
-  qs('movement-user').value = '1';
   submit(qs('movement-form'));
   qs('movement-product').value = '1';
   qs('movement-warehouse').value = '2';
   qs('movement-quantity').value = '3';
-  qs('movement-user').value = '1';
   submit(qs('movement-form'));
 }
 

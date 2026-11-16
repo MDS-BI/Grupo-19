@@ -68,6 +68,7 @@ export function seedLogisticsCatalogs(){
   }
 }
 
+
 // ----------------------------------------------------------------------------
 // Helpers compartidos de saneamiento y validación para el dominio logístico
 // ----------------------------------------------------------------------------

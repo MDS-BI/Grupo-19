@@ -32,11 +32,10 @@ function setupLowStock(){
   submit(qs('warehouse-form'));
 
   qs('nav-movements').click();
-  qs('movement-type').value = 'entrada';
-  qs('movement-product').value = '1';
-  qs('movement-warehouse').value = '1';
-  qs('movement-quantity').value = '2';
-  qs('movement-user').value = '1';
+    qs('movement-type').value = 'entrada';
+    qs('movement-product').value = '1';
+    qs('movement-warehouse').value = '1';
+    qs('movement-quantity').value = '2';
   submit(qs('movement-form'));
 
   qs('nav-stock').click();
@@ -90,7 +89,6 @@ describe('User Story 6 - minimum stock alerts', () => {
     qs('movement-product').value = '1';
     qs('movement-warehouse').value = '1';
     qs('movement-quantity').value = '10';
-    qs('movement-user').value = '1';
     qs('movement-form').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
 
     qs('nav-alerts').click();

@@ -317,6 +317,16 @@ button.danger:hover { background: #fae3df; }
   margin: 8px 4px;
 }
 
+.nav-section-title { margin: 6px 12px 4px; font-size: 0.78rem; color: rgba(198, 211, 234, 0.8); text-transform: uppercase; letter-spacing: .04em; }
+.nav-advanced[hidden], .nav-module[hidden] { display: none !important; }
+
+.topbar { justify-content: space-between; gap: 16px; }
+.active-user-panel { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.active-user-label { margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.active-user-panel select { width: auto; min-width: 180px; padding: 6px 8px; }
+.active-user-panel small { width: 100%; text-align: right; font-size: 0.75rem; }
+.access-notice { margin-bottom: 12px; }
+
 .warning { color: #b45309; font-size: 0.85em; margin-top: 4px; min-height: 1em; }
 
 .data-table {

@@ -1,4 +1,4 @@
-import { loadProducts, loadUsers } from '../storage.js';
+import { loadProducts } from '../storage.js';
 import { listActiveWarehouses } from '../domain/warehouses.js';
 
 function qs(id){ return document.getElementById(id); }
@@ -38,20 +38,7 @@ export function populateMovementWarehouseSelect(){
 }
 
 export function populateMovementUserSelect(){
-  const select = qs('movement-user');
-  const prev = select.value;
-  select.innerHTML = '';
-  const blank = document.createElement('option');
-  blank.value = '';
-  blank.textContent = '-- Selecciona un usuario --';
-  select.appendChild(blank);
-  loadUsers().forEach(u => {
-    const opt = document.createElement('option');
-    opt.value = String(u.user_id);
-    opt.textContent = u.user_name;
-    select.appendChild(opt);
-  });
-  if(prev && [...select.options].some(o => o.value === prev)) select.value = prev;
+  // Usuario activo del ERP: el selector manual fue eliminado (HU-03).
 }
 
 const ERROR_FIELDS = ['type', 'productId', 'warehouseId', 'quantity', 'userId'];
@@ -61,7 +48,6 @@ export function clearMovementForm(){
   qs('movement-product').value = '';
   qs('movement-warehouse').value = '';
   qs('movement-quantity').value = '';
-  qs('movement-user').value = '';
   clearMovementErrors();
 }
 
@@ -75,7 +61,6 @@ export function prefillAdjustment(movement, adjustmentType){
   qs('movement-product').value = String(movement.product_id);
   qs('movement-warehouse').value = String(movement.warehouse_id);
   qs('movement-quantity').value = '';
-  qs('movement-user').value = '';
   clearMovementErrors();
   qs('movement-quantity').focus();
 }
@@ -85,8 +70,7 @@ export function collectMovementPayload(){
     type: qs('movement-type').value,
     productId: qs('movement-product').value,
     warehouseId: qs('movement-warehouse').value,
-    quantity: qs('movement-quantity').value,
-    userId: qs('movement-user').value
+    quantity: qs('movement-quantity').value
   };
 }
 
