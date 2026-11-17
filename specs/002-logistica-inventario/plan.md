@@ -33,12 +33,18 @@ El desarrollo se basará en el Modelo Entidad-Relación que diseñamos, donde se
 
 ```text
 specs/002-logistica-inventario/
+├── spec.md
 ├── plan.md
+├── research.md
+├── quickstart.md
 ├── data-model.md
 ├── MER.md
+├── MER_logisica_visual.jpeg
 ├── contracts/
 │   ├── entity-storage.md
 │   └── logistics-storage.md
+├── checklists/
+│   └── requirements.md
 └── tasks.md
 ```
 
@@ -81,7 +87,19 @@ tests/
 
 **Decisión de Estructura**: Una aplicación Vite simple con un único punto de entrada HTML, un pequeño conjunto de módulos JavaScript y CSS en un archivo separado. Se usará localStorage para la persistencia de modo que la aplicación permanezca ligera y autónoma. El módulo base (Entidad/Documento, `entity-form.js`/`document-form.js`) se conserva intacto para no introducir regresiones (ver FR-001–039), mientras que el dominio de Logística e Inventario se construye como una capa adicional: `src/storage.js` concentra los esquemas, la persistencia y los helpers de validación/saneamiento compartidos por las entidades logísticas (`PRODUCTS`, `PRODUCT_CATEGORIES`, `WAREHOUSES`, `USERS`, `STOCK`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS`, `REPLENISHMENT_REQUESTS`); `src/domain/` concentra las reglas de negocio de cada historia de usuario (productos, bodegas, movimientos, transferencias, stock, alertas y reposiciones) desacopladas de la interfaz; y `src/components/` añade un formulario y un listado por historia de usuario junto a los componentes base. `shell.js` posee el marco del espacio de trabajo ERP — un logotipo monograma SVG en línea derivado del nombre del módulo, la barra superior y la barra lateral de módulos (ahora incluyendo Productos, Bodegas, Stock, Movimientos, Transferencias, Alertas y Reposiciones) — envolviendo todas las vistas para que la marca y la navegación permanezcan consistentes sin duplicar marcado. `dashboard.js` renderiza los botones de acción rápida y las tarjetas de estadísticas de la pantalla de entrada, leyendo los recuentos del almacenamiento cada vez que se vuelve visible. `module-config.js` centraliza todos los puntos de adaptación — nombre del módulo, etiquetas de términos, definiciones de campos personalizados, ciclo de vida de estados y color de acento — manteniendo la personalización del dominio fuera del código central; el estilo se controla mediante propiedades personalizadas de CSS (tokens de diseño) en `styles.css` para que el color de acento configurado se aplique globalmente.
 
+## Verificación
+
+- `T066`: `npx vitest run` y `npm run build` desde la raíz del repositorio.
+- `T067`: validación manual de los escenarios de aceptación de HU-01 a HU-07 con `spec.md`.
+- `T068`: reconciliación de `spec.md`, `plan.md`, `tasks.md` y `checklists/requirements.md` con la implementación actual.
+- La ejecución de la suite no se realizó durante la reconciliación documental de 2026-11-17; por eso T066 permanece pendiente en `tasks.md`.
+
 ## Seguimiento de Complejidad
 
-Este plan no introdujo violaciones de la constitución.
+| Desviación | Por qué sigue presente | Alternativa más simple rechazada | Seguimiento |
+|---|---|---|---|
+| Atomicidad de escrituras en movimientos, transferencias y recepciones no totalmente transaccional | `localStorage` no ofrece transacciones nativas y la implementación actual ya está operativa; se prefiere reforzar sin rehacer el dominio | Reemplazar toda la capa de persistencia por otra tecnología, con riesgo de perder datos y funcionalidad | T081, T082, T083 |
+| `escapeHtml` no cubre comillas/backticks | Los listados actuales usan plantillas de texto; no se observó ejecución de contenido, pero conviene cerrar el caso | Desactivar el renderizado de contenido dinámico, rompiendo la interfaz | T084 |
+| Roles simulados sin autenticación real | Decisión confirmada en clarificaciones 2026-11-03; el usuario activo del ERP es suficiente para esta iteración | Introducir login y backend, fuera del alcance de 002 | Fuera de alcance; documento en `spec.md` |
+| Rediseño visual corporativo pendiente | Debe preservarse como iniciativa separada para no alterar la lógica logística | Aplicar cambios globales de estilo dentro de 002, con riesgo de regresiones visuales y funcionales | Feature posterior `003-rediseno-visual-corporativo` |
 

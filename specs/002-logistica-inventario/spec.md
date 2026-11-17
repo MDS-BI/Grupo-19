@@ -2,7 +2,7 @@
 
 **Rama de la funcionalidad**: 002-logistica-inventario  
 **Creada**: 2026-10-29  
-**Estado**: Borrador  
+**Estado**: Implementado — pendiente de validación final
 **Entrada**: Descripción del usuario: "Desarrollar un módulo de Logística e Inventario para gestionar productos, bodegas y existencias, permitiendo registrar entradas y salidas de productos, realizar transferencias entre bodegas y generar alertas de stock mínimo".
 
 ## Propósito
@@ -44,7 +44,7 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 
 ### Session 2026-11-05 — Resolución de Casos Límite Abiertos
 
-- Q: ¿Quién puede cancelar una transferencia en estado "pendiente" y qué ocurre con el stock? → A: Cualquier usuario del catálogo `USERS` puede cancelarla seleccionando su `user_id` como `cancelled_by`; el estado pasa a "cancelada" y el stock no se modifica porque no fue descontado hasta la confirmación. Solo las transferencias "pendientes" pueden cancelarse.
+- Q: ¿Quién puede cancelar una transferencia en estado "pendiente" y qué ocurre con el stock? → A: El usuario activo del ERP puede cancelarla y su `user_id` se registra automáticamente como `cancelled_by`; el estado pasa a "cancelada" y el stock no se modifica porque no fue descontado hasta la confirmación. Solo las transferencias "pendientes" pueden cancelarse.
 - Q: ¿Se puede cambiar el estado de un producto a "Inactivo" si todavía tiene stock físico en bodegas? → A: Sí, se permite; el stock existente se conserva y se muestra solo para consulta, igual que para una bodega inactiva.
 - Q: ¿Se puede modificar el SKU de un producto que ya tiene movimientos de inventario asociados? → A: Sí, el SKU puede editarse porque los movimientos referencian `product_id`, no `sku`; debe mantenerse la validación de unicidad del nuevo valor.
 - Q: ¿Qué ocurre si el "Precio de Costo" ingresado es mayor al "Precio de Venta"? → A: El sistema permite guardar el producto y muestra una advertencia no bloqueante; no se impide el registro.
@@ -58,6 +58,7 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Qué puede hacer el encargado de bodega? → A: Consultar únicamente solicitudes aprobadas y registrar su recepción; no crea, aprueba ni cancela solicitudes.
 - Q: ¿Desde qué estados se puede cancelar? → A: Desde "pendiente" y "aprobada"; las solicitudes "recibida" y "cancelada" son inmutables.
 - Q: ¿Cómo se usa la paleta visual? → A: Azul marino, verde petróleo, gris oscuro y violeta sutil con acabados Liquid Glass discretos; se evitan neones y animaciones llamativas.
+- Q: ¿Cómo se resuelve la contradicción entre la sesión 2026-10-30 (selector de usuario en el formulario) y la sesión 2026-11-03 (usuario activo del ERP)? → A: Prevalece la sesión 2026-11-03: los formularios de movimientos y transferencias usan el usuario activo seleccionado en la cabecera del ERP y no muestran un selector manual.
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
@@ -105,7 +106,7 @@ Como encargado de bodega, quiero registrar las entradas y salidas de productos, 
 
 **Escenarios de Aceptación**:
 
-1. **Dado que** el encargado de bodega está en el formulario de movimiento, **cuando** registra una entrada seleccionando un producto, una bodega, un usuario existente y una cantidad mayor que cero, **entonces** el sistema crea o incrementa `quantity_available` en `STOCK` para esa combinación producto+bodega, guarda el movimiento en `INVENTORY_TRANSACTIONS` con `transaction_type` "entrada", `user_id` y `transaction_date` automática, y muestra un mensaje de éxito.
+1. **Dado que** el encargado de bodega está en el formulario de movimiento, **cuando** registra una entrada seleccionando un producto, una bodega y una cantidad mayor que cero, usando automáticamente el usuario activo del ERP, **entonces** el sistema crea o incrementa `quantity_available` en `STOCK` para esa combinación producto+bodega, guarda el movimiento en `INVENTORY_TRANSACTIONS` con `transaction_type` "entrada", `user_id` y `transaction_date` automática, y muestra un mensaje de éxito.
 2. **Dado que** existe stock disponible para un producto en una bodega, **cuando** el encargado registra una salida con una cantidad menor o igual al stock disponible, **entonces** el sistema descuenta inmediatamente esa cantidad de `quantity_available` y guarda el movimiento con `transaction_type` "salida" en el historial.
 3. **Dado que** no existe stock para la combinación producto+bodega o que la cantidad solicitada supera `quantity_available`, **cuando** el encargado intenta registrar una salida, **entonces** el sistema rechaza la operación con un mensaje claro, no crea el movimiento y no modifica el stock.
 4. **Dado que** un movimiento ya fue registrado, **cuando** el encargado intenta editarlo o eliminarlo, **entonces** el sistema no ofrece esas acciones y solo permite corregir la situación mediante un nuevo movimiento de ajuste (`ajuste_entrada` o `ajuste_salida`) que queda registrado en el historial.
@@ -138,8 +139,8 @@ Como encargado de bodega, quiero registrar transferencias de productos entre dis
 
 **Escenarios de Aceptación**:
 
-1. **Dado que** el encargado de bodega se encuentra en el formulario de "Nueva Transferencia", **Cuando** selecciona un producto válido, una bodega de origen con stock suficiente, una bodega de destino diferente, una cantidad mayor a cero y el usuario que registra la solicitud, **Entonces** el sistema genera el registro con estado `"pendiente"`, asigna la fecha del día (`transfer_date`) y guarda `created_by`.
-2. **Dado que** existe una transferencia registrada en estado `"pendiente"`, **Cuando** el usuario confirma la recepción en la bodega de destino seleccionando el usuario que confirma, **Entonces** el sistema cambia el estado a `"confirmada"`, registra `confirmed_by`, descuenta las unidades de la bodega origen e incrementa el stock en la bodega destino.
+1. **Dado que** el encargado de bodega se encuentra en el formulario de "Nueva Transferencia", **Cuando** selecciona un producto válido, una bodega de origen con stock suficiente, una bodega de destino diferente y una cantidad mayor a cero, usando automáticamente el usuario activo del ERP, **Entonces** el sistema genera el registro con estado `"pendiente"`, asigna la fecha del día (`transfer_date`) y guarda `created_by`.
+2. **Dado que** existe una transferencia registrada en estado `"pendiente"`, **Cuando** el usuario confirma la recepción en la bodega de destino con el usuario activo del ERP, **Entonces** el sistema cambia el estado a `"confirmada"`, registra `confirmed_by`, descuenta las unidades de la bodega origen e incrementa el stock en la bodega destino.
 3. **Dado que** un usuario intenta registrar una transferencia, **Cuando** selecciona la misma bodega como origen y destino, **Entonces** el sistema bloquea el envío y muestra el mensaje de error: "La bodega de destino debe ser diferente a la bodega de origen".
 4. **Dado que** la cantidad a transferir supera el stock disponible en la bodega de origen (`quantity_available`), **Cuando** el usuario intenta guardar la solicitud, **Entonces** el sistema rechaza la transacción informando falta de existencias.
 5. **Dado que** existe una transferencia en estado `"pendiente"`, **Cuando** un usuario del catálogo `USERS` la cancela, **Entonces** el sistema cambia el estado a `"cancelada"`, registra `cancelled_by` y no modifica `STOCK` en ninguna de las dos bodegas; si la transferencia ya está `"confirmada"` o `"cancelada"`, el sistema bloquea la acción.
@@ -239,6 +240,8 @@ Como supervisor de inventario, quiero solicitar, autorizar y recibir reposicione
 ## Requisitos *(obligatorio)*
 
 ### Requisitos Funcionales
+
+> **Nota de alcance 002**: FR-001–FR-039 se conservan como requisitos heredados del módulo base (`specs/001-erp-base-module/spec.md`) y no se reimplementan en esta funcionalidad. El alcance específico de Logística e Inventario comienza en FR-040. Los FR específicos de HU-06 y HU-07 se documentan dentro de sus respectivas historias y en `data-model.md`/`contracts/`.
 
 - **FR-001**: El sistema DEBE permitir a los usuarios crear un registro de entidad con al menos un nombre y un código.
 - **FR-002**: El sistema DEBE permitir a los usuarios editar los detalles de un registro de entidad existente.
@@ -410,6 +413,20 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **SC-038**: El 0% de las recepciones duplicadas modifica el stock o el historial de movimientos.
 - **SC-039**: El encargado de bodega solo visualiza solicitudes aprobadas en el 100% de los casos y no puede crear, aprobar ni cancelar.
 
+## Trazabilidad de Implementación
+
+| Historia | Estado documentado | Dominio | Pruebas | Tareas |
+|---|---|---|---|---|
+| HU-01 Registro y Modificación de Productos | Implementada | `src/domain/products.js` | `tests/unit/products.test.js`, `tests/integration/products.test.js` | T014–T022 |
+| HU-02 Control de Stock | Implementada | `src/domain/stock.js` | `tests/unit/stock.test.js`, `tests/integration/stock.test.js` | T047–T053 |
+| HU-03 Entradas y Salidas de Inventario | Implementada con atomicidad pendiente (T081) | `src/domain/movements.js` | `tests/unit/movements.test.js`, `tests/integration/movements.test.js` | T031–T038 |
+| HU-04 Registro y Administración de Bodegas | Implementada | `src/domain/warehouses.js` | `tests/unit/warehouses.test.js`, `tests/integration/warehouses.test.js` | T023–T030 |
+| HU-05 Transferencias entre Bodegas | Implementada con atomicidad pendiente (T082) | `src/domain/transfers.js` | `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js` | T039–T046 |
+| HU-06 Alertas de Stock Mínimo | Implementada | `src/domain/alerts.js` | `tests/unit/alerts.test.js`, `tests/integration/alerts.test.js` | T054–T062 |
+| HU-07 Solicitudes de Reposición | Implementada con atomicidad pendiente (T083) | `src/domain/replenishments.js`, `src/domain/permissions.js` | `tests/unit/replenishments.test.js`, `tests/integration/replenishments.test.js` | T069–T080 |
+
+La ejecución completa de la suite no forma parte de esta edición documental; queda registrada como T066 en `tasks.md`.
+
 ## Suposiciones
 
 - El módulo base gestiona datos para un único espacio de trabajo en lugar de una base de datos multiinquilino compartida.
@@ -426,7 +443,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - Los datos permanecen disponibles entre sesiones dentro del mismo navegador y no se ven afectados por la navegación entre pantallas.
 - El contenido introducido por el usuario (nombres, descripciones, notas) DEBE tratarse de forma segura antes de mostrarse para evitar la ejecución de contenido no deseado.
 - `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla; no hay pantallas de administración de categorías ni de usuarios en esta iteración.
-- El módulo no requiere autenticación en esta iteración; los roles de `USERS` son informativos y los usuarios que registran movimientos y transferencias se seleccionan del catálogo.
+- El módulo no requiere autenticación en esta iteración; los roles de `USERS` son informativos y los usuarios que registran movimientos, transferencias y reposiciones se toman del usuario activo del ERP seleccionado en la cabecera, sin selector manual en los formularios.
 - Los usuarios con rol administrador cuentan con los privilegios de seguridad necesarios para crear, editar y cambiar el estado de productos y bodegas.
 - El SKU es un código alfanumérico estandarizado por la empresa; no se genera automáticamente en esta versión (el usuario lo digita).
 - No se contempla el manejo de imágenes múltiples de productos en esta iteración inicial; se trabajará únicamente con datos alfanuméricos.

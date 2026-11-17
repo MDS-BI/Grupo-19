@@ -312,7 +312,7 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 ## Catálogos semilla y alcance de la iteración
 
 - `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS` y `REPLENISHMENT_REQUESTS` puedan referenciarlos; no se incluyen pantallas de administración de categorías ni de usuarios en esta iteración.
-- El módulo no requiere autenticación en esta iteración. El campo `USERS.role` es informativo y los usuarios que registran movimientos y transferencias se seleccionan del catálogo.
+- El módulo no requiere autenticación en esta iteración. El campo `USERS.role` es informativo y los usuarios que registran movimientos, transferencias y reposiciones se toman del usuario activo del ERP seleccionado en la cabecera, sin selector manual en los formularios.
 - Las alertas de stock mínimo (`STOCK.min_stock_level`) forman parte de la HU-06 y se derivan al consultar `STOCK`; el control de vencimientos (`STOCK.expiration_date`) queda fuera del alcance de esta iteración.
 
 ## Compatibilidad con la plantilla ERP
