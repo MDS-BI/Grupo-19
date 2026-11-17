@@ -34,7 +34,7 @@ describe('User Story 4 - manage entities and documents via the workspace sidebar
     const buttons = [...document.querySelectorAll('.nav-module')];
     expect(buttons.map(b => b.dataset.module)).toEqual([
       'dashboard', 'entities', 'documents', 'search',
-      'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts'
+      'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments'
     ]);
   });
 

@@ -1,8 +1,8 @@
-# Módulo de Logística e Inventario
+# Logística e Inventario | Grupo 19
 
-Nuestro proyecto consiste en desarrollar un módulo de Logística e Inventario para un sistema ERP, que permita llevar un mejor control de los productos y bodegas de una empresa. El sistema estará orientado al registro de productos, la consulta de las cantidades disponibles y el control de las entradas y salidas de inventario. También se busca incorporar transferencias entre bodegas y alertas cuando las existencias estén por debajo del stock mínimo establecido.
+Nuestro proyecto consiste en desarrollar un módulo de Logística e Inventario para un sistema ERP, que permita llevar un mejor control de los productos y bodegas de una empresa. El sistema estará orientado al registro de productos, la consulta de las cantidades disponibles y el control de las entradas y salidas de inventario. También incorpora transferencias entre bodegas, alertas cuando las existencias estén por debajo del stock mínimo establecido y solicitudes de reposición con aprobación y recepción trazables.
 
-Para desarrollar el módulo utilizaremos la plantilla entregada por el profesor, aprovechando sus funciones de registro, edición y búsqueda de información. El sistema tomará como referencia nuestro Modelo Entidad-Relación, que considera productos, categorías, bodegas, usuarios, existencias, movimientos y transferencias. La idea es adaptar la estructura existente y desarrollar las funciones necesarias para administrar el inventario de manera más organizada.
+Para desarrollar el módulo utilizaremos la plantilla entregada por el profesor, aprovechando sus funciones de registro, edición y búsqueda de información. El sistema tomará como referencia nuestro Modelo Entidad-Relación, que considera productos, categorías, bodegas, usuarios, existencias, movimientos, transferencias y solicitudes de reposición. La idea es adaptar la estructura existente y desarrollar las funciones necesarias para administrar el inventario de manera más organizada.
 
 ## Setup
 
@@ -59,24 +59,26 @@ If the configuration is invalid (unknown types, bad keys, transitions referencin
 
 ## Logística e Inventario
 
-On top of the generic Entity/Document base, this feature adds six dedicated screens reachable from the sidebar: **Productos**, **Bodegas**, **Stock**, **Movimientos**, **Transferencias** and **Alertas**. See `specs/002-logistica-inventario/` (`spec.md`, `plan.md`, `data-model.md`, `MER.md`, `contracts/`) for the full specification.
+On top of the generic Entity/Document base, this feature adds seven dedicated screens reachable from the sidebar: **Productos**, **Bodegas**, **Stock**, **Movimientos**, **Transferencias**, **Alertas** and **Reposiciones**. See `specs/002-logistica-inventario/` (`spec.md`, `plan.md`, `data-model.md`, `MER.md`, `contracts/`) for the full specification.
 
 ### Domain layer
 
-- `src/domain/products.js`, `warehouses.js`, `stock.js`, `movements.js`, `transfers.js`, `alerts.js` — business rules per user story, decoupled from the UI.
+- `src/domain/products.js`, `warehouses.js`, `stock.js`, `movements.js`, `transfers.js`, `alerts.js`, `replenishments.js` — business rules per user story, decoupled from the UI.
+- `src/components/replenishment-form.js` / `replenishment-list.js` — HU-07 form with alert prefill and status/action list.
 - `src/domain/seed.js` — raw seed data for the `PRODUCT_CATEGORIES` and `USERS` catalogs.
 - `src/storage.js` — extended with the logistics storage keys, sequential-id helpers, `escapeHtml`/validation helpers, and `seedLogisticsCatalogs()` (idempotent).
 
 ### Storage keys
 
-`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`.
+`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`, `logistics:replenishment_requests`.
 
 ### Seed catalogs
 
-`PRODUCT_CATEGORIES` and `USERS` are preloaded on first boot (no admin screens for them in this iteration). There is no authentication: every form that records who performed an action (products, movements, transfers) requires picking an existing user from a dropdown instead.
+`PRODUCT_CATEGORIES` and `USERS` are preloaded on first boot (no admin screens for them in this iteration). There is no real authentication: the active user is selected in the topbar and its identity is recorded automatically in movements, transfers and replenishment requests.
 
 ### Business rules worth knowing
 
 - Inventory movements (`entrada`/`salida`/`ajuste_entrada`/`ajuste_salida`) are immutable — corrections are made with a new adjustment movement, never by editing history.
 - A warehouse transfer only moves stock when **confirmed**; it can be **cancelled** while still `pendiente` without touching `STOCK`.
 - Minimum-stock alerts are derived on the fly by comparing `STOCK.quantity_available` to `STOCK.min_stock_level` — there is no separate alerts table.
+- Replenishment requests can be created manually or from an alert; they only change stock when received by a warehouse manager, which creates exactly one input movement linked by `movement_id`.

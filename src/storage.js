@@ -16,7 +16,8 @@ const LOGISTICS_KEYS = {
   users: 'logistics:users',
   stock: 'logistics:stock',
   movements: 'logistics:inventory_transactions',
-  transfers: 'logistics:stock_transfers'
+  transfers: 'logistics:stock_transfers',
+  replenishments: 'logistics:replenishment_requests'
 };
 
 function loadList(key){
@@ -51,12 +52,15 @@ export const loadMovements = () => loadList(LOGISTICS_KEYS.movements);
 export const saveMovements = (list) => saveList(LOGISTICS_KEYS.movements, list);
 export const loadTransfers = () => loadList(LOGISTICS_KEYS.transfers);
 export const saveTransfers = (list) => saveList(LOGISTICS_KEYS.transfers, list);
+export const loadReplenishments = () => loadList(LOGISTICS_KEYS.replenishments);
+export const saveReplenishments = (list) => saveList(LOGISTICS_KEYS.replenishments, list);
 
 export function nextProductId(){ return nextId(loadProducts(), 'product_id'); }
 export function nextWarehouseId(){ return nextId(loadWarehouses(), 'warehouse_id'); }
 export function nextStockId(){ return nextId(loadStock(), 'stock_id'); }
 export function nextMovementId(){ return nextId(loadMovements(), 'transaction_id'); }
 export function nextTransferId(){ return nextId(loadTransfers(), 'transfer_id'); }
+export function nextReplenishmentId(){ return nextId(loadReplenishments(), 'request_id'); }
 
 /** Carga idempotente de los catálogos semilla (FR-071): no duplica si ya existen datos. */
 export function seedLogisticsCatalogs(){

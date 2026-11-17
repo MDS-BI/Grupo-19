@@ -5,6 +5,7 @@ import {
 import { listMovements } from '../domain/movements.js';
 import { listTransfers } from '../domain/transfers.js';
 import { listAlerts } from '../domain/alerts.js';
+import { listReplenishments, replenishmentCounts } from '../domain/replenishments.js';
 import { canAccessModule, canPerform, roleLabel } from '../domain/permissions.js';
 import { getDemoDataSummary } from '../domain/demo-data.js';
 
@@ -55,6 +56,9 @@ function renderQuickActions(role){
   }
   if(can('transfers.create')){
     actions.push({ label: 'Nueva transferencia', hint: 'Solicitar traslado entre bodegas', module: 'transfers' });
+  }
+  if(can('replenishments.create')){
+    actions.push({ label: 'Solicitar reposición', hint: 'Nueva solicitud desde alerta o manual', module: 'replenishments', newRecord: true });
   }
   if(access('stock')){
     actions.push({ label: 'Revisar stock', hint: 'Existencias por bodega', module: 'stock' });
@@ -148,6 +152,26 @@ function renderPendingTransfers(transfers){
     </div>`).join('');
 }
 
+function renderPendingReplenishments(requests){
+  const container = document.getElementById('dashboard-replenishments');
+  if(!container) return;
+  if(requests.length === 0){
+    container.innerHTML = '<div class="mini-empty mini-empty--ok">No hay reposiciones pendientes de autorización.</div>';
+    return;
+  }
+  container.innerHTML = requests.slice(0, 4).map(r => `
+    <div class="mini-item">
+      <div class="mini-main">
+        <div class="mini-title">${escapeHtml(r.product_name)}</div>
+        <div class="mini-meta">${escapeHtml(r.warehouse_name)} · ${escapeHtml(r.created_by_name)}</div>
+      </div>
+      <div class="mini-side">
+        <span class="status-badge status-pending">Pendiente</span>
+        <div class="mini-meta">${formatNumber(r.quantity)} unidades</div>
+      </div>
+    </div>`).join('');
+}
+
 function renderDemoStatus(){
   const status = document.getElementById('demo-data-status');
   const button = document.getElementById('load-demo-data');
@@ -178,6 +202,8 @@ export function renderDashboard(role = ''){
   const movementRows = listMovements();
   const transferRows = listTransfers();
   const alerts = listAlerts();
+  const replenishmentRows = listReplenishments();
+  const pendingReplenishments = replenishmentRows.filter(r => r.status === 'pendiente');
   const pendingTransfers = transferRows.filter(t => t.status === 'pendiente');
   const activeWarehouses = warehouses.filter(w => w.status === 'activo');
   const totalUnits = stock.reduce((sum, record) => sum + Number(record.quantity_available || 0), 0);
@@ -190,6 +216,7 @@ export function renderDashboard(role = ''){
   setText('stat-movements', movements.length);
   setText('stat-transfers', pendingTransfers.length);
   setText('stat-alerts', alerts.length);
+  setText('stat-replenishment-pending', replenishmentCounts().pendiente);
   setText('dashboard-pending-count', pendingTransfers.length);
 
   const lastUpdate = document.getElementById('dashboard-last-update');
@@ -201,5 +228,6 @@ export function renderDashboard(role = ''){
   renderActivity(movementRows);
   renderLowStock(alerts);
   renderPendingTransfers(pendingTransfers);
+  renderPendingReplenishments(pendingReplenishments);
   renderDemoStatus();
 }

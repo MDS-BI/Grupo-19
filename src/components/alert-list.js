@@ -9,7 +9,8 @@ function formatNumber(value){
   return Number(value || 0).toLocaleString('es-CL');
 }
 
-export function renderAlertList(tbody, emptyEl, alerts){
+export function renderAlertList(tbody, emptyEl, alerts, options = {}){
+  const { canCreate = false, onCreateRequest = () => {} } = options;
   tbody.innerHTML = '';
   const total = alerts ? alerts.length : 0;
   setText('alert-count', `${total} ${total === 1 ? 'alerta' : 'alertas'}`);
@@ -28,6 +29,21 @@ export function renderAlertList(tbody, emptyEl, alerts){
       <td class="num">${formatNumber(a.min_stock_level)}</td>
       <td class="num"><span class="alert-badge">${formatNumber(a.deficit)}</span></td>
     `;
+    const actionsTd = document.createElement('td');
+    if(canCreate){
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'secondary subtle btn-replenish';
+      button.textContent = 'Solicitar';
+      button.dataset.productId = String(a.product_id);
+      button.dataset.warehouseId = String(a.warehouse_id);
+      button.addEventListener('click', () => onCreateRequest(a));
+      actionsTd.appendChild(button);
+    }else{
+      actionsTd.textContent = '—';
+      actionsTd.classList.add('muted');
+    }
+    tr.appendChild(actionsTd);
     tbody.appendChild(tr);
   }
 }

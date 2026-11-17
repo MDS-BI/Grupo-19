@@ -51,6 +51,14 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Qué ocurre si la bodega de origen o de destino de una transferencia "pendiente" pasa a estado inactivo antes de confirmarse? → A: El sistema impide confirmar la transferencia mientras cualquiera de las dos bodegas esté inactiva; la solicitud permanece "pendiente" hasta que ambas vuelvan a estar activas o se cancele.
 - Q: ¿Se solicita el campo Estado al crear un producto o se asigna por defecto? → A: Se asigna automáticamente como "activo" al crear; el campo Estado no se solicita en el formulario de creación y solo se modifica después mediante la acción de cambio de estado (FR-045).
 
+### Session 2026-11-17 — Solicitudes de Reposición
+
+- Q: ¿Cómo se identifica el ERP en la interfaz? → A: El nombre configurable del módulo es "Logística e Inventario | Grupo 19", aplicado en título, marca y logotipo derivado.
+- Q: ¿Quién crea solicitudes de reposición? → A: El administrador y el supervisor de inventario; el administrador también puede aprobar y cancelar.
+- Q: ¿Qué puede hacer el encargado de bodega? → A: Consultar únicamente solicitudes aprobadas y registrar su recepción; no crea, aprueba ni cancela solicitudes.
+- Q: ¿Desde qué estados se puede cancelar? → A: Desde "pendiente" y "aprobada"; las solicitudes "recibida" y "cancelada" son inmutables.
+- Q: ¿Cómo se usa la paleta visual? → A: Azul marino, verde petróleo, gris oscuro y violeta sutil con acabados Liquid Glass discretos; se evitan neones y animaciones llamativas.
+
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
 ### Historia de Usuario 1 - Registro y Modificación de Productos (Prioridad: P1)
@@ -156,6 +164,26 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 
 ---
 
+### Historia de Usuario 7 - Solicitudes de Reposición (Prioridad: P2)
+
+Como supervisor de inventario, quiero solicitar, autorizar y recibir reposiciones de productos con trazabilidad, para reponer stock sin duplicar movimientos ni perder el historial de quién gestionó cada solicitud.
+
+**Por qué es prioridad**: Convierte las alertas de HU-06 en un flujo operativo: la alerta sugiere el déficit, el supervisor o administrador crea la solicitud, el administrador la autoriza y el encargado de bodega registra la recepción. Depende de HU-01 (productos), HU-03 (movimientos inmutables), HU-04 (bodegas activas) y HU-06 (alertas derivadas).
+
+**Prueba Independiente**: Configurar una alerta, presionar "Solicitar" desde la pantalla de alertas, verificar que se preseleccionan producto, bodega y déficit; crear la solicitud, comprobar que el stock no cambia; aprobarla como administrador; recibirla como encargado y verificar que se crea exactamente una entrada de HU-03, que el stock aumenta una sola vez y que la alerta se recalcula.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** un supervisor o administrador está en la pantalla de reposiciones, **Cuando** crea una solicitud indicando producto, bodega activa y cantidad entera mayor que cero, **Entonces** se registra en estado "pendiente" con `created_by`, `request_date` y `source` automáticos, sin modificar `STOCK` ni crear movimientos.
+2. **Dado que** existe una alerta activa de HU-06, **Cuando** el usuario presiona "Solicitar" en esa alerta, **Entonces** el formulario de reposición se abre con producto, bodega y déficit preseleccionados y `source = "alert"`.
+3. **Dado que** existe una solicitud "pendiente", **Cuando** el administrador la aprueba, **Entonces** cambia a "aprobada" y registra `approved_by` y `approved_at`; el stock permanece sin cambios.
+4. **Dado que** existe una solicitud "aprobada", **Cuando** el encargado de bodega registra la recepción, **Entonces** el sistema crea un movimiento de entrada inmutable de HU-03, guarda su `movement_id` en la solicitud, marca la solicitud como "recibida" con `received_by`/`received_at` y aumenta `STOCK.quantity_available` una sola vez.
+5. **Dado que** una solicitud está "pendiente" o "aprobada", **Cuando** el administrador la cancela, **Entonces** cambia a "cancelada" y registra `cancelled_by`/`cancelled_at` sin modificar `STOCK`; una solicitud "recibida" o "cancelada" no puede cancelarse ni aprobarse.
+6. **Dado que** el perfil activo es encargado de bodega, **Cuando** consulta reposiciones, **Entonces** solo ve solicitudes "aprobadas", no ve el formulario de creación y no puede aprobar ni cancelar.
+7. **Dado que** hay solicitudes en varios estados, **Cuando** se aplican filtros por estado, producto o bodega, **Entonces** el listado y el contador de filas reflejan los resultados mientras las tarjetas de indicadores muestran los totales globales por estado.
+
+---
+
 ### Casos Límite
 
 - ¿Qué ocurre cuando un usuario intenta guardar una entidad sin nombre o código obligatorio?
@@ -202,6 +230,11 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 - ¿Qué ocurre con las alertas de productos o bodegas inactivos? (Se muestran solo como información para consulta, sin habilitar operaciones).
 - ¿Qué ocurre cuando se modifica `min_stock_level` o se repone el stock? (Las alertas se recalculan de inmediato; la alerta desaparece si el stock supera el mínimo).
 - ¿Qué ocurre al consultar las alertas? (La consulta no modifica `STOCK`, productos, bodegas ni movimientos).
+- ¿Qué ocurre si se crea una solicitud de reposición para una bodega inactiva? (Se rechaza; solo se permiten bodegas activas).
+- ¿Qué ocurre si se intenta aprobar una solicitud que ya está aprobada, recibida o cancelada? (Se bloquea; solo se aprueban solicitudes pendientes).
+- ¿Qué ocurre si se intenta recibir dos veces la misma solicitud? (La segunda recepción se rechaza; no se crea otro movimiento ni se vuelve a aumentar `STOCK`).
+- ¿Qué ocurre si el usuario activo no existe al crear, aprobar, cancelar o recibir? (La operación se rechaza con un error claro y no persiste cambios).
+- ¿Qué ocurre si el encargado de bodega cambia de perfil mientras consulta reposiciones? (La vista se recalcula con los permisos del nuevo perfil).
 
 ## Requisitos *(obligatorio)*
 
@@ -299,6 +332,17 @@ Como supervisor de inventario, quiero recibir alertas cuando las existencias de 
 - **FR-090**: El sistema DEBE permitir cambiar el estado de un producto a "Inactivo" aunque tenga stock físico registrado en una o más bodegas; el stock existente se conserva y se muestra solo para consulta.
 - **FR-091**: El sistema DEBE asignar automáticamente el Estado "activo" al crear un producto sin solicitarlo en el formulario de creación.
 - **FR-092**: El sistema DEBE tratar los campos de texto de productos, bodegas, movimientos y transferencias de la misma forma que FR-046, escapando su contenido antes de mostrarlo en listados y formularios.
+- **FR-093**: El sistema DEBE permitir al administrador y al supervisor de inventario crear solicitudes de reposición con producto existente, bodega activa y cantidad entera mayor que cero, registrando automáticamente `created_by`, `request_date` y `source`.
+- **FR-094**: El sistema DEBE mantener el estado de una solicitud dentro de "pendiente", "aprobada", "recibida" o "cancelada", permitiendo aprobar únicamente solicitudes pendientes.
+- **FR-095**: El sistema DEBE registrar automáticamente `approved_by` y `approved_at` al aprobar una solicitud de reposición, sin modificar `STOCK`.
+- **FR-096**: El sistema DEBE permitir al encargado de bodega registrar la recepción de solicitudes aprobadas creando un movimiento de entrada inmutable de HU-03, guardando `movement_id`, `received_by` y `received_at`, y aumentando `STOCK.quantity_available` una sola vez.
+- **FR-097**: El sistema DEBE impedir una segunda recepción de la misma solicitud y no duplicar el movimiento ni el stock.
+- **FR-098**: El sistema DEBE permitir cancelar solicitudes "pendientes" o "aprobadas", registrando `cancelled_by` y `cancelled_at` sin modificar `STOCK`; las solicitudes "recibidas" o "canceladas" son inmutables.
+- **FR-099**: El sistema DEBE mostrar a los encargados de bodega únicamente las solicitudes aprobadas y ocultarles el formulario de creación, las acciones de aprobación y cancelación.
+- **FR-100**: El sistema DEBE permitir preseleccionar producto, bodega y déficit desde una alerta activa de HU-06, marcando `source = "alert"`.
+- **FR-101**: El sistema DEBE mostrar indicadores globales de solicitudes pendientes, aprobadas y recibidas, además de filtros por estado, producto y bodega que actualicen el listado y su contador de filas.
+- **FR-102**: El sistema DEBE recalcular las alertas de HU-06 después de recepcionar una reposición, sin persistir una tabla de alertas.
+- **FR-103**: El sistema DEBE tratar observaciones y cualquier texto ingresado en reposiciones de la misma forma que FR-046 y FR-092, escapándolo antes de mostrarlo.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
 
@@ -318,6 +362,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **Stock (`STOCK`)**: Existencias disponibles de cada producto por bodega. Atributos clave: `stock_id`, `product_id`, `warehouse_id`, `quantity_available` (mayor o igual a cero), `min_stock_level` (nivel mínimo configurable por producto+bodega; genera alerta cuando `quantity_available` es menor o igual a `min_stock_level` y `min_stock_level` es mayor que cero), `expiration_date` (reservado para control de vencimientos futuro; opcional) y `update_date` (obligatorio). La combinación `product_id` + `warehouse_id` es única.
 - **Movimiento de Inventario (`INVENTORY_TRANSACTIONS`)**: Registro histórico e inmutable de entradas, salidas y ajustes. Atributos clave: `transaction_id`, `product_id`, `warehouse_id`, `transaction_type` ("entrada", "salida", "ajuste_entrada" o "ajuste_salida"), `quantity` (mayor que cero), `user_id` (FK obligatoria a `USERS`) y `transaction_date` (automática). Cada movimiento actualiza de inmediato `STOCK.quantity_available`; no se edita ni se elimina.
 - **Transferencia de Stock (`STOCK_TRANSFERS`)**: Documento transaccional que traslada productos entre bodegas. Atributos clave: `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity` (mayor que cero), `status` ("pendiente", "confirmada" o "cancelada"), `transfer_date` (automática), `created_by` (FK obligatoria a `USERS`; usuario que registra la solicitud), `confirmed_by` (FK a `USERS`; obligatoria al confirmar la recepción) y `cancelled_by` (FK a `USERS`; obligatoria al cancelar una transferencia pendiente).
+- **Solicitud de Reposición (`REPLENISHMENT_REQUESTS`)**: Documento que solicita reponer un producto en una bodega. Atributos clave: `request_id`, `product_id` (FK a `PRODUCTS`), `warehouse_id` (FK a `WAREHOUSES`, solo activas), `quantity` (entera mayor que cero), `observation` (opcional), `status` ("pendiente", "aprobada", "recibida" o "cancelada"), `request_date` (automática), `created_by` (FK a `USERS`), `approved_by`/`approved_at`, `received_by`/`received_at`, `cancelled_by`/`cancelled_at`, `movement_id` (FK a `INVENTORY_TRANSACTIONS`; presente al recibir) y `source` ("manual" o "alert").
 - **Usuario (`USERS`)**: Persona que opera el sistema y registra movimientos y transferencias. Atributos clave: `user_id`, `user_name`, `role`, `email` y `assigned_warehouse_id` (FK opcional a `WAREHOUSES`; identifica la bodega operativa asignada al usuario).
 - **ModuleConfig**: El objeto de adaptación cargado al arrancar que define el nombre del módulo, las etiquetas de terminología, las definiciones de campos personalizados y el ciclo de vida de estados de documentos. Consulte `specs/001-erp-base-module/data-model.md` para su forma completa.
 
@@ -359,6 +404,11 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **SC-032**: El 100% de las alertas desaparecen automáticamente en menos de 2 segundos después de que el stock supere el mínimo.
 - **SC-033**: Los filtros de alertas por producto y bodega devuelven resultados correctos en menos de 2 segundos para hasta 500 registros de stock.
 - **SC-034**: El 0% de las consultas de alertas modifica existencias o movimientos.
+- **SC-035**: Un usuario puede crear una solicitud de reposición desde una alerta en menos de 30 segundos, con producto, bodega y déficit preseleccionados.
+- **SC-036**: El 100% de las solicitudes creadas permanecen "pendientes" sin modificar `STOCK` ni generar movimientos.
+- **SC-037**: El 100% de las recepciones generan un único movimiento de entrada y aumentan el stock exactamente en la cantidad solicitada.
+- **SC-038**: El 0% de las recepciones duplicadas modifica el stock o el historial de movimientos.
+- **SC-039**: El encargado de bodega solo visualiza solicitudes aprobadas en el 100% de los casos y no puede crear, aprobar ni cancelar.
 
 ## Suposiciones
 
@@ -383,6 +433,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - La gestión de impuestos sobre el producto se considerará resuelta de manera global o en una capa de facturación posterior; el módulo almacena el valor neto.
 - Las existencias se derivan de los movimientos de HU-03 y de las transferencias confirmadas de HU-05, que también actualizan `STOCK` y pueden crear el registro en la bodega destino; la HU-02 no genera ni corrige stock.
 - Las alertas de stock mínimo (HU-06) se derivan al consultar `STOCK` comparando `quantity_available` con `min_stock_level`; no se persiste una tabla de alertas.
+- La reposición (HU-07) persiste solicitudes en su propia clave de `localStorage`; la recepción delega en la lógica de movimientos inmutables de HU-03 y nunca edita un movimiento existente.
 - `min_stock_level` se configura por combinación producto+bodega y solo el administrador puede modificarlo.
 - El umbral de alerta es inclusivo: se genera alerta cuando `quantity_available` es igual o menor que `min_stock_level`.
 - Las alertas son informativas y no bloquean movimientos ni transferencias; no se envían notificaciones externas en esta iteración.

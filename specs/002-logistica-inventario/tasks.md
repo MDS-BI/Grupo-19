@@ -195,6 +195,34 @@
 **Punto de control**: Las alertas se derivan de `STOCK`, reflejan el umbral inclusivo y desaparecen solas al superar el mínimo.
 
 ---
+ 
+## Fase 10: Historia de Usuario 7 - Solicitudes de Reposición (Prioridad: P2)
+
+**Objetivo**: Crear, aprobar, cancelar y recibir solicitudes de reposición con trazabilidad, conectando las alertas de HU-06 con entradas inmutables de HU-03.
+
+**Prueba Independiente**: Generar una alerta, presionar "Solicitar", verificar el prefill del déficit, crear y aprobar la solicitud, recibirla como encargado y comprobar que se crea una sola entrada de stock y que la alerta desaparece.
+
+### Pruebas para la Historia de Usuario 7
+
+- [ ] T069 [P] [US7] Añadir pruebas unitarias de estados, validaciones, cancelación, trazabilidad y recepción única en `tests/unit/replenishments.test.js`
+- [ ] T070 [P] [US7] Añadir pruebas de integración de creación manual y desde alerta, permisos por rol, aprobación, recepción, cancelación, filtros e indicadores en `tests/integration/replenishments.test.js`
+
+### Implementación de la Historia de Usuario 7
+
+- [ ] T071 [P] [US7] Añadir la clave `logistics:replenishment_requests` y los helpers `loadReplenishments`, `saveReplenishments` y `nextReplenishmentId` en `src/storage.js`
+- [ ] T072 [P] [US7] Implementar el dominio de reposiciones con `requestReplenishment`, `approveRequest`, `cancelRequest`, `receiveRequest`, `listReplenishments`, `replenishmentCounts` y `canCancelRequest` en `src/domain/replenishments.js`
+- [ ] T073 [P] [US7] Registrar el módulo `replenishments` y las acciones `create`, `approve`, `cancel` y `receive` por rol en `src/domain/permissions.js`
+- [ ] T074 [P] [US7] Crear el formulario de reposición con selects de producto/bodega, validación de cantidad, origen manual/alerta y prefill desde HU-06 en `src/components/replenishment-form.js`
+- [ ] T075 [P] [US7] Crear el listado de reposiciones con estados, trazabilidad, movimiento vinculado y acciones por permiso en `src/components/replenishment-list.js`
+- [ ] T076 [US7] Añadir la vista `#view-replenishments`, la navegación lateral, los filtros y el cableo de eventos en `index.html`, `src/app.js` y `src/components/shell.js`
+- [ ] T077 [US7] Añadir la acción "Solicitar" en el listado de alertas HU-06 en `src/components/alert-list.js` y `src/app.js`
+- [ ] T078 [US7] Mostrar el indicador de pendientes, el panel del dashboard y la acción rápida de reposición en `src/components/dashboard.js`
+- [ ] T079 [US7] Añadir estilos corporativos violeta/liquid-glass para reposiciones y estados en `src/styles.css`
+- [ ] T080 [P] [US7] Documentar la entidad, el contrato de almacenamiento y las reglas de HU-07 en `specs/002-logistica-inventario/`
+
+**Punto de control**: Las solicitudes solo modifican stock al recibirse, y esa recepción crea un único movimiento inmutable vinculado por `movement_id`.
+
+---
 
 ## Fase 9: Pulido y Preocupaciones Transversales
 
@@ -204,7 +232,7 @@
 - [ ] T064 [P] Añadir refinamientos de accesibilidad (etiquetas, orden de foco, `aria-current` y semántica de tablas) en `src/styles.css` y los componentes de `src/components/`
 - [ ] T065 [P] Verificar el rendimiento de listados y búsquedas con 500 registros en `src/domain/products.js`, `src/domain/warehouses.js`, `src/domain/movements.js`, `src/domain/transfers.js`, `src/domain/stock.js` y `src/domain/alerts.js`
 - [ ] T066 Ejecutar `npx vitest run` y `npm run build` en la raíz del repositorio para verificar que no hay regresiones
-- [ ] T067 Validar manualmente los escenarios de aceptación de US1–US6 usando `specs/002-logistica-inventario/spec.md` y registrar los resultados en `specs/002-logistica-inventario/tasks.md`
+- [ ] T067 Validar manualmente los escenarios de aceptación de US1–US7 usando `specs/002-logistica-inventario/spec.md` y registrar los resultados en `specs/002-logistica-inventario/tasks.md`
 - [ ] T068 [P] Reconciliar `specs/002-logistica-inventario/plan.md` y `specs/002-logistica-inventario/tasks.md` con la estructura final implementada
 
 ---

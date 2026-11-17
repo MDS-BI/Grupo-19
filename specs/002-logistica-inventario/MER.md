@@ -3,7 +3,7 @@
 
 ## Módulo de Logística e Inventario
 
-El siguiente diagrama representa las siete entidades del módulo, sus atributos y las relaciones entre ellas.
+El siguiente diagrama representa las ocho entidades del módulo, sus atributos y las relaciones entre ellas.
 
 ```mermaid
 erDiagram
@@ -84,6 +84,25 @@ erDiagram
         int confirmed_by FK
     }
 
+    REPLENISHMENT_REQUESTS {
+        int request_id PK
+        int product_id FK
+        int warehouse_id FK
+        int quantity
+        string observation
+        string status
+        date request_date
+        int created_by FK
+        int approved_by FK
+        date approved_at
+        int received_by FK
+        date received_at
+        int cancelled_by FK
+        date cancelled_at
+        int movement_id FK
+        string source
+    }
+
     PRODUCT_CATEGORIES ||--o{ PRODUCTS : clasifica
     PRODUCTS ||--o{ STOCK : tiene
     WAREHOUSES ||--o{ STOCK : almacena
@@ -97,6 +116,13 @@ erDiagram
     WAREHOUSES |o--o{ USERS : asignados
     USERS ||--o{ STOCK_TRANSFERS : crea
     USERS |o--o{ STOCK_TRANSFERS : confirma
+    PRODUCTS ||--o{ REPLENISHMENT_REQUESTS : repone
+    WAREHOUSES ||--o{ REPLENISHMENT_REQUESTS : recibe
+    USERS ||--o{ REPLENISHMENT_REQUESTS : crea
+    USERS |o--o{ REPLENISHMENT_REQUESTS : aprueba
+    USERS |o--o{ REPLENISHMENT_REQUESTS : recibe
+    USERS |o--o{ REPLENISHMENT_REQUESTS : cancela
+    INVENTORY_TRANSACTIONS ||--o| REPLENISHMENT_REQUESTS : genera
 ```
 
 ## Restricciones adicionales
@@ -113,6 +139,11 @@ erDiagram
 - `PRODUCTS.unit_price` se conserva solo por compatibilidad con la plantilla base; las reglas de negocio usan `sale_price` y `cost_price`.
 - `STOCK.min_stock_level` se configura por producto y bodega y genera alertas cuando `quantity_available` es menor o igual al mínimo (con mínimo mayor que cero); `STOCK.expiration_date` queda reservado para una iteración futura de vencimientos.
 - `WAREHOUSES.responsable_id` identifica al responsable principal de la bodega; `USERS.assigned_warehouse_id` identifica la bodega operativa asignada al usuario.
+- `REPLENISHMENT_REQUESTS.status` solo admite los valores "pendiente", "aprobada", "recibida" o "cancelada".
+- `REPLENISHMENT_REQUESTS.quantity` debe ser un entero mayor que cero y la bodega debe estar activa al crear la solicitud.
+- `REPLENISHMENT_REQUESTS.movement_id` se asigna solo al recibir; apunta a un movimiento de entrada inmutable de `INVENTORY_TRANSACTIONS`.
+- Solo se aprueban solicitudes pendientes; solo se cancelan solicitudes pendientes o aprobadas; solo se reciben solicitudes aprobadas.
+- `recibida` y `cancelada` son estados terminales: no se aprueban, cancelan ni reciben nuevamente.
 
 ## Referencia visual
 

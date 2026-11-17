@@ -1,10 +1,10 @@
 export const ACTIVE_USER_KEY = 'logistics:active_user_id';
 
-export const MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'entities', 'documents', 'search'];
+export const MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments', 'entities', 'documents', 'search'];
 
 const ROLE_PERMISSIONS = {
   administrador: {
-    modules: ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'entities', 'documents', 'search'],
+    modules: ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments', 'entities', 'documents', 'search'],
     actions: {
       'products.manage': true,
       'warehouses.manage': true,
@@ -14,11 +14,15 @@ const ROLE_PERMISSIONS = {
       'transfers.create': true,
       'transfers.confirm': true,
       'transfers.cancel': true,
+      'replenishments.create': true,
+      'replenishments.approve': true,
+      'replenishments.cancel': true,
+      'replenishments.receive': false,
       'base.manage': true
     }
   },
   supervisor_inventario: {
-    modules: ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts'],
+    modules: ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments'],
     actions: {
       'products.manage': false,
       'warehouses.manage': false,
@@ -28,11 +32,15 @@ const ROLE_PERMISSIONS = {
       'transfers.create': false,
       'transfers.confirm': false,
       'transfers.cancel': false,
+      'replenishments.create': true,
+      'replenishments.approve': false,
+      'replenishments.cancel': false,
+      'replenishments.receive': false,
       'base.manage': false
     }
   },
   encargado_bodega: {
-    modules: ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts'],
+    modules: ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments'],
     actions: {
       'products.manage': false,
       'warehouses.manage': false,
@@ -42,6 +50,10 @@ const ROLE_PERMISSIONS = {
       'transfers.create': true,
       'transfers.confirm': true,
       'transfers.cancel': true,
+      'replenishments.create': false,
+      'replenishments.approve': false,
+      'replenishments.cancel': false,
+      'replenishments.receive': true,
       'base.manage': false
     }
   }

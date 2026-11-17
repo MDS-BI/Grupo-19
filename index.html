@@ -14,7 +14,7 @@
           <span id="logo-mark" class="logo-mark" aria-hidden="true"></span>
           <span class="brand-copy">
             <span id="brand-name" class="brand-name">Logística e Inventario</span>
-            <span class="brand-tagline">ERP · Control de inventario y bodegas</span>
+            <span class="brand-tagline">ERP · Inventario, bodegas y reposiciones</span>
           </span>
         </div>
         <div class="active-user-panel" aria-label="Usuario activo simulado">
@@ -74,6 +74,10 @@
           <button type="button" class="nav-module" data-module="alerts" id="nav-alerts">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 2.5 16h15z"></path><path d="M10 8v4"></path><circle cx="10" cy="13.5" r="0.75" fill="currentColor" stroke="none"></circle></svg>
             <span class="nav-label">Alertas</span>
+          </button>
+          <button type="button" class="nav-module" data-module="replenishments" id="nav-replenishments">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5h11"></path><path d="m11 4 3 2.5-3 2.5"></path><path d="M17 13.5H6"></path><path d="m9 11-3 2.5L9 16"></path></svg>
+            <span class="nav-label">Reposiciones</span>
           </button>
         </nav>
         <div class="sidebar-foot">
@@ -147,6 +151,14 @@
               <span class="stat-value" id="stat-alerts">0</span>
               <span class="stat-foot">Requieren reposición</span>
             </article>
+            <article class="stat-card stat-card--violet">
+              <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h11"></path><path d="m11 4 3 2.5-3 2.5"></path><path d="M17 13.5H6"></path><path d="m9 11-3 2.5L9 16"></path></svg></span>
+                <span class="stat-label">Reposiciones pendientes</span>
+              </div>
+              <span class="stat-value" id="stat-replenishment-pending">0</span>
+              <span class="stat-foot">Solicitudes por aprobar</span>
+            </article>
           </div>
 
           <div class="dashboard-layout">
@@ -195,6 +207,17 @@
                   <span class="count-badge" id="dashboard-pending-count">0</span>
                 </div>
                 <div id="dashboard-transfers" class="mini-list"></div>
+              </section>
+
+              <section class="card" aria-labelledby="dashboard-replenishments-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="dashboard-replenishments-heading">Reposiciones pendientes</h2>
+                    <p class="card-subtitle">Solicitudes creadas que esperan autorización.</p>
+                  </div>
+                  <button type="button" class="secondary subtle" data-goto="replenishments">Ver todo</button>
+                </div>
+                <div id="dashboard-replenishments" class="mini-list"></div>
               </section>
 
               <section class="card demo-card" id="demo-data-card" aria-labelledby="demo-data-heading">
@@ -853,8 +876,121 @@
             <div id="alert-list-empty" class="empty" hidden aria-live="polite">No se encontraron alertas.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>Producto</th><th>Bodega</th><th>Disponible</th><th>Mínimo</th><th>Déficit</th></tr></thead>
+                <thead><tr><th>Producto</th><th>Bodega</th><th>Disponible</th><th>Mínimo</th><th>Déficit</th><th>Acción</th></tr></thead>
                 <tbody id="alert-list-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="view-replenishments" aria-labelledby="replenishments-view-heading" hidden>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Reposición</p>
+              <h1 id="replenishments-view-heading">Gestión de solicitudes de reposición</h1>
+              <p class="page-subtitle muted">Solicita reposiciones desde una alerta o manualmente, autorízalas y registra su recepción sin duplicar el stock.</p>
+            </div>
+            <span class="status-badge status-active">Datos locales · acceso simulado</span>
+          </div>
+
+          <div class="stat-grid stat-grid--compact">
+            <article class="stat-card stat-card--soft">
+              <span class="stat-value" id="replenishment-count-pending">0</span>
+              <span class="stat-label">Pendientes</span>
+            </article>
+            <article class="stat-card stat-card--soft">
+              <span class="stat-value" id="replenishment-count-approved">0</span>
+              <span class="stat-label">Aprobadas</span>
+            </article>
+            <article class="stat-card stat-card--soft">
+              <span class="stat-value" id="replenishment-count-received">0</span>
+              <span class="stat-label">Recibidas</span>
+            </article>
+          </div>
+
+          <section class="card" aria-labelledby="replenishment-filters-heading">
+            <div class="card-head">
+              <div>
+                <h2 id="replenishment-filters-heading">Filtrar solicitudes</h2>
+                <p class="card-subtitle">Los indicadores superiores se calculan sobre todas las solicitudes almacenadas.</p>
+              </div>
+              <span class="pill">Solo lectura</span>
+            </div>
+            <div class="filter-grid">
+              <div>
+                <label for="replenishment-filter-status">Estado</label>
+                <select id="replenishment-filter-status">
+                  <option value="">Todos los estados</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="recibida">Recibida</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
+              <div>
+                <label for="replenishment-filter-warehouse">Bodega</label>
+                <select id="replenishment-filter-warehouse"></select>
+              </div>
+              <div>
+                <label for="replenishment-filter-product">Producto</label>
+                <select id="replenishment-filter-product"></select>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="replenishment-form-heading">
+            <div class="card-head">
+              <div>
+                <h2 id="replenishment-form-heading">Solicitar reposición</h2>
+                <p class="card-subtitle">El usuario y la fecha se registran automáticamente desde el perfil activo.</p>
+              </div>
+              <span class="pill" id="replenishment-form-origin">Origen: manual</span>
+            </div>
+            <form id="replenishment-form">
+              <div>
+                <label for="replenishment-product">Producto *</label>
+                <select id="replenishment-product"></select>
+                <div class="error" id="error-replenishment-product" aria-live="polite"></div>
+              </div>
+              <div>
+                <label for="replenishment-warehouse">Bodega *</label>
+                <select id="replenishment-warehouse"></select>
+                <div class="error" id="error-replenishment-warehouse" aria-live="polite"></div>
+              </div>
+              <div>
+                <label for="replenishment-quantity">Cantidad solicitada *</label>
+                <input type="number" id="replenishment-quantity" min="1" step="1" placeholder="Ej. 10" />
+                <div class="error" id="error-replenishment-quantity" aria-live="polite"></div>
+              </div>
+              <div>
+                <label for="replenishment-observation">Observación (opcional)</label>
+                <textarea id="replenishment-observation" rows="2" placeholder="Motivo o nota para la bodega"></textarea>
+                <div class="error" id="error-replenishment-observation" aria-live="polite"></div>
+              </div>
+              <div class="field-full">
+                <p class="auto-hint">Acceso simulado: se guarda el usuario activo seleccionado en la barra superior. La solicitud no modifica el stock hasta su recepción.</p>
+                <div class="error" id="error-replenishment-createdBy" aria-live="polite"></div>
+              </div>
+              <input type="hidden" id="replenishment-source" value="manual" />
+              <div class="form-actions">
+                <button type="submit" id="replenishment-submit-button" class="primary">Crear solicitud</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="card" aria-labelledby="replenishment-list-heading">
+            <div class="card-head">
+              <div>
+                <h2 id="replenishment-list-heading">Solicitudes registradas</h2>
+                <p class="card-subtitle">Pendientes, aprobadas, recibidas y canceladas con trazabilidad de usuarios y movimientos.</p>
+              </div>
+              <span class="count-badge" id="replenishment-row-count">0</span>
+            </div>
+            <div id="replenishment-list-empty" class="empty" hidden aria-live="polite">No se encontraron solicitudes.</div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Producto</th><th>Bodega</th><th>Cantidad</th><th>Estado</th><th>Observación</th><th>Trazabilidad</th><th>Movimiento</th><th>Acciones</th></tr></thead>
+                <tbody id="replenishment-list-body"></tbody>
               </table>
             </div>
           </section>

@@ -123,6 +123,29 @@ Registra los traslados de productos desde una bodega de origen hacia una bodega 
 | confirmed_by | int | Usuario que confirma la recepción en la bodega de destino | FK a USERS, obligatorio cuando status = "confirmada" |
 | cancelled_by | int | Usuario que cancela la transferencia | FK a USERS, obligatorio cuando status = "cancelada" |
 
+## Entidad: REPLENISHMENT_REQUESTS (Solicitudes de reposición)
+
+Registra solicitudes de reposición con trazabilidad de creación, autorización, recepción o cancelación.
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| request_id | int | Identificador de la solicitud | PK, obligatorio y único |
+| product_id | int | Producto a reponer | FK a PRODUCTS, obligatorio |
+| warehouse_id | int | Bodega activa donde se repondrá | FK a WAREHOUSES, obligatorio; solo bodegas activas |
+| quantity | int | Cantidad solicitada | Entera, mayor que cero |
+| observation | string | Nota opcional para la bodega | Opcional, texto escapado antes de mostrarse |
+| status | string | Estado de la solicitud | Obligatorio; valores permitidos: "pendiente", "aprobada", "recibida" o "cancelada" |
+| request_date | date | Fecha de creación | Obligatoria, automática |
+| created_by | int | Usuario que crea la solicitud | FK a USERS, obligatorio |
+| approved_by | int | Usuario que aprueba | FK a USERS, obligatorio cuando status = "aprobada", "recibida" o "cancelada" desde aprobada |
+| approved_at | date | Fecha de aprobación | Automática al aprobar |
+| received_by | int | Usuario que recibe | FK a USERS, obligatorio cuando status = "recibida" |
+| received_at | date | Fecha de recepción | Automática al recibir |
+| cancelled_by | int | Usuario que cancela | FK a USERS, obligatorio cuando status = "cancelada" |
+| cancelled_at | date | Fecha de cancelación | Automática al cancelar |
+| movement_id | int | Movimiento de entrada generado al recibir | FK a INVENTORY_TRANSACTIONS; obligatorio cuando status = "recibida" |
+| source | string | Origen de la solicitud | "manual" o "alert" |
+
 ## Relaciones entre entidades
 
 Las entidades del módulo de Logística e Inventario se relacionan mediante claves primarias (PK) y foráneas (FK), permitiendo conectar la información de los productos, bodegas, usuarios y movimientos.
@@ -196,6 +219,33 @@ Un usuario puede crear, confirmar y cancelar varias transferencias. Cada transfe
 - FK: STOCK_TRANSFERS.confirmed_by
 - FK: STOCK_TRANSFERS.cancelled_by
 
+### 12. PRODUCTS - REPLENISHMENT_REQUESTS
+Un producto puede tener varias solicitudes de reposición. Cada solicitud referencia un producto existente.
+
+- Cardinalidad: 1:N
+- FK: REPLENISHMENT_REQUESTS.product_id
+
+### 13. WAREHOUSES - REPLENISHMENT_REQUESTS
+Una bodega puede recibir varias reposiciones. Solo se permiten bodegas activas al crear la solicitud.
+
+- Cardinalidad: 1:N
+- FK: REPLENISHMENT_REQUESTS.warehouse_id
+
+### 14. USERS - REPLENISHMENT_REQUESTS
+Un usuario puede crear, aprobar, recibir y cancelar varias solicitudes según su rol.
+
+- Cardinalidad: 1:N
+- FK: REPLENISHMENT_REQUESTS.created_by
+- FK: REPLENISHMENT_REQUESTS.approved_by
+- FK: REPLENISHMENT_REQUESTS.received_by
+- FK: REPLENISHMENT_REQUESTS.cancelled_by
+
+### 15. INVENTORY_TRANSACTIONS - REPLENISHMENT_REQUESTS
+Cada solicitud recibida genera exactamente un movimiento de entrada; el movimiento conserva su propio historial inmutable.
+
+- Cardinalidad: 1:1
+- FK: REPLENISHMENT_REQUESTS.movement_id
+
 
 ## Reglas de validación
 
@@ -249,9 +299,19 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 - Solo las transferencias pendientes pueden cancelarse; al cancelarse se registra `cancelled_by` y no se modifica `STOCK`.
 - La confirmación de una transferencia pendiente se rechaza si la bodega de origen o la de destino está inactiva en ese momento.
 
+### Reposiciones entre bodegas
+- Cada solicitud debe indicar producto existente, bodega activa y cantidad entera mayor que cero.
+- El estado solo puede ser "pendiente", "aprobada", "recibida" o "cancelada".
+- La creación registra `created_by`, `request_date` y `source` automáticamente; no modifica `STOCK`.
+- Solo las solicitudes pendientes pueden aprobarse, registrando `approved_by` y `approved_at`.
+- Solo el administrador puede cancelar; pueden cancelarse solicitudes pendientes o aprobadas, registrando `cancelled_by` y `cancelled_at`.
+- Solo el encargado de bodega puede recibir, y únicamente solicitudes aprobadas.
+- La recepción crea un movimiento de entrada inmutable, vincula `movement_id`, marca la solicitud como "recibida" y aumenta `STOCK` una sola vez.
+- No se permite aprobar, cancelar ni recibir dos veces una solicitud en estado terminal; `recibida` y `cancelada` son inmutables.
+
 ## Catálogos semilla y alcance de la iteración
 
-- `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES`, `INVENTORY_TRANSACTIONS` y `STOCK_TRANSFERS` puedan referenciarlos; no se incluyen pantallas de administración de categorías ni de usuarios en esta iteración.
+- `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS` y `REPLENISHMENT_REQUESTS` puedan referenciarlos; no se incluyen pantallas de administración de categorías ni de usuarios en esta iteración.
 - El módulo no requiere autenticación en esta iteración. El campo `USERS.role` es informativo y los usuarios que registran movimientos y transferencias se seleccionan del catálogo.
 - Las alertas de stock mínimo (`STOCK.min_stock_level`) forman parte de la HU-06 y se derivan al consultar `STOCK`; el control de vencimientos (`STOCK.expiration_date`) queda fuera del alcance de esta iteración.
 
@@ -271,7 +331,7 @@ El archivo module-config.js permite personalizar el nombre del módulo, las etiq
 Lo utilizaremos para adaptar las opciones disponibles a Logística e Inventario.
 
 ### Extensiones necesarias
-El control de stock por bodega, la administración de usuarios y las transferencias requieren estructuras y funciones adicionales a las que ofrece la plantilla base.
+El control de stock por bodega, la administración de usuarios, las transferencias y las solicitudes de reposición requieren estructuras y funciones adicionales a las que ofrece la plantilla base.
 
 El modelo ERP de referencia utiliza identificadores enteros, mientras que la plantilla trabaja con identificadores de texto. Durante la implementación se deberá mantener un tipo consistente para cada identificador y sus relaciones.
 

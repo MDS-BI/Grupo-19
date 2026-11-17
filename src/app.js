@@ -16,6 +16,10 @@ import { listStock, getProductTotal, setMinStockLevel } from './domain/stock.js'
 import { registerMovement, listMovements } from './domain/movements.js';
 import { requestTransfer, confirmTransfer, cancelTransfer, listTransfers } from './domain/transfers.js';
 import { listAlerts } from './domain/alerts.js';
+import {
+  requestReplenishment, approveRequest, cancelRequest, receiveRequest,
+  listReplenishments, replenishmentCounts
+} from './domain/replenishments.js';
 
 import { populateProductCategorySelect, populateProductUserSelect, clearProductForm, startProductEdit, collectProductPayload, showProductErrors } from './components/product-form.js';
 import { renderProductList } from './components/product-list.js';
@@ -27,6 +31,8 @@ import { renderMovementList } from './components/movement-list.js';
 import { populateTransferProductSelect, populateTransferWarehouseSelects, clearTransferForm, collectTransferPayload, showTransferErrors } from './components/transfer-form.js';
 import { renderTransferList } from './components/transfer-list.js';
 import { renderAlertList } from './components/alert-list.js';
+import { populateReplenishmentProductSelect, populateReplenishmentWarehouseSelect, clearReplenishmentForm, collectReplenishmentPayload, showReplenishmentErrors, prefillReplenishmentFromAlert } from './components/replenishment-form.js';
+import { renderReplenishmentList, renderReplenishmentCounts } from './components/replenishment-list.js';
 
 function qs(id){ return document.getElementById(id); }
 
@@ -37,7 +43,7 @@ const articulo = (word) => esFemenina(word) ? 'la' : 'el';
 const demostrativo = (word) => esFemenina(word) ? 'esta' : 'este';
 const seleccionada = (word) => esFemenina(word) ? 'seleccionada' : 'seleccionado';
 
-const MODULES = ['dashboard', 'entities', 'documents', 'search', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts'];
+const MODULES = ['dashboard', 'entities', 'documents', 'search', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments'];
 const VIEWS = {
   dashboard: 'view-dashboard',
   entities: 'view-entities',
@@ -48,7 +54,8 @@ const VIEWS = {
   stock: 'view-stock',
   movements: 'view-movements',
   transfers: 'view-transfers',
-  alerts: 'view-alerts'
+  alerts: 'view-alerts',
+  replenishments: 'view-replenishments'
 };
 
 let wired = false;
@@ -144,6 +151,17 @@ function showModule(name, opts = {}){
     populateAlertFilterSelects();
     refreshAlerts();
   }
+  if(name === 'replenishments'){
+    populateReplenishmentProductSelect();
+    populateReplenishmentWarehouseSelect();
+    populateReplenishmentFilterSelects();
+    if(opts.newRecord) clearReplenishmentForm();
+    if(opts.newRecord || opts.focusForm){
+      const quantity = qs('replenishment-quantity');
+      if(quantity) quantity.focus();
+    }
+    refreshReplenishments();
+  }
   applyPermissionUiState();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -237,6 +255,10 @@ function populateMovementFilterSelects(){
 function populateAlertFilterSelects(){
   populateFilterSelect(qs('alert-filter-product'), productOptions(), 'Todos los productos');
   populateFilterSelect(qs('alert-filter-warehouse'), warehouseOptions(), 'Todas las bodegas');
+}
+function populateReplenishmentFilterSelects(){
+  populateFilterSelect(qs('replenishment-filter-product'), productOptions(), 'Todos los productos');
+  populateFilterSelect(qs('replenishment-filter-warehouse'), warehouseOptions(), 'Todas las bodegas');
 }
 
 function refreshProducts(){
@@ -403,7 +425,92 @@ function refreshAlerts(){
   if(!guardModuleAccess('alerts', { silent: true })) return;
   const productId = qs('alert-filter-product').value;
   const warehouseId = qs('alert-filter-warehouse').value;
-  renderAlertList(qs('alert-list-body'), qs('alert-list-empty'), listAlerts({ productId, warehouseId }));
+  const canCreateRequest = canPerform(getActiveRole(), 'replenishments.create');
+  renderAlertList(qs('alert-list-body'), qs('alert-list-empty'), listAlerts({ productId, warehouseId }), {
+    canCreate: canCreateRequest,
+    onCreateRequest: (alert) => {
+      if(!guardAction('replenishments.create', 'No tienes permisos para crear solicitudes de reposición con el perfil activo.')) return;
+      populateReplenishmentProductSelect();
+      populateReplenishmentWarehouseSelect();
+      prefillReplenishmentFromAlert({ productId: alert.product_id, warehouseId: alert.warehouse_id, quantity: alert.deficit });
+      const origin = qs('replenishment-form-origin');
+      if(origin) origin.textContent = 'Origen: alerta HU-06';
+      showModule('replenishments', { focusForm: true });
+    }
+  });
+}
+
+function isWarehouseManagerOnly(){
+  const role = getActiveRole();
+  return canPerform(role, 'replenishments.receive')
+    && !canPerform(role, 'replenishments.create')
+    && !canPerform(role, 'replenishments.approve');
+}
+
+function refreshReplenishments(){
+  if(!guardModuleAccess('replenishments', { silent: true })) return;
+  const role = getActiveRole();
+  const managerOnly = isWarehouseManagerOnly();
+  const statusSelect = qs('replenishment-filter-status');
+  if(statusSelect){
+    statusSelect.disabled = managerOnly;
+    if(managerOnly) statusSelect.value = 'aprobada';
+  }
+  const status = managerOnly ? 'aprobada' : statusSelect?.value;
+  const productId = qs('replenishment-filter-product').value;
+  const warehouseId = qs('replenishment-filter-warehouse').value;
+  renderReplenishmentCounts(replenishmentCounts());
+  renderReplenishmentList(qs('replenishment-list-body'), qs('replenishment-list-empty'), listReplenishments({ status, productId, warehouseId }), {
+    canApprove: canPerform(role, 'replenishments.approve'),
+    canCancel: canPerform(role, 'replenishments.cancel'),
+    canReceive: canPerform(role, 'replenishments.receive'),
+    onApprove: (request) => {
+      if(!guardAction('replenishments.approve', 'No tienes permisos para aprobar reposiciones con el perfil activo.')) return;
+      if(!isValidActiveUser()){ alert('No existe un usuario activo válido para aprobar la reposición.'); return; }
+      const result = approveRequest(request.request_id, activeUser.user_id);
+      if(!result.success) alert(result.error);
+      refreshReplenishments();
+      renderDashboard(role);
+    },
+    onCancel: (request) => {
+      if(!guardAction('replenishments.cancel', 'No tienes permisos para cancelar reposiciones con el perfil activo.')) return;
+      if(!isValidActiveUser()){ alert('No existe un usuario activo válido para cancelar la reposición.'); return; }
+      const result = cancelRequest(request.request_id, activeUser.user_id);
+      if(!result.success) alert(result.error);
+      refreshReplenishments();
+      renderDashboard(role);
+    },
+    onReceive: (request) => {
+      if(!guardAction('replenishments.receive', 'Solo el encargado de bodega puede registrar la recepción con el perfil activo.')) return;
+      if(!isValidActiveUser()){ alert('No existe un usuario activo válido para recibir la reposición.'); return; }
+      const result = receiveRequest(request.request_id, activeUser.user_id);
+      if(!result.success) alert(result.error);
+      refreshReplenishments();
+      refreshStock();
+      refreshMovements();
+      refreshAlerts();
+      renderDashboard(role);
+    }
+  });
+}
+
+function handleReplenishmentSubmit(ev){
+  ev.preventDefault();
+  if(!guardAction('replenishments.create', 'No tienes permisos para crear solicitudes de reposición con el perfil activo.')) return;
+  if(!guardModuleAccess('replenishments', { silent: true })) return;
+  if(!isValidActiveUser()){
+    showReplenishmentErrors({ createdBy: 'No existe un usuario activo válido para registrar la solicitud' });
+    return;
+  }
+  const payload = collectReplenishmentPayload();
+  const result = requestReplenishment({ ...payload, createdBy: activeUser.user_id });
+  showReplenishmentErrors(result.errors || {});
+  if(!result.success) return;
+  clearReplenishmentForm();
+  const origin = qs('replenishment-form-origin');
+  if(origin) origin.textContent = 'Origen: manual';
+  refreshReplenishments();
+  renderDashboard(getActiveRole());
 }
 
 function onEditEntityChange(){
@@ -559,6 +666,7 @@ function applyPermissionUiState(){
   const canMove = canPerform(role, 'movements.register');
   const canAdjust = canPerform(role, 'movements.adjust');
   const canTransferCreate = canPerform(role, 'transfers.create');
+  const canReplenishmentCreate = canPerform(role, 'replenishments.create');
 
   // Dashboard quick actions: base advanced only for admin
   [['action-new-entity', 'entities', 'base.manage'], ['action-new-document', 'documents', 'base.manage'], ['action-open-entities', 'entities', 'base.manage'], ['action-find', 'search', 'base.manage']]
@@ -586,6 +694,7 @@ function applyPermissionUiState(){
   setSectionDisabled('#view-warehouses .card[aria-labelledby="warehouse-form-heading"]', !canWarehouses);
   setSectionDisabled('#view-movements .card[aria-labelledby="movement-form-heading"]', !(canMove || canAdjust));
   setSectionDisabled('#view-transfers .card[aria-labelledby="transfer-form-heading"]', !canTransferCreate);
+  setSectionDisabled('#view-replenishments .card[aria-labelledby="replenishment-form-heading"]', !canReplenishmentCreate);
 
   // Active user selector always available in topbar
   applyNavigationPermissions(role);
@@ -714,6 +823,11 @@ function wireEvents(){
   qs('alert-filter-product').addEventListener('change', refreshAlerts);
   qs('alert-filter-warehouse').addEventListener('change', refreshAlerts);
 
+  qs('replenishment-form').addEventListener('submit', handleReplenishmentSubmit);
+  qs('replenishment-filter-status').addEventListener('change', refreshReplenishments);
+  qs('replenishment-filter-product').addEventListener('change', refreshReplenishments);
+  qs('replenishment-filter-warehouse').addEventListener('change', refreshReplenishments);
+
   const activeUserSelect = qs('active-user-select');
   if(activeUserSelect) activeUserSelect.addEventListener('change', onActiveUserChange);
 }
@@ -733,6 +847,7 @@ export function initApp(resolved){
   clearWarehouseForm();
   clearMovementForm();
   clearTransferForm();
+  clearReplenishmentForm();
   showModule('dashboard');
   if(activeUser){
     setAccessNotice(`Perfil activo (simulación): ${activeUser.user_name} — ${roleLabel(activeUser.role)}. Sin autenticación real ni seguridad.`);

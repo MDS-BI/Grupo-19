@@ -19,7 +19,7 @@
 //   theme: { accentColor: '#0f62fe' }
 // }
 export const userConfig = {
-  moduleName: 'Logística e Inventario',
+  moduleName: 'Logística e Inventario | Grupo 19',
   theme: { accentColor: '#0f766e' }
 };
 
