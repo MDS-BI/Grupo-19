@@ -31,6 +31,15 @@ function formatDateTime(iso){
   return date.toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+function renderCurrentDate(){
+  const el = document.getElementById('dashboard-date');
+  if(!el) return;
+  const now = new Date();
+  const weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  el.textContent = `${weekdays[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
+}
+
 function movementTypeInfo(type){
   if(type === 'salida') return { label: 'Salida', className: 'type-out', dot: 'dot-exit', sign: '−' };
   if(type === 'ajuste_entrada') return { label: 'Ajuste +', className: 'type-adjust', dot: 'dot-adjust', sign: '+' };
@@ -94,22 +103,35 @@ function renderActivity(movements){
     container.innerHTML = '<div class="mini-empty">Aún no hay movimientos registrados. Registra una entrada o utiliza los datos de demostración.</div>';
     return;
   }
-  container.innerHTML = movements.slice(0, 6).map(m => {
+  const rows = movements.slice(0, 6).map(m => {
     const info = movementTypeInfo(m.transaction_type);
     const signedQuantity = `${info.sign}${formatNumber(m.quantity)}`;
+    const qtyClass = info.className === 'type-out' ? 'qty-out' : info.className === 'type-adjust' ? 'qty-adjust' : '';
     return `
-      <div class="activity-item">
-        <span class="activity-dot ${info.dot}" aria-hidden="true"></span>
-        <div class="activity-main">
-          <div class="activity-title">${escapeHtml(m.product_name)}</div>
-          <div class="activity-meta">${escapeHtml(m.warehouse_name)} · ${escapeHtml(formatDateTime(m.transaction_date))} · ${escapeHtml(m.user_name)}</div>
-        </div>
-        <div class="activity-side">
-          <span class="type-badge ${info.className}">${escapeHtml(info.label)}</span>
-          <div class="qty-pill ${info.className === 'type-out' ? 'qty-out' : info.className === 'type-adjust' ? 'qty-adjust' : ''}">${escapeHtml(signedQuantity)}</div>
-        </div>
-      </div>`;
+        <tr>
+          <td class="activity-time">${escapeHtml(formatDateTime(m.transaction_date))}</td>
+          <td class="cell-strong">${escapeHtml(m.product_name)}</td>
+          <td class="cell-muted">${escapeHtml(m.warehouse_name)}</td>
+          <td><span class="type-badge ${info.className}">${escapeHtml(info.label)}</span></td>
+          <td class="num"><span class="qty-pill ${qtyClass}">${escapeHtml(signedQuantity)}</span></td>
+          <td class="cell-muted activity-user">${escapeHtml(m.user_name)}</td>
+        </tr>`;
   }).join('');
+  container.innerHTML = `
+      <table class="data-table activity-table">
+        <thead>
+          <tr>
+            <th scope="col">Fecha</th>
+            <th scope="col">Producto</th>
+            <th scope="col">Bodega</th>
+            <th scope="col">Tipo</th>
+            <th scope="col" class="num">Cantidad</th>
+            <th scope="col">Usuario</th>
+          </tr>
+        </thead>
+        <tbody>${rows}
+        </tbody>
+      </table>`;
 }
 
 function renderLowStock(alerts){
@@ -224,6 +246,7 @@ export function renderDashboard(role = ''){
     lastUpdate.textContent = `Actualizado ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
   }
 
+  renderCurrentDate();
   renderQuickActions(role);
   renderActivity(movementRows);
   renderLowStock(alerts);

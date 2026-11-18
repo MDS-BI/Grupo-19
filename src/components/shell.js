@@ -12,7 +12,7 @@ export function monogramFor(name){
 export function renderLogo(container){
   if(!container) return;
   const letters = monogramFor(getConfig().moduleName);
-  container.innerHTML = `<svg width="34" height="34" viewBox="0 0 34 34" focusable="false" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="8" fill="var(--accent, #2563eb)"></rect><text x="17" y="22.5" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#ffffff">${escapeHtml(letters)}</text></svg>`;
+  container.innerHTML = `<svg width="38" height="38" viewBox="0 0 40 40" focusable="false" aria-hidden="true"><rect x="0.5" y="0.5" width="39" height="39" rx="11" fill="rgba(24,182,168,0.12)" stroke="rgba(24,182,168,0.38)"></rect><path d="M20 6.5 32 12.5 20 18.5 8 12.5 20 6.5Z" fill="#18b6a8"></path><path d="M8 12.5 20 18.5v13L8 25.5v-13Z" fill="#0e8f85"></path><path d="M32 12.5 20 18.5v13l12-6v-13Z" fill="#8371d9"></path><rect x="12" y="19.5" width="16" height="9" rx="4.5" fill="#081526" opacity="0.85"></rect><text x="20" y="26" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',sans-serif" font-size="7" font-weight="800" fill="#ffffff">${escapeHtml(letters)}</text></svg>`;
 }
 
 export function applyShellLabels(){

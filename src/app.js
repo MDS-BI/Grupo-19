@@ -605,7 +605,9 @@ function applyLabels(config){
   const femDocument = esFemenina(document_);
 
   document.title = config.moduleName;
-  qs('brand-name').textContent = config.moduleName;
+  const brandParts = config.moduleName.split('|');
+  qs('brand-name').textContent = brandParts[0].trim();
+  qs('brand-tagline').textContent = brandParts.length > 1 ? brandParts.slice(1).join('|').trim() : 'Grupo 19';
   applyShellLabels();
 
   qs('dashboard-heading').textContent = config.moduleName;
@@ -704,8 +706,19 @@ function applyPermissionUiState(){
 function refreshActiveUserBadge(){
   const badge = qs('active-user-role');
   if(!badge) return;
-  if(!activeUser){ badge.textContent = 'Sin usuario'; return; }
+  const avatar = qs('active-user-avatar');
+  if(!activeUser){
+    badge.textContent = 'Sin usuario';
+    if(avatar) avatar.textContent = '--';
+    return;
+  }
   badge.textContent = `${activeUser.user_name} — ${roleLabel(activeUser.role)}`;
+  if(avatar){
+    const initials = String(activeUser.user_name || '')
+      .trim().split(/\s+/).filter(Boolean).slice(0, 2)
+      .map(part => part[0].toUpperCase()).join('');
+    avatar.textContent = initials || '--';
+  }
 }
 
 function populateActiveUserSelect(){
