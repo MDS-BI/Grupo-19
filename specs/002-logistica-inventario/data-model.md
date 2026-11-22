@@ -4,7 +4,7 @@
 
 El módulo permitirá organizar la información de productos, bodegas, usuarios y movimientos de inventario de una empresa.
 
-Para ello, utilizaremos las entidades definidas en nuestro Modelo Entidad-Relación (MER).
+Para ello, utilizaremos las entidades definidas en nuestro Modelo Entidad-Relación (MER). La HU-08 añade los catálogos de cargos y permisos que gobiernan la visibilidad de la interfaz sin alterar los datos operativos.
 
 ## Entidad: PRODUCT_CATEGORIES
 
@@ -75,6 +75,40 @@ Contiene la información de los usuarios que utilizan el sistema de inventario.
 - `responsable_id` referencia a `USERS.user_id`.
 - `assigned_warehouse_id` referencia a `WAREHOUSES.warehouse_id`.
 
+
+## Entidad: ROLES (Cargos)
+
+Define los cargos del ERP, su etiqueta visible y la página de inicio configurable por cargo (HU-08).
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| role_key | string | Identificador del cargo | PK, obligatorio y único; la semilla contiene `administrador`, `supervisor_inventario` y `encargado_bodega` |
+| role_label | string | Etiqueta visible del cargo | Obligatoria, no vacía; escapada antes de mostrarse |
+| default_landing_module | string | Vista abierta al cargar la aplicación o cambiar de usuario/cargo | Obligatoria; debe corresponder a un módulo conocido; semilla: `administrador` → `dashboard`, `supervisor_inventario` → `alerts`, `encargado_bodega` → `movements`; fallback `dashboard` |
+| is_admin | boolean | Indica si el cargo conserva siempre el acceso al panel de permisos | Obligatoria; `true` solo para `administrador` en la semilla |
+| description | string | Descripción opcional del cargo | Opcional; escapada antes de mostrarse |
+
+## Entidad: ROLE_PERMISSIONS (Matriz por cargo)
+
+Registra qué módulos, vistas, secciones, acciones y paneles puede ver cada cargo. Es la versión persistida de la matriz que antes vivía solo en `src/domain/permissions.js`.
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| role_key | string | Cargo al que aplica el permiso | PK compuesta, FK a `ROLES.role_key`, obligatoria |
+| scope | string | Tipo de recurso | PK compuesta, obligatoria; valores: `modulo`, `vista`, `seccion`, `accion`, `panel` |
+| resource_key | string | Clave estable del recurso | PK compuesta, obligatoria; formatos `module:<nombre>`, `view:<nombre>`, `section:<id>`, `action:<id>` y `admin:permissions` |
+| allowed | boolean | Permiso configurado para el cargo | Obligatorio; nunca puede otorgar una acción prohibida por FR-124 |
+
+## Entidad: USER_PERMISSION_OVERRIDES (Excepciones individuales)
+
+Permite al administrador conceder o quitar un permiso concreto a un usuario, por encima de lo configurado para su cargo y siempre dentro de las reglas de negocio.
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| user_id | int | Usuario al que aplica la excepción | PK compuesta, FK a `USERS.user_id`, obligatoria |
+| scope | string | Tipo de recurso | PK compuesta, obligatoria; mismo dominio que `ROLE_PERMISSIONS.scope` |
+| resource_key | string | Clave del recurso exceptuado | PK compuesta, obligatoria; mismo dominio que `ROLE_PERMISSIONS.resource_key` |
+| allowed | boolean | Valor individual del permiso | Obligatorio; prevalece sobre el cargo, sin saltarse FR-124 |
 
 ## Entidad: STOCK (Existencias)
 
@@ -247,6 +281,24 @@ Cada solicitud recibida genera exactamente un movimiento de entrada; el movimien
 - FK: REPLENISHMENT_REQUESTS.movement_id
 
 
+### 16. ROLES - USERS
+Cada usuario tiene un cargo que debe existir en `ROLES`; varios usuarios pueden compartir el mismo cargo.
+
+- Cardinalidad: 1:N
+- FK lógica: `USERS.role` → `ROLES.role_key`
+
+### 17. ROLES - ROLE_PERMISSIONS
+Un cargo puede tener muchas entradas de matriz; cada entrada pertenece a un cargo.
+
+- Cardinalidad: 1:N
+- FK: `ROLE_PERMISSIONS.role_key`
+
+### 18. USERS - USER_PERMISSION_OVERRIDES
+Un usuario puede tener varias excepciones individuales; cada excepción pertenece a un usuario.
+
+- Cardinalidad: 1:N
+- FK: `USER_PERMISSION_OVERRIDES.user_id`
+
 ## Reglas de validación
 
 Para mantener la información del inventario correcta, el sistema deberá considerar las siguientes reglas:
@@ -309,10 +361,21 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 - La recepción crea un movimiento de entrada inmutable, vincula `movement_id`, marca la solicitud como "recibida" y aumenta `STOCK` una sola vez.
 - No se permite aprobar, cancelar ni recibir dos veces una solicitud en estado terminal; `recibida` y `cancelada` son inmutables.
 
+### Roles y permisos
+- El cargo de un usuario debe existir en `ROLES`; un cargo no reconocido se rechaza y conserva el valor anterior (FR-105).
+- `ROLES.default_landing_module` debe corresponder a un módulo conocido y permitido; si no, se usa `dashboard` y se muestra un aviso no bloqueante (FR-119).
+- `allowed` es siempre booleano; la combinación (`role_key`, `scope`, `resource_key`) y (`user_id`, `scope`, `resource_key`) es única.
+- Las etiquetas de roles, módulos y secciones se escapan antes de mostrarse (FR-123).
+- El permiso efectivo se calcula como `reglaDeNegocio && (excepciónIndividual ?? permisoDelCargo ?? semillaDelCargo)`. Las reglas de negocio, incluida FR-099, tienen prioridad sobre cualquier configuración (FR-124).
+- El recurso `admin:permissions` siempre está permitido para el cargo con `is_admin = true`; intentar desactivarlo muestra una advertencia sin quitar el acceso (FR-118).
+- Cambiar un cargo o un permiso no modifica productos, bodegas, stock, movimientos, transferencias ni reposiciones, y no cambia el usuario activo (FR-120, FR-121).
+- La configuración persiste entre sesiones del mismo navegador (FR-122).
+
 ## Catálogos semilla y alcance de la iteración
 
-- `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS` y `REPLENISHMENT_REQUESTS` puedan referenciarlos; no se incluyen pantallas de administración de categorías ni de usuarios en esta iteración.
-- El módulo no requiere autenticación en esta iteración. El campo `USERS.role` es informativo y los usuarios que registran movimientos, transferencias y reposiciones se toman del usuario activo del ERP seleccionado en la cabecera, sin selector manual en los formularios.
+- `PRODUCT_CATEGORIES` y `USERS` se precargan como catálogos semilla para que `PRODUCTS`, `WAREHOUSES`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS` y `REPLENISHMENT_REQUESTS` puedan referenciarlos; no se incluye administración general de categorías ni de usuarios. La HU-08 añade únicamente el cambio de cargo y la configuración de permisos.
+- `ROLES` y `ROLE_PERMISSIONS` se precargan con el comportamiento vigente de HU-01–HU-07; `USER_PERMISSION_OVERRIDES` comienza vacío y `ROLES.default_landing_module` usa `dashboard` para administrador, `alerts` para supervisor y `movements` para encargado.
+- El módulo no requiere autenticación en esta iteración. El campo `USERS.role` pasa a ser operativo para el control de visibilidad (HU-08), pero los usuarios que registran movimientos, transferencias y reposiciones siguen tomándose del usuario activo del ERP seleccionado en la cabecera, sin selector manual en los formularios.
 - Las alertas de stock mínimo (`STOCK.min_stock_level`) forman parte de la HU-06 y se derivan al consultar `STOCK`; el control de vencimientos (`STOCK.expiration_date`) queda fuera del alcance de esta iteración.
 
 ## Compatibilidad con la plantilla ERP
@@ -331,7 +394,7 @@ El archivo module-config.js permite personalizar el nombre del módulo, las etiq
 Lo utilizaremos para adaptar las opciones disponibles a Logística e Inventario.
 
 ### Extensiones necesarias
-El control de stock por bodega, la administración de usuarios, las transferencias y las solicitudes de reposición requieren estructuras y funciones adicionales a las que ofrece la plantilla base.
+El control de stock por bodega, el cambio de cargo de usuarios, las transferencias, las solicitudes de reposición y el control de visibilidad por rol requieren estructuras y funciones adicionales a las que ofrece la plantilla base.
 
 El modelo ERP de referencia utiliza identificadores enteros, mientras que la plantilla trabaja con identificadores de texto. Durante la implementación se deberá mantener un tipo consistente para cada identificador y sus relaciones.
 

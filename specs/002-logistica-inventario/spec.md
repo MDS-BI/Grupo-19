@@ -2,8 +2,9 @@
 
 **Rama de la funcionalidad**: 002-logistica-inventario  
 **Creada**: 2026-10-29  
-**Estado**: Implementado — pendiente de validación final
+**Estado**: HU-01 a HU-07 implementadas — pendiente de validación final; HU-08 planeada — pendiente de generación de tareas e implementación
 **Entrada**: Descripción del usuario: "Desarrollar un módulo de Logística e Inventario para gestionar productos, bodegas y existencias, permitiendo registrar entradas y salidas de productos, realizar transferencias entre bodegas y generar alertas de stock mínimo".
+**Ampliación (2026-11-22)**: Descripción del usuario: "Agregar una nueva historia de usuario para la gestión de roles, redirección inicial y control de visibilidad por usuario: asignar y cambiar el cargo de un usuario con una página de inicio por rol; configurar qué módulos, vistas o secciones puede ver cada rol o usuario; mostrar u ocultar menús, rutas y botones según permisos y bloquear el acceso directo por URL a vistas no autorizadas".
 
 ## Propósito
 
@@ -59,6 +60,19 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Desde qué estados se puede cancelar? → A: Desde "pendiente" y "aprobada"; las solicitudes "recibida" y "cancelada" son inmutables.
 - Q: ¿Cómo se usa la paleta visual? → A: Azul marino, verde petróleo, gris oscuro y violeta sutil con acabados Liquid Glass discretos; se evitan neones y animaciones llamativas.
 - Q: ¿Cómo se resuelve la contradicción entre la sesión 2026-10-30 (selector de usuario en el formulario) y la sesión 2026-11-03 (usuario activo del ERP)? → A: Prevalece la sesión 2026-11-03: los formularios de movimientos y transferencias usan el usuario activo seleccionado en la cabecera del ERP y no muestran un selector manual.
+
+### Session 2026-11-22 — Gestión de Roles, Redirección Inicial y Control de Visibilidad
+
+- Q: ¿Qué se entiende por "cargo" de un usuario y quién puede modificarlo? → A: El cargo es el `role` ya presente en el catálogo `USERS` (`administrador`, `supervisor_inventario`, `encargado_bodega`); solo el administrador puede asignarlo o cambiarlo desde el panel de administración y el cambio surte efecto de inmediato.
+- Q: ¿Qué página de inicio debe abrirse para cada rol? → A: Cada rol tiene una landing page configurable: administrador → Panel general, supervisor_inventario → Alertas/Control de Stock, encargado_bodega → Movimientos/Control de Stock; el administrador puede redefinirla en el panel.
+- Q: ¿Cómo se configura qué puede ver cada rol o usuario? → A: Mediante un panel de administración con una matriz de permisos por rol sobre módulos, vistas y secciones, más excepciones individuales por usuario que prevalecen sobre la configuración del rol.
+- Q: ¿El bloqueo de acceso directo por URL constituye seguridad real? → A: No. Se mantiene la decisión de FR-073: no hay autenticación en esta iteración y los roles son simulados; el bloqueo y el ocultamiento son de interfaz dentro del modelo simulado y no sustituyen autenticación ni autorización reales.
+- Q: ¿Qué ocurre cuando cambia el cargo del usuario activo? → A: Se recalculan de inmediato los permisos y la navegación vigentes y se abre la landing page del nuevo rol; si la vista actual sigue autorizada, puede permanecer hasta que el usuario navegue.
+- Q: ¿Cómo se resuelve un conflicto entre un permiso individual y el permiso del rol? → A: Prevalece el permiso individual; si no existe excepción para ese usuario y sección, se aplica lo configurado para su rol.
+- Q: ¿Puede el administrador dejar sin acceso al panel de permisos? → A: No; el sistema conserva siempre para el administrador el acceso al panel de administración de permisos para evitar que la configuración quede irreversible.
+- Q: ¿Los cambios de permisos alteran datos operativos? → A: No; solo afectan la visibilidad y la navegación, sin modificar productos, bodegas, stock, movimientos, transferencias ni reposiciones.
+- Q: ¿Qué evento debe abrir automáticamente la página de inicio según el cargo, dado que en esta iteración no existe una pantalla de inicio de sesión? → A: Al cargar la aplicación con el usuario activo por defecto y también al cambiar de usuario activo en la cabecera del ERP.
+- Q: ¿Qué prevalece cuando la matriz de permisos permite una acción que una regla de negocio existente prohíbe para ese cargo, por ejemplo un encargado de bodega creando o aprobando reposiciones? → A: Las reglas de negocio existentes prevalecen siempre; la matriz solo puede restringir el acceso, nunca otorgarlo.
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
@@ -185,6 +199,30 @@ Como supervisor de inventario, quiero solicitar, autorizar y recibir reposicione
 
 ---
 
+### Historia de Usuario 8 - Gestión de Roles, Redirección Inicial y Control de Visibilidad (Prioridad: P1)
+
+Como administrador del sistema, quiero asignar y cambiar el cargo de los usuarios, definir una página de inicio por rol y decidir qué módulos, vistas y secciones puede ver cada rol o usuario, para que cada persona acceda de entrada a lo que necesita y no pueda ver ni abrir funciones que no le corresponden.
+
+**Por qué es prioridad**: Es una capacidad transversal que gobierna el acceso a todos los módulos construidos en HU-01 a HU-07. Sin ella, cualquier usuario vería la misma navegación y podría abrir directamente vistas de otros roles, lo que invalida la separación de responsabilidades ya descrita para reposiciones (HU-07) y la distinción entre administrador, supervisor y encargado. Además, define la primera pantalla que ve cada usuario, que es la puerta de entrada a todo el sistema.
+
+**Prueba Independiente**: Se puede probar con usuarios de ejemplo de los tres cargos: cambiar el cargo a uno de ellos, verificar que al cargar la aplicación y al cambiar el usuario activo en la cabecera se abre la landing page del cargo correspondiente, comprobar que la barra lateral y los botones muestran solo las secciones permitidas, intentar abrir por URL una vista no autorizada y confirmar que se bloquea con un mensaje claro, y validar que una excepción individual prevalece sobre el permiso del cargo sin alterar ningún dato de inventario.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** el administrador está en el panel de administración de usuarios, **cuando** asigna o cambia el cargo de un usuario a uno de los roles definidos y guarda, **entonces** el sistema persiste el nuevo cargo y lo aplica de inmediato a la sesión de ese usuario.
+2. **Dado que** un usuario tiene asignado un cargo con una landing page configurada, **cuando** se carga la aplicación con ese usuario activo o se le selecciona en la cabecera del ERP, **entonces** el sistema abre automáticamente esa página de inicio sin mostrar primero una pantalla genérica.
+3. **Dado que** el administrador redefinió la landing page de un cargo, **cuando** se carga la aplicación o cambia el usuario activo con ese cargo, **entonces** el sistema abre la nueva página configurada.
+4. **Dado que** el administrador está en la matriz de permisos, **cuando** marca o desmarca el acceso de un rol a un módulo, vista o sección y guarda, **entonces** la configuración queda registrada y se aplica a todos los usuarios con ese rol que no tengan una excepción individual.
+5. **Dado que** un usuario tiene una excepción individual configurada para una sección, **cuando** su rol permite o niega esa misma sección, **entonces** el sistema aplica la excepción individual y la navegación y las acciones reflejan ese valor.
+6. **Dado que** el usuario activo carece de permiso para ciertos módulos o secciones, **cuando** consulta la barra lateral, los menús y los botones de una vista permitida, **entonces** el sistema oculta o deshabilita únicamente los elementos no autorizados y conserva visibles los permitidos.
+7. **Dado que** un usuario intenta abrir directamente por URL una vista para la que no tiene permiso, **cuando** carga esa ruta, **entonces** el sistema bloquea el acceso, muestra un mensaje claro de falta de permiso y lo devuelve a su página de inicio o a una vista permitida.
+8. **Dado que** cambia el cargo del usuario activo, **cuando** se confirma el cambio, **entonces** el sistema recalcula permisos y navegación y abre la landing page del nuevo rol; si la vista actual sigue autorizada, puede permanecer visible hasta la siguiente navegación.
+9. **Dado que** el administrador intenta desactivar su propio acceso al panel de permisos, **cuando** guarda la matriz, **entonces** el sistema conserva ese acceso y muestra una advertencia, de modo que la configuración no quede irreversible.
+10. **Dado que** se modifican roles, landing pages o permisos, **cuando** se consultan productos, bodegas, stock, movimientos, transferencias o reposiciones, **entonces** esos datos permanecen intactos y el usuario activo que registra operaciones no cambia.
+11. **Dado que** el administrador configura la matriz para otorgar al encargado de bodega acceso a crear o aprobar reposiciones, **cuando** el encargado consulta esa sección, **entonces** el sistema mantiene las restricciones de FR-099 y no le muestra el formulario de creación ni las acciones de aprobación o cancelación.
+
+---
+
 ### Casos Límite
 
 - ¿Qué ocurre cuando un usuario intenta guardar una entidad sin nombre o código obligatorio?
@@ -236,6 +274,17 @@ Como supervisor de inventario, quiero solicitar, autorizar y recibir reposicione
 - ¿Qué ocurre si se intenta recibir dos veces la misma solicitud? (La segunda recepción se rechaza; no se crea otro movimiento ni se vuelve a aumentar `STOCK`).
 - ¿Qué ocurre si el usuario activo no existe al crear, aprobar, cancelar o recibir? (La operación se rechaza con un error claro y no persiste cambios).
 - ¿Qué ocurre si el encargado de bodega cambia de perfil mientras consulta reposiciones? (La vista se recalcula con los permisos del nuevo perfil).
+- ¿Qué ocurre si se asigna a un usuario un cargo que no está en la lista de roles definidos? (Se rechaza el cambio con un error claro y se conserva el cargo anterior).
+- ¿Qué ocurre si el administrador cambia su propio cargo a uno sin acceso al panel de permisos? (Se conserva el acceso mínimo al panel para no perder la capacidad de configurar y se muestra una advertencia).
+- ¿Qué ocurre si no hay una landing page configurada para un rol? (Se usa una página de inicio predeterminada común y la aplicación permanece operativa).
+- ¿Qué ocurre si al cargar la aplicación o cambiar el usuario activo la landing page configurada dejó de estar disponible? (Se abre la página de inicio predeterminada y se muestra un aviso no bloqueante).
+- ¿Qué ocurre si un usuario tiene excepciones individuales para varias secciones con valores contradictorios? (Se aplica la excepción más específica por sección; no se permite duplicar excepciones para la misma sección).
+- ¿Qué ocurre cuando se elimina o deja de usar una sección de la matriz de permisos? (La regla queda inactiva y no bloquea el acceso a otras secciones).
+- ¿Qué ocurre si un usuario intenta abrir por URL una vista cuya configuración de permiso aún no existe? (Se aplica el permiso por defecto del rol y, si tampoco existe, el acceso se considera no autorizado).
+- ¿Qué ocurre cuando cambia el cargo de un usuario que tiene un formulario con cambios sin guardar? (Se recalculan permisos y navegación al confirmar el cambio y se le avisa de que esos cambios podrían no guardarse).
+- ¿Qué ocurre si un usuario con permisos limitados consulta una vista permitida que contiene acciones de otras secciones? (Los botones no autorizados se ocultan o deshabilitan; el resto de la vista sigue operativa).
+- ¿Qué ocurre si cambia el cargo del usuario activo mientras tiene seleccionada una bodega operativa? (La bodega asignada no cambia; solo cambian permisos y navegación).
+- ¿Qué ocurre si la matriz de permisos intenta otorgar a un cargo una acción prohibida por una regla de negocio? (La regla de negocio prevalece; la configuración no concede ese acceso).
 
 ## Requisitos *(obligatorio)*
 
@@ -346,6 +395,27 @@ Como supervisor de inventario, quiero solicitar, autorizar y recibir reposicione
 - **FR-101**: El sistema DEBE mostrar indicadores globales de solicitudes pendientes, aprobadas y recibidas, además de filtros por estado, producto y bodega que actualicen el listado y su contador de filas.
 - **FR-102**: El sistema DEBE recalcular las alertas de HU-06 después de recepcionar una reposición, sin persistir una tabla de alertas.
 - **FR-103**: El sistema DEBE tratar observaciones y cualquier texto ingresado en reposiciones de la misma forma que FR-046 y FR-092, escapándolo antes de mostrarlo.
+- **FR-104**: El sistema DEBE permitir al administrador asignar y cambiar el cargo (`role`) de cualquier usuario del catálogo `USERS`, usando solo roles definidos.
+- **FR-105**: El sistema DEBE rechazar un cargo no reconocido, conservar el cargo anterior y mostrar un mensaje de error claro.
+- **FR-106**: El sistema DEBE asociar a cada rol una página de inicio (landing page) configurable.
+- **FR-107**: El sistema DEBE abrir automáticamente la página de inicio configurada para el cargo del usuario activo al cargar la aplicación con el usuario activo por defecto y cada vez que cambie el usuario activo en la cabecera del ERP, sin mostrar primero una pantalla genérica.
+- **FR-108**: El sistema DEBE permitir al administrador definir o redefinir la página de inicio de cada rol desde el panel de administración.
+- **FR-109**: El sistema DEBE ofrecer un panel de administración con una matriz de permisos por rol para módulos, vistas y secciones.
+- **FR-110**: El sistema DEBE permitir al administrador marcar o desmarcar, por rol, el acceso a cada módulo, vista o sección y conservar esa configuración.
+- **FR-111**: El sistema DEBE permitir al administrador definir excepciones de permiso individuales por usuario para un módulo, vista o sección concreta.
+- **FR-112**: El sistema DEBE aplicar la excepción individual cuando exista y, en caso contrario, el permiso configurado para el cargo del usuario, siempre dentro de los límites de FR-124.
+- **FR-113**: El sistema DEBE mostrar u ocultar dinámicamente los elementos de navegación —barra lateral, menús y botones— según los permisos vigentes del usuario activo.
+- **FR-114**: El sistema DEBE ocultar o deshabilitar en las vistas permitidas las acciones y los botones cuyo permiso no esté concedido al usuario activo.
+- **FR-115**: El sistema DEBE bloquear el acceso directo por URL o ruta a vistas no autorizadas, mostrar un mensaje claro de falta de permiso y devolver al usuario a su página de inicio o a una vista permitida.
+- **FR-116**: El sistema DEBE recalcular de inmediato los permisos y la navegación vigentes cuando cambia el cargo del usuario activo.
+- **FR-117**: Cuando cambia el cargo del usuario activo, el sistema DEBE abrir la landing page del nuevo rol; si la vista actual continúa autorizada, PUEDE mantenerla hasta la siguiente navegación.
+- **FR-118**: El sistema DEBE conservar siempre para el administrador el acceso al panel de administración de permisos y mostrar una advertencia si intenta desactivarlo.
+- **FR-119**: El sistema DEBE usar una página de inicio predeterminada y mostrar un aviso no bloqueante cuando la landing page configurada no esté disponible.
+- **FR-120**: El sistema NO DEBE modificar productos, bodegas, `STOCK`, movimientos, transferencias ni reposiciones como consecuencia de cambios de cargo, landing page o permisos.
+- **FR-121**: El sistema NO DEBE alterar el usuario activo usado para registrar operaciones (FR-058, FR-073) cuando cambian el cargo o los permisos.
+- **FR-122**: El sistema DEBE conservar la configuración de cargos, landing pages y permisos entre sesiones dentro del mismo navegador.
+- **FR-123**: El sistema DEBE tratar los nombres de roles, módulos y secciones introducidos en la configuración de la misma forma que FR-046, FR-092 y FR-103 antes de mostrarlos.
+- **FR-124**: El sistema DEBE aplicar la matriz de permisos y las excepciones individuales solo para restringir el acceso permitido por las reglas de negocio vigentes, incluida FR-099; la configuración NO DEBE otorgar a un cargo acciones que esas reglas le prohíban.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
 
@@ -368,6 +438,9 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **Solicitud de Reposición (`REPLENISHMENT_REQUESTS`)**: Documento que solicita reponer un producto en una bodega. Atributos clave: `request_id`, `product_id` (FK a `PRODUCTS`), `warehouse_id` (FK a `WAREHOUSES`, solo activas), `quantity` (entera mayor que cero), `observation` (opcional), `status` ("pendiente", "aprobada", "recibida" o "cancelada"), `request_date` (automática), `created_by` (FK a `USERS`), `approved_by`/`approved_at`, `received_by`/`received_at`, `cancelled_by`/`cancelled_at`, `movement_id` (FK a `INVENTORY_TRANSACTIONS`; presente al recibir) y `source` ("manual" o "alert").
 - **Usuario (`USERS`)**: Persona que opera el sistema y registra movimientos y transferencias. Atributos clave: `user_id`, `user_name`, `role`, `email` y `assigned_warehouse_id` (FK opcional a `WAREHOUSES`; identifica la bodega operativa asignada al usuario).
 - **ModuleConfig**: El objeto de adaptación cargado al arrancar que define el nombre del módulo, las etiquetas de terminología, las definiciones de campos personalizados y el ciclo de vida de estados de documentos. Consulte `specs/001-erp-base-module/data-model.md` para su forma completa.
+- **Cargo/Rol (`ROLES`)**: Catálogo de cargos del sistema (`administrador`, `supervisor_inventario`, `encargado_bodega`). Atributos clave: identificador del rol, nombre visible y página de inicio asignada. Cada usuario de `USERS` tiene exactamente un cargo vigente.
+- **Matriz de Permisos por Rol (`ROLE_PERMISSIONS`)**: Configuración que indica, para cada cargo, qué módulos, vistas y secciones son visibles. Atributos clave: cargo, módulo/vista/sección y estado de visibilidad (permitido o denegado). Se administra desde el panel de administración.
+- **Excepción de Permiso por Usuario (`USER_PERMISSION_OVERRIDES`)**: Regla individual que ajusta la visibilidad de un módulo, vista o sección para un usuario específico. Atributos clave: usuario, módulo/vista/sección y estado de visibilidad; prevalece sobre la matriz del cargo y no se duplica para la misma sección.
 
 ## Criterios de Éxito *(obligatorio)*
 
@@ -412,6 +485,17 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **SC-037**: El 100% de las recepciones generan un único movimiento de entrada y aumentan el stock exactamente en la cantidad solicitada.
 - **SC-038**: El 0% de las recepciones duplicadas modifica el stock o el historial de movimientos.
 - **SC-039**: El encargado de bodega solo visualiza solicitudes aprobadas en el 100% de los casos y no puede crear, aprobar ni cancelar.
+- **SC-040**: El 100% de las cargas de la aplicación y de los cambios de usuario activo abren la página de inicio configurada para el cargo correspondiente.
+- **SC-041**: El administrador puede asignar o cambiar el cargo de un usuario en menos de 30 segundos.
+- **SC-042**: El 100% de los cambios de cargo y de permisos se reflejan en la navegación en menos de 2 segundos.
+- **SC-043**: El 100% de los intentos de acceso directo por URL a vistas no autorizadas son bloqueados con un mensaje claro.
+- **SC-044**: El 0% de los elementos de navegación no autorizados se muestran al usuario activo en los tres roles definidos.
+- **SC-045**: El 100% de las excepciones individuales prevalecen sobre el permiso del cargo en casos de conflicto.
+- **SC-046**: Al menos el 95% de los usuarios de prueba comprende por qué no puede acceder a una vista a partir del mensaje mostrado.
+- **SC-047**: El 0% de los cambios de cargo o permisos modifica datos de productos, bodegas, stock, movimientos, transferencias ni reposiciones.
+- **SC-048**: El administrador conserva acceso al panel de permisos en el 100% de los casos, incluso si intenta desactivarlo.
+- **SC-049**: La aplicación permanece operativa en el 100% de los casos cuando falta una landing page configurada o esta deja de estar disponible.
+- **SC-050**: El 100% de los intentos de la matriz por otorgar una acción prohibida por una regla de negocio mantienen la restricción vigente y no conceden el acceso.
 
 ## Trazabilidad de Implementación
 
@@ -424,6 +508,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 | HU-05 Transferencias entre Bodegas | Implementada con atomicidad pendiente (T082) | `src/domain/transfers.js` | `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js` | T039–T046 |
 | HU-06 Alertas de Stock Mínimo | Implementada | `src/domain/alerts.js` | `tests/unit/alerts.test.js`, `tests/integration/alerts.test.js` | T054–T062 |
 | HU-07 Solicitudes de Reposición | Implementada con atomicidad pendiente (T083) | `src/domain/replenishments.js`, `src/domain/permissions.js` | `tests/unit/replenishments.test.js`, `tests/integration/replenishments.test.js` | T069–T080 |
+| HU-08 Gestión de Roles, Redirección Inicial y Control de Visibilidad | Planeada — pendiente de implementación | `src/domain/permissions.js`, `src/components/permissions-panel.js` | `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` (por generar en `/speckit.tasks`) | Por definir en `/speckit.tasks` |
 
 La ejecución completa de la suite no forma parte de esta edición documental; queda registrada como T066 en `tasks.md`.
 
@@ -467,3 +552,9 @@ La ejecución completa de la suite no forma parte de esta edición documental; q
 - Confirmar una transferencia requiere que tanto la bodega de origen como la de destino estén activas en ese momento.
 - El SKU de un producto puede modificarse en cualquier momento, incluso con movimientos asociados, porque estos referencian `product_id` y no `sku`.
 - Un producto puede desactivarse aunque tenga stock físico; el stock se conserva y se muestra solo para consulta, igual que para una bodega inactiva.
+- El catálogo `USERS` existente es la fuente de usuarios y su campo `role` es editable por el administrador; los roles disponibles son `administrador`, `supervisor_inventario` y `encargado_bodega`, coherentes con FR-073.
+- Cada rol tiene una página de inicio por defecto (administrador → Panel general, supervisor_inventario → Alertas/Control de Stock, encargado_bodega → Movimientos/Control de Stock) que el administrador puede redefinir.
+- La visibilidad por módulo, vista o sección se configura con una matriz por rol y se ajusta con excepciones individuales por usuario, que prevalecen sobre el rol.
+- El control de visibilidad, el ocultamiento de navegación y el bloqueo de acceso directo por URL son mecanismos de interfaz dentro del modelo de roles simulados; no constituyen seguridad real y la autenticación/autorización reales quedan fuera de alcance (FR-073).
+- El panel de administración de permisos es accesible solo para el rol administrador, que conserva siempre ese acceso para evitar una configuración irreversible.
+- Cambiar el cargo de un usuario no altera su bodega asignada ni el usuario activo que registran movimientos, transferencias y reposiciones (FR-058, FR-073).

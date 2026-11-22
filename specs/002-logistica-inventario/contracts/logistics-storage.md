@@ -2,7 +2,7 @@
 
 ## Propósito
 
-Además del contrato genérico de Entidad/Documento (`entity-storage.md`, heredado de `001-erp-base-module`), este módulo persiste localmente en `localStorage` las ocho entidades de Logística e Inventario definidas en `data-model.md`. Este contrato resume las claves de almacenamiento y las operaciones de repositorio que implementan `src/storage.js` y `src/domain/*.js` (ver tareas T007, T008, T009, T012, T071).
+Además del contrato genérico de Entidad/Documento (`entity-storage.md`, heredado de `001-erp-base-module`), este módulo persiste localmente en `localStorage` las entidades de Logística e Inventario definidas en `data-model.md`, incluidas las de control de roles y permisos de HU-08. Este contrato resume las claves de almacenamiento y las operaciones de repositorio que implementan `src/storage.js` y `src/domain/*.js` (ver tareas T007, T008, T009, T012, T071 y las tareas HU-08 derivadas de `plan.md`).
 
 La forma exacta de cada campo, sus restricciones y sus relaciones están definidas en `data-model.md`; este archivo no las repite, solo fija el contrato de persistencia y las operaciones esperadas.
 
@@ -18,7 +18,11 @@ Cada entidad se persiste bajo su propia clave de `localStorage`, como una lista 
 - `logistics:inventory_transactions`
 - `logistics:stock_transfers`
 - `logistics:replenishment_requests`
+- `logistics:roles`
+- `logistics:role_permissions`
+- `logistics:user_permission_overrides`
 
+`logistics:active_user_id` se conserva como clave independiente en `src/domain/permissions.js` y no se migra a este contrato.
 ## Operaciones de Repositorio
 
 ### Genéricas (por entidad, implementadas en `src/storage.js`)
@@ -36,7 +40,8 @@ Cada entidad se persiste bajo su propia clave de `localStorage`, como una lista 
 - **Transferencias** (`transfers.js`): `requestTransfer(productId, sourceWarehouseId, targetWarehouseId, quantity, createdBy)`, `confirmTransfer(transferId, confirmedBy)` (rechaza si alguna bodega está inactiva — FR-087), `cancelTransfer(transferId, cancelledBy)` (solo desde `"pendiente"`, sin modificar `STOCK` — FR-085, FR-086).
 - **Alertas** (`alerts.js`, derivadas, sin persistencia propia): `listAlerts(filters)` comparando `STOCK.quantity_available` con `STOCK.min_stock_level` (FR-077, FR-084); `setMinStockLevel(stockId, value)` para la configuración de administrador (FR-076).
 - **Reposiciones** (`replenishments.js`): `requestReplenishment({ productId, warehouseId, quantity, observation, createdBy, source })`, `approveRequest(requestId, approvedBy)`, `cancelRequest(requestId, cancelledBy)`, `receiveRequest(requestId, receivedBy)`, `getReplenishmentRequest(requestId)`, `listReplenishments(filters)`, `replenishmentCounts()` y `canCancelRequest(request)`. La recepción delega en `registerMovement` con `type: "entrada"` y guarda el `transaction_id` como `movement_id` (FR-093–FR-103); `loadReplenishments`, `saveReplenishments` y `nextReplenishmentId` viven en `storage.js`.
-- **Semillas** (`seed.js`): `seedProductCategories()`, `seedUsers()`, idempotentes (FR-071).
+- **Roles y permisos** (`permissions.js`): `getRoles`, `getRolePermissions`, `getUserPermissionOverrides`, `getEffectivePermission`, `setRolePermission`, `setUserPermissionOverride`, `setUserRole`, `setRoleLandingModule` y `resolveLandingModule`. `getEffectivePermission` aplica `reglaDeNegocio && (excepción ?? rol ?? semilla)` y garantiza `admin:permissions` para el cargo administrador (FR-104–FR-124).
+- **Semillas** (`seed.js`): `seedProductCategories()`, `seedUsers()`, `seedRoles()` y `seedRolePermissions()`, idempotentes (FR-071, FR-122).
 
 ## Expectativas de Validación
 
@@ -44,8 +49,13 @@ Cada entidad se persiste bajo su propia clave de `localStorage`, como una lista 
 - Las validaciones de integridad referencial (categoría, usuario, bodega existentes) se aplican antes de persistir cualquier registro que los referencie.
 - Las operaciones de movimientos y transferencias deben ser atómicas respecto a `STOCK`: si la validación de negocio falla, no debe quedar un registro parcial ni un `STOCK` modificado.
 - La recepción de reposiciones crea primero el movimiento de entrada; si ese movimiento falla, la solicitud no se marca como "recibida" y no se persiste `movement_id` (FR-096, FR-097).
+- Los cargos se validan contra `ROLES`; un cargo no reconocido se rechaza y se conserva el anterior (FR-105).
+- `allowed` es booleano y las claves (`role_key`, `scope`, `resource_key`) y (`user_id`, `scope`, `resource_key`) son únicas.
+- Las landing pages se validan contra módulos conocidos y permitidos; una configuración inválida cae a `dashboard` con aviso no bloqueante (FR-119).
+- Las etiquetas de roles, módulos y secciones configuradas se escapan con el helper compartido antes de mostrarse (FR-123).
+- Las operaciones de roles y permisos nunca escriben entidades operativas ni cambian el usuario activo (FR-120, FR-121).
 
 ## Expectativas de Extensibilidad
 
-- Los campos adicionales que un módulo personalizado añada a cualquiera de estas entidades deben persistirse junto a los campos base sin manejo especial en la capa de almacenamiento, igual que en `entity-storage.md`.
+- Los campos adicionales que un módulo personalizado añada a cualquiera de estas entidades, incluidas `ROLES`, `ROLE_PERMISSIONS` y `USER_PERMISSION_OVERRIDES`, deben persistirse junto a los campos base sin manejo especial en la capa de almacenamiento, igual que en `entity-storage.md`.
 - Las operaciones de dominio aquí descritas deben permanecer estables para que futuras historias (por ejemplo, control de vencimientos sobre `STOCK.expiration_date`) puedan construirse sobre ellas sin modificarlas.
