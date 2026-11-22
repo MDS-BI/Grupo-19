@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   saveProducts, saveWarehouses, saveUsers, saveStock, loadStock, loadMovements,
   loadReplenishments, loadProducts, loadWarehouses
@@ -129,6 +129,24 @@ describe('HU-07 replenishment requests domain', () => {
     expect(loadMovements()[0].user_id).toBe(WAREHOUSE_MANAGER.user_id);
     expect(loadStock()[0].quantity_available).toBe(request.quantity);
     expect(loadMovements().length).toBe(1);
+  });
+
+  it('rolls back the generated movement and stock when saving the request fails (T083)', () => {
+    const request = approvedRequest();
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    const spy = vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
+      if(key === 'logistics:replenishment_requests') throw new Error('fallo de escritura');
+      return originalSetItem(key, value);
+    });
+
+    const result = receiveRequest(request.request_id, WAREHOUSE_MANAGER.user_id);
+    spy.mockRestore();
+
+    expect(result.success).toBe(false);
+    expect(getReplenishmentRequest(request.request_id).status).toBe('aprobada');
+    expect(getReplenishmentRequest(request.request_id).movement_id).toBeUndefined();
+    expect(loadMovements()).toEqual([]);
+    expect(loadStock()).toEqual([]);
   });
 
   it('rejects duplicate receptions and leaves stock unchanged (FR-100)', () => {

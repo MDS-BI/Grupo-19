@@ -62,6 +62,15 @@ describe('stock domain', () => {
     expect(listStock({ warehouseId: WAREHOUSE_A.warehouse_id }).length).toBe(1);
   });
 
+  it('combines product and warehouse filters in a read-only query (FR-047, FR-049)', () => {
+    upsertStockForEntry(PRODUCT.product_id, WAREHOUSE_A.warehouse_id, 10);
+    upsertStockForEntry(PRODUCT.product_id, WAREHOUSE_B.warehouse_id, 3);
+    const filtered = listStock({ productId: PRODUCT.product_id, warehouseId: WAREHOUSE_B.warehouse_id });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].quantity_available).toBe(3);
+    expect(loadStock()).toHaveLength(2);
+  });
+
   it('computes the total across warehouses for a product (FR-048)', () => {
     upsertStockForEntry(PRODUCT.product_id, WAREHOUSE_A.warehouse_id, 10);
     upsertStockForEntry(PRODUCT.product_id, WAREHOUSE_B.warehouse_id, 3);

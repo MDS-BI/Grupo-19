@@ -1,4 +1,4 @@
-import { loadMovements, saveMovements, loadProducts, loadUsers, loadWarehouses, nextMovementId, isPositiveInteger } from '../storage.js';
+import { LOGISTICS_KEYS, loadMovements, saveMovements, loadProducts, loadUsers, loadWarehouses, nextMovementId, isPositiveInteger, withStorageRollback } from '../storage.js';
 import { listActiveWarehouses } from './warehouses.js';
 import { upsertStockForEntry, deductStockForExit } from './stock.js';
 
@@ -21,26 +21,35 @@ export function registerMovement({ type, productId, warehouseId, quantity, userI
   const wId = Number(warehouseId);
   const qty = Number(quantity);
 
-  if(ENTRY_TYPES.has(type)){
-    upsertStockForEntry(pId, wId, qty);
-  } else {
-    const result = deductStockForExit(pId, wId, qty);
-    if(!result.ok) return { success: false, errors: { quantity: result.reason } };
-  }
+  const transaction = withStorageRollback(
+    [LOGISTICS_KEYS.stock, LOGISTICS_KEYS.movements],
+    () => {
+      if(ENTRY_TYPES.has(type)){
+        upsertStockForEntry(pId, wId, qty);
+      } else {
+        const result = deductStockForExit(pId, wId, qty);
+        if(!result.ok) return { failure: result.reason };
+      }
 
-  const movement = {
-    transaction_id: nextMovementId(),
-    product_id: pId,
-    warehouse_id: wId,
-    transaction_type: type,
-    quantity: qty,
-    user_id: Number(userId),
-    transaction_date: new Date().toISOString()
-  };
-  const list = loadMovements();
-  list.push(movement);
-  saveMovements(list);
-  return { success: true, movement };
+      const movement = {
+        transaction_id: nextMovementId(),
+        product_id: pId,
+        warehouse_id: wId,
+        transaction_type: type,
+        quantity: qty,
+        user_id: Number(userId),
+        transaction_date: new Date().toISOString()
+      };
+      const list = loadMovements();
+      list.push(movement);
+      saveMovements(list);
+      return { movement };
+    }
+  );
+
+  if(!transaction.ok) return { success: false, errors: { storage: transaction.error?.message || 'No fue posible registrar el movimiento' } };
+  if(transaction.value.failure) return { success: false, errors: { quantity: transaction.value.failure } };
+  return { success: true, movement: transaction.value.movement };
 }
 
 export function listMovements({ productId, warehouseId } = {}){

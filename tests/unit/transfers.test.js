@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { saveProducts, saveWarehouses, saveUsers, loadTransfers } from '../../src/storage.js';
 import { upsertStockForEntry, getStockRecord } from '../../src/domain/stock.js';
 import { requestTransfer, confirmTransfer, cancelTransfer, listTransfers } from '../../src/domain/transfers.js';
@@ -80,6 +80,32 @@ describe('transfers domain', () => {
     confirmTransfer(created.transfer_id, CONFIRMER.user_id);
     const result = confirmTransfer(created.transfer_id, CONFIRMER.user_id);
     expect(result.success).toBe(false);
+  });
+
+  it('rolls back source and target STOCK when writing the transfer fails (T082)', () => {
+    const created = requestTransfer(payload()).transfer;
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    const spy = vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
+      if(key === 'logistics:stock_transfers') throw new Error('fallo de escritura');
+      return originalSetItem(key, value);
+    });
+
+    const result = confirmTransfer(created.transfer_id, CONFIRMER.user_id);
+    spy.mockRestore();
+
+    expect(result.success).toBe(false);
+    expect(getStockRecord(PRODUCT.product_id, SOURCE.warehouse_id).quantity_available).toBe(10);
+    expect(getStockRecord(PRODUCT.product_id, TARGET.warehouse_id)).toBeUndefined();
+    expect(loadTransfers()[0].status).toBe('pendiente');
+  });
+
+  it('rejects a second confirmation without moving stock again', () => {
+    const created = requestTransfer(payload()).transfer;
+    expect(confirmTransfer(created.transfer_id, CONFIRMER.user_id).success).toBe(true);
+    const second = confirmTransfer(created.transfer_id, CONFIRMER.user_id);
+    expect(second.success).toBe(false);
+    expect(getStockRecord(PRODUCT.product_id, SOURCE.warehouse_id).quantity_available).toBe(5);
+    expect(getStockRecord(PRODUCT.product_id, TARGET.warehouse_id).quantity_available).toBe(5);
   });
 
   it('cancels a pending transfer without modifying STOCK, recording cancelled_by (FR-085)', () => {

@@ -1,6 +1,6 @@
 import {
-  loadReplenishments, saveReplenishments, loadProducts, loadUsers, loadWarehouses,
-  nextReplenishmentId, isPositiveInteger
+  LOGISTICS_KEYS, loadReplenishments, saveReplenishments, loadProducts, loadUsers, loadWarehouses,
+  nextReplenishmentId, isPositiveInteger, withStorageRollback
 } from '../storage.js';
 import { listActiveWarehouses } from './warehouses.js';
 import { registerMovement } from './movements.js';
@@ -88,24 +88,34 @@ export function receiveRequest(requestId, receivedBy){
   if(request.status !== 'aprobada') return { success: false, error: 'Solo las solicitudes aprobadas pueden recibirse' };
   if(!receivedBy || !userExists(receivedBy)) return { success: false, error: INVALID_ACTIVE_USER_MSG };
 
-  const movementResult = registerMovement({
-    type: 'entrada',
-    productId: request.product_id,
-    warehouseId: request.warehouse_id,
-    quantity: request.quantity,
-    userId: receivedBy
-  });
-  if(!movementResult.success){
-    const firstError = movementResult.errors ? Object.values(movementResult.errors)[0] : undefined;
-    return { success: false, error: firstError || 'No fue posible registrar la entrada de la reposición' };
-  }
+  const transaction = withStorageRollback(
+    [LOGISTICS_KEYS.stock, LOGISTICS_KEYS.movements, LOGISTICS_KEYS.replenishments],
+    () => {
+      const movementResult = registerMovement({
+        type: 'entrada',
+        productId: request.product_id,
+        warehouseId: request.warehouse_id,
+        quantity: request.quantity,
+        userId: receivedBy
+      });
+      if(!movementResult.success){
+        const firstError = movementResult.errors ? Object.values(movementResult.errors)[0] : undefined;
+        return { failure: firstError || 'No fue posible registrar la entrada de la reposición' };
+      }
+      const saved = saveUpdatedRequest(requestId, {
+        status: 'recibida',
+        received_by: Number(receivedBy),
+        received_at: new Date().toISOString(),
+        movement_id: movementResult.movement.transaction_id
+      });
+      if(!saved.success) return { failure: saved.error };
+      return { saved };
+    }
+  );
 
-  return saveUpdatedRequest(requestId, {
-    status: 'recibida',
-    received_by: Number(receivedBy),
-    received_at: new Date().toISOString(),
-    movement_id: movementResult.movement.transaction_id
-  });
+  if(!transaction.ok) return { success: false, error: transaction.error?.message || 'No fue posible recibir la reposición' };
+  if(transaction.value.failure) return { success: false, error: transaction.value.failure };
+  return transaction.value.saved;
 }
 
 export function getReplenishmentRequest(requestId){

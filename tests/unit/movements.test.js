@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { saveProducts, saveWarehouses, saveUsers, loadMovements, loadStock } from '../../src/storage.js';
 import { registerMovement, listMovements } from '../../src/domain/movements.js';
 import * as movementsModule from '../../src/domain/movements.js';
@@ -82,6 +82,21 @@ describe('movements domain', () => {
     // No update/delete exports exist for movements — immutability by API design.
     expect(Object.keys(movementsModule)).not.toContain('updateMovement');
     expect(Object.keys(movementsModule)).not.toContain('deleteMovement');
+  });
+
+  it('rolls back STOCK when writing the movement history fails (T081)', () => {
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    const spy = vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
+      if(key === 'logistics:inventory_transactions') throw new Error('fallo de escritura');
+      return originalSetItem(key, value);
+    });
+
+    const result = registerMovement(payload());
+    spy.mockRestore();
+
+    expect(result.success).toBe(false);
+    expect(loadStock()).toEqual([]);
+    expect(loadMovements()).toEqual([]);
   });
 
   it('lists movements most recent first with product/warehouse filters', () => {
