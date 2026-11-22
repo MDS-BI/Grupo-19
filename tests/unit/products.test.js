@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { saveProductCategories, saveUsers, loadProducts } from '../../src/storage.js';
+import { saveProductCategories, saveUsers, saveMovements, loadProducts } from '../../src/storage.js';
 import { createProduct, updateProduct, setProductStatus, searchProducts } from '../../src/domain/products.js';
 
 const store = new Map();
@@ -54,6 +54,23 @@ describe('products domain', () => {
     const result = updateProduct(created.product_id, basePayload({ sku: 'SKU-002' }));
     expect(result.success).toBe(true);
     expect(result.product.sku).toBe('SKU-002');
+  });
+
+  it('allows editing the SKU when movement history already references the product (FR-088)', () => {
+    const created = createProduct(basePayload()).product;
+    saveMovements([{
+      transaction_id: 1,
+      product_id: created.product_id,
+      warehouse_id: 1,
+      transaction_type: 'entrada',
+      quantity: 5,
+      user_id: USER.user_id,
+      transaction_date: '2026-11-22T00:00:00.000Z'
+    }]);
+    const result = updateProduct(created.product_id, basePayload({ sku: 'SKU-EDITADO' }));
+    expect(result.success).toBe(true);
+    expect(result.product.sku).toBe('SKU-EDITADO');
+    expect(loadProducts()).toHaveLength(1);
   });
 
   it('rejects negative prices (FR-043)', () => {

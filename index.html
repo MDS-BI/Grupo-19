@@ -58,6 +58,10 @@
               <span class="nav-label" id="nav-search-label">Búsqueda</span>
             </button>
           </div>
+          <button type="button" class="nav-admin-module" data-module="admin" id="nav-admin">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 3.5 6v4.2c0 4 2.7 6.8 6.5 7.8 3.8-1 6.5-3.8 6.5-7.8V6L10 2.5z"></path><path d="M7.6 10.2 9.3 12l3.3-3.6"></path></svg>
+            <span class="nav-label">Permisos</span>
+          </button>
           <button type="button" class="nav-module" data-module="products" id="nav-products">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="1.5"></rect><path d="M3 8h14"></path></svg>
             <span class="nav-label">Productos</span>
@@ -599,7 +603,7 @@
             <div id="product-list-empty" class="empty" hidden aria-live="polite">No se encontraron productos.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>SKU</th><th>Producto</th><th>Categoría</th><th>Precio venta</th><th>Unidad</th><th>Proveedor</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th scope="col">SKU</th><th scope="col">Producto</th><th scope="col">Categoría</th><th scope="col">Precio venta</th><th scope="col">Unidad</th><th scope="col">Proveedor</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="product-list-body"></tbody>
               </table>
             </div>
@@ -667,7 +671,7 @@
             <div id="warehouse-list-empty" class="empty" hidden aria-live="polite">No se encontraron bodegas.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>Bodega</th><th>Ubicación</th><th>Capacidad</th><th>Responsable</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th scope="col">Bodega</th><th scope="col">Ubicación</th><th scope="col">Capacidad</th><th scope="col">Responsable</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="warehouse-list-body"></tbody>
               </table>
             </div>
@@ -711,7 +715,7 @@
             <div id="stock-list-empty" class="empty" hidden aria-live="polite">No se encontraron registros de stock.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>Producto</th><th>Bodega</th><th>Disponible</th><th>Estado producto</th><th>Estado bodega</th><th>Nivel mínimo</th></tr></thead>
+                <thead><tr><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Disponible</th><th scope="col">Estado producto</th><th scope="col">Estado bodega</th><th scope="col">Nivel mínimo</th></tr></thead>
                 <tbody id="stock-list-body"></tbody>
               </table>
             </div>
@@ -788,7 +792,7 @@
             <div id="movement-list-empty" class="empty" hidden aria-live="polite">No se encontraron movimientos.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Bodega</th><th>Cantidad</th><th>Usuario</th><th>Ajustar</th></tr></thead>
+                <thead><tr><th scope="col">Fecha</th><th scope="col">Tipo</th><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Usuario</th><th scope="col">Ajustar</th></tr></thead>
                 <tbody id="movement-list-body"></tbody>
               </table>
             </div>
@@ -852,7 +856,7 @@
             <div id="transfer-list-empty" class="empty" hidden aria-live="polite">No se encontraron transferencias.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>Producto</th><th>Ruta</th><th>Cantidad</th><th>Estado</th><th>Usuarios</th><th>Acciones</th></tr></thead>
+                <thead><tr><th scope="col">Producto</th><th scope="col">Ruta</th><th scope="col">Cantidad</th><th scope="col">Estado</th><th scope="col">Usuarios</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="transfer-list-body"></tbody>
               </table>
             </div>
@@ -896,7 +900,7 @@
             <div id="alert-list-empty" class="empty" hidden aria-live="polite">No se encontraron alertas.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>Producto</th><th>Bodega</th><th>Disponible</th><th>Mínimo</th><th>Déficit</th><th>Acción</th></tr></thead>
+                <thead><tr><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Disponible</th><th scope="col">Mínimo</th><th scope="col">Déficit</th><th scope="col">Acción</th></tr></thead>
                 <tbody id="alert-list-body"></tbody>
               </table>
             </div>
@@ -1009,8 +1013,58 @@
             <div id="replenishment-list-empty" class="empty" hidden aria-live="polite">No se encontraron solicitudes.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>Producto</th><th>Bodega</th><th>Cantidad</th><th>Estado</th><th>Observación</th><th>Trazabilidad</th><th>Movimiento</th><th>Acciones</th></tr></thead>
+                <thead><tr><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Estado</th><th scope="col">Observación</th><th scope="col">Trazabilidad</th><th scope="col">Movimiento</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="replenishment-list-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="view-admin-permissions" aria-labelledby="admin-permissions-heading" hidden>
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Administración</p>
+              <h1 id="admin-permissions-heading">Roles y permisos</h1>
+              <p class="page-subtitle muted">Configura cargos, permisos por módulo, vista, sección y acción con excepciones individuales. Sin autenticación real.</p>
+            </div>
+            <span class="status-badge status-active">Datos locales · acceso simulado</span>
+          </div>
+
+          <section class="card" aria-labelledby="permission-assignment-heading">
+            <div class="card-head">
+              <div>
+                <h2 id="permission-assignment-heading">Cargo del usuario</h2>
+                <p class="card-subtitle">Cambiar el cargo recalcula de inmediato la navegación y la página de inicio del perfil activo.</p>
+              </div>
+            </div>
+            <div class="filter-grid">
+              <div>
+                <label for="permission-user-select">Usuario</label>
+                <select id="permission-user-select"></select>
+              </div>
+              <div>
+                <label for="permission-user-role-select">Cargo</label>
+                <select id="permission-user-role-select"></select>
+              </div>
+              <div class="form-actions permission-apply">
+                <button type="button" id="permission-apply-role" class="primary">Aplicar cargo</button>
+              </div>
+            </div>
+            <p id="permission-feedback" class="muted permission-feedback" aria-live="polite"></p>
+          </section>
+
+          <section class="card" aria-labelledby="permission-matrix-heading">
+            <div class="card-head">
+              <div>
+                <h2 id="permission-matrix-heading">Matriz de permisos por cargo</h2>
+                <p class="card-subtitle">El panel de permisos permanece disponible para el cargo administrador por regla de negocio.</p>
+              </div>
+              <span class="pill">Cambios inmediatos</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table permission-matrix">
+                <thead><tr><th scope="col">Recurso</th><th scope="col">Administrador</th><th scope="col">Supervisor</th><th scope="col">Encargado</th></tr></thead>
+                <tbody id="permission-matrix-body"></tbody>
               </table>
             </div>
           </section>

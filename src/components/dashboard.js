@@ -47,12 +47,12 @@ function movementTypeInfo(type){
   return { label: 'Entrada', className: '', dot: '', sign: '+' };
 }
 
-function renderQuickActions(role){
+function renderQuickActions(role, userId){
   const container = document.getElementById('dashboard-quick-actions');
   if(!container) return;
   const actions = [];
-  const can = (action) => canPerform(role, action);
-  const access = (moduleName) => canAccessModule(role, moduleName);
+  const can = (action) => canPerform(role, action, userId);
+  const access = (moduleName) => canAccessModule(role, moduleName, userId);
 
   if(can('products.manage')){
     actions.push({ label: 'Nuevo producto', hint: 'Registrar en el catálogo', module: 'products', newRecord: true });
@@ -214,7 +214,7 @@ function renderDemoStatus(){
   }
 }
 
-export function renderDashboard(role = ''){
+export function renderDashboard(role = '', userId){
   const counts = recordCounts();
   const products = loadProducts();
   const warehouses = loadWarehouses();
@@ -247,7 +247,7 @@ export function renderDashboard(role = ''){
   }
 
   renderCurrentDate();
-  renderQuickActions(role);
+  renderQuickActions(role, userId);
   renderActivity(movementRows);
   renderLowStock(alerts);
   renderPendingTransfers(pendingTransfers);

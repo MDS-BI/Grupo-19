@@ -1,5 +1,5 @@
 import { getConfig } from './module-config.js';
-import { PRODUCT_CATEGORY_SEED, USER_SEED } from './domain/seed.js';
+import { PRODUCT_CATEGORY_SEED, ROLE_PERMISSION_SEED, ROLE_SEED, USER_SEED } from './domain/seed.js';
 
 const ENTITIES_KEY = 'erp_base_module:entities';
 const DOCUMENTS_KEY = 'erp_base_module:documents';
@@ -9,7 +9,7 @@ const DOCUMENTS_KEY = 'erp_base_module:documents';
 // (ver contracts/logistics-storage.md y data-model.md)
 // ============================================================================
 
-const LOGISTICS_KEYS = {
+export const LOGISTICS_KEYS = {
   productCategories: 'logistics:product_categories',
   products: 'logistics:products',
   warehouses: 'logistics:warehouses',
@@ -17,8 +17,58 @@ const LOGISTICS_KEYS = {
   stock: 'logistics:stock',
   movements: 'logistics:inventory_transactions',
   transfers: 'logistics:stock_transfers',
-  replenishments: 'logistics:replenishment_requests'
+  replenishments: 'logistics:replenishment_requests',
+  roles: 'logistics:roles',
+  rolePermissions: 'logistics:role_permissions',
+  userPermissionOverrides: 'logistics:user_permission_overrides'
 };
+
+export const LOGISTICS_SCHEMAS = {
+  productCategories: { required: ['category_id', 'category_name'], unique: ['category_id', 'category_name'] },
+  products: { required: ['product_id', 'sku', 'product_name', 'category_id', 'status'], unique: ['product_id', 'sku'] },
+  warehouses: { required: ['warehouse_id', 'name', 'location', 'status'], unique: ['warehouse_id', 'name'] },
+  users: { required: ['user_id', 'user_name', 'role'], unique: ['user_id'], references: { role: 'roles' } },
+  stock: { required: ['stock_id', 'product_id', 'warehouse_id', 'quantity_available'], unique: ['stock_id', ['product_id', 'warehouse_id']] },
+  movements: { required: ['transaction_id', 'product_id', 'warehouse_id', 'transaction_type', 'quantity', 'user_id', 'transaction_date'], unique: ['transaction_id'] },
+  transfers: { required: ['transfer_id', 'product_id', 'source_warehouse_id', 'target_warehouse_id', 'quantity', 'status', 'transfer_date', 'created_by'], unique: ['transfer_id'] },
+  replenishments: { required: ['request_id', 'product_id', 'warehouse_id', 'quantity', 'status', 'request_date', 'created_by'], unique: ['request_id'] },
+  roles: { required: ['role_key', 'role_label', 'default_landing_module', 'is_admin'], unique: ['role_key'] },
+  rolePermissions: { required: ['role_key', 'scope', 'resource_key', 'allowed'], unique: [['role_key', 'scope', 'resource_key']], references: { role_key: 'roles' } },
+  userPermissionOverrides: { required: ['user_id', 'scope', 'resource_key', 'allowed'], unique: [['user_id', 'scope', 'resource_key']], references: { user_id: 'users' } }
+};
+
+let nativeSetItemOwner = null;
+let nativeSetItem = null;
+
+function rememberNativeSetItem(){
+  if(nativeSetItemOwner !== localStorage){
+    nativeSetItemOwner = localStorage;
+    nativeSetItem = localStorage.setItem;
+  }
+}
+
+function restoreItem(key, raw){
+  if(raw === null){
+    localStorage.removeItem(key);
+    return;
+  }
+  if(nativeSetItemOwner === localStorage && typeof nativeSetItem === 'function'){
+    nativeSetItem.call(localStorage, key, raw);
+    return;
+  }
+  localStorage.setItem(key, raw);
+}
+
+export function withStorageRollback(keys, operation){
+  rememberNativeSetItem();
+  const snapshot = keys.map(key => [key, localStorage.getItem(key)]);
+  try{
+    return { ok: true, value: operation() };
+  }catch(error){
+    snapshot.forEach(([key, raw]) => restoreItem(key, raw));
+    return { ok: false, error };
+  }
+}
 
 function loadList(key){
   try{
@@ -31,6 +81,7 @@ function loadList(key){
 }
 
 function saveList(key, list){
+  rememberNativeSetItem();
   localStorage.setItem(key, JSON.stringify(list));
 }
 
@@ -54,6 +105,56 @@ export const loadTransfers = () => loadList(LOGISTICS_KEYS.transfers);
 export const saveTransfers = (list) => saveList(LOGISTICS_KEYS.transfers, list);
 export const loadReplenishments = () => loadList(LOGISTICS_KEYS.replenishments);
 export const saveReplenishments = (list) => saveList(LOGISTICS_KEYS.replenishments, list);
+export const loadRoles = () => loadList(LOGISTICS_KEYS.roles);
+export const saveRoles = (list) => saveList(LOGISTICS_KEYS.roles, list);
+export const loadRolePermissions = () => loadList(LOGISTICS_KEYS.rolePermissions);
+export const saveRolePermissions = (list) => saveList(LOGISTICS_KEYS.rolePermissions, list);
+export const loadUserPermissionOverrides = () => loadList(LOGISTICS_KEYS.userPermissionOverrides);
+export const saveUserPermissionOverrides = (list) => saveList(LOGISTICS_KEYS.userPermissionOverrides, list);
+
+export function getLogisticsSchema(name){
+  return LOGISTICS_SCHEMAS[name];
+}
+
+export function hasDuplicateCompositeKey(list, keyFields, record){
+  const fields = Array.isArray(keyFields[0]) ? keyFields : [keyFields];
+  return list.some(item => item !== record && fields.every(field => String(item[field]) === String(record[field])));
+}
+
+export function referencesExist(record, references = {}){
+  return Object.entries(references).every(([field, values]) => {
+    const value = record[field];
+    if(value === undefined || value === null || value === '') return true;
+    return values.some(candidate => String(candidate) === String(value));
+  });
+}
+
+export function validateRecord(schemaName, record, context = {}){
+  const schema = LOGISTICS_SCHEMAS[schemaName];
+  if(!schema) return { valid: false, errors: { schema: `Esquema desconocido: ${schemaName}` } };
+  const errors = {};
+  for(const field of schema.required){
+    const value = record[field];
+    if(value === undefined || value === null || (typeof value === 'string' && value.trim() === '')){
+      errors[field] = `El campo ${field} es obligatorio`;
+    }
+  }
+  if(schema.unique && context.list){
+    for(const key of schema.unique){
+      if(hasDuplicateCompositeKey(context.list, key, record)){
+        errors[key] = 'La clave ya existe';
+      }
+    }
+  }
+  if(schema.references){
+    for(const [field, values] of Object.entries(schema.references)){
+      if(!referencesExist({ [field]: record[field] }, { [field]: context[values] || values })){
+        errors[field] = `Referencia inválida: ${field}`;
+      }
+    }
+  }
+  return { valid: Object.keys(errors).length === 0, errors };
+}
 
 export function nextProductId(){ return nextId(loadProducts(), 'product_id'); }
 export function nextWarehouseId(){ return nextId(loadWarehouses(), 'warehouse_id'); }
@@ -70,6 +171,12 @@ export function seedLogisticsCatalogs(){
   if(loadUsers().length === 0){
     saveUsers(USER_SEED.map((u, i) => ({ user_id: i + 1, assigned_warehouse_id: undefined, ...u })));
   }
+  if(loadRoles().length === 0){
+    saveRoles(ROLE_SEED.map(role => ({ ...role })));
+  }
+  if(loadRolePermissions().length === 0){
+    saveRolePermissions(ROLE_PERMISSION_SEED.map(permission => ({ ...permission })));
+  }
 }
 
 
@@ -79,7 +186,13 @@ export function seedLogisticsCatalogs(){
 
 /** Escapa texto antes de insertarlo en HTML, previniendo la ejecución de contenido no deseado (FR-046, FR-092). */
 export function escapeHtml(s){
-  return String(s ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  return String(s ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+    .replaceAll('`', '&#96;');
 }
 
 export function isNonEmptyText(v){
@@ -400,6 +513,9 @@ export function deleteDocumentsForEntity(entityId){
 export function clearAll(){
   saveEntities([]);
   saveDocuments([]);
+  saveRoles([]);
+  saveRolePermissions([]);
+  saveUserPermissionOverrides([]);
 }
 
 export function searchEntities(term){

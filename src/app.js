@@ -7,7 +7,16 @@ import { folioLabel } from './components/document-list.js';
 import { renderLogo, applyShellLabels, setActiveModule, applyNavigationPermissions } from './components/shell.js';
 import { renderDashboard } from './components/dashboard.js';
 import { setupSearchBar, renderSearchResults } from './components/search-bar.js';
-import { canAccessModule, canPerform, resolveActiveUser, setActiveUserId, roleLabel } from './domain/permissions.js';
+import {
+  ADMIN_RESOURCE,
+  canAccessModule,
+  canPerform,
+  getEffectivePermission,
+  resolveActiveUser,
+  resolveLandingModule,
+  roleLabel,
+  setActiveUserId
+} from './domain/permissions.js';
 import { loadDemoData } from './domain/demo-data.js';
 
 import { createProduct, updateProduct, setProductStatus, searchProducts } from './domain/products.js';
@@ -33,6 +42,7 @@ import { renderTransferList } from './components/transfer-list.js';
 import { renderAlertList } from './components/alert-list.js';
 import { populateReplenishmentProductSelect, populateReplenishmentWarehouseSelect, clearReplenishmentForm, collectReplenishmentPayload, showReplenishmentErrors, prefillReplenishmentFromAlert } from './components/replenishment-form.js';
 import { renderReplenishmentList, renderReplenishmentCounts } from './components/replenishment-list.js';
+import { renderPermissionsPanel, wirePermissionsPanel } from './components/permissions-panel.js';
 
 function qs(id){ return document.getElementById(id); }
 
@@ -43,7 +53,7 @@ const articulo = (word) => esFemenina(word) ? 'la' : 'el';
 const demostrativo = (word) => esFemenina(word) ? 'esta' : 'este';
 const seleccionada = (word) => esFemenina(word) ? 'seleccionada' : 'seleccionado';
 
-const MODULES = ['dashboard', 'entities', 'documents', 'search', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments'];
+const MODULES = ['dashboard', 'entities', 'documents', 'search', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments', 'admin'];
 const VIEWS = {
   dashboard: 'view-dashboard',
   entities: 'view-entities',
@@ -55,13 +65,18 @@ const VIEWS = {
   movements: 'view-movements',
   transfers: 'view-transfers',
   alerts: 'view-alerts',
-  replenishments: 'view-replenishments'
+  replenishments: 'view-replenishments',
+  admin: 'view-admin-permissions'
 };
 
 let wired = false;
 let activeUser = null;
 
 function getActiveRole(){ return activeUser ? activeUser.role : ''; }
+function getActiveUserId(){ return activeUser ? Number(activeUser.user_id) : undefined; }
+function currentCan(action){ return canPerform(getActiveRole(), action, getActiveUserId()); }
+function currentCanModule(moduleName){ return canAccessModule(getActiveRole(), moduleName, getActiveUserId()); }
+function currentCanAdminPanel(){ return getEffectivePermission(getActiveRole(), 'panel', ADMIN_RESOURCE, getActiveUserId()); }
 
 function setAccessNotice(message = ''){
   const el = qs('access-notice');
@@ -82,7 +97,11 @@ function deny(message = 'No tienes permisos para realizar esta acción con el pe
 }
 
 function guardModuleAccess(moduleName, { silent = false } = {}){
-  if(canAccessModule(getActiveRole(), moduleName)) return true;
+  if(moduleName === 'admin'){
+    if(currentCanAdminPanel()) return true;
+  } else if(currentCanModule(moduleName)){
+    return true;
+  }
   if(!silent){
     setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).');
   }
@@ -90,7 +109,7 @@ function guardModuleAccess(moduleName, { silent = false } = {}){
 }
 
 function guardAction(action, message){
-  if(canPerform(getActiveRole(), action)) return true;
+  if(currentCan(action)) return true;
   return deny(message || 'Acción no permitida para el perfil activo (simulación).');
 }
 
@@ -104,7 +123,12 @@ function showModule(name, opts = {}){
   MODULES.forEach(m => { const el = qs(VIEWS[m]); if(el) el.hidden = m !== name; });
   setActiveModule(name);
 
-  if(name === 'dashboard') renderDashboard(getActiveRole());
+  if(name === 'dashboard') renderDashboard(getActiveRole(), getActiveUserId());
+  if(name === 'admin'){
+    const panel = qs('view-admin-permissions');
+    renderPermissionsPanel(panel);
+    wirePermissionsPanel(panel, refreshAfterPermissionChange);
+  }
   if(name === 'entities'){
     populateDocumentEntitySelect();
     populateEditEntitySelect();
@@ -264,7 +288,7 @@ function populateReplenishmentFilterSelects(){
 function refreshProducts(){
   if(!guardModuleAccess('products', { silent: true })) return;
   renderProductList(qs('product-list-body'), qs('product-list-empty'), searchProducts(qs('product-search').value), {
-    canManage: canPerform(getActiveRole(), 'products.manage'),
+    canManage: currentCan('products.manage'),
     onEdit: (p) => {
       if(!guardAction('products.manage', 'Solo el administrador puede editar productos.')) return;
       startProductEdit(p);
@@ -299,7 +323,7 @@ function handleProductSubmit(ev){
 function refreshWarehouses(){
   if(!guardModuleAccess('warehouses', { silent: true })) return;
   renderWarehouseList(qs('warehouse-list-body'), qs('warehouse-list-empty'), searchWarehouses(qs('warehouse-search').value), {
-    canManage: canPerform(getActiveRole(), 'warehouses.manage'),
+    canManage: currentCan('warehouses.manage'),
     onEdit: (w) => {
       if(!guardAction('warehouses.manage', 'Solo el administrador puede editar bodegas.')) return;
       startWarehouseEdit(w);
@@ -332,7 +356,7 @@ function refreshStock(){
   if(!guardModuleAccess('stock', { silent: true })) return;
   const productId = qs('stock-filter-product').value;
   const warehouseId = qs('stock-filter-warehouse').value;
-  const canConfigureMin = canPerform(getActiveRole(), 'stock.configure_min');
+  const canConfigureMin = currentCan('stock.configure_min');
   renderStockList(qs('stock-list-body'), qs('stock-list-empty'), listStock({ productId, warehouseId }), {
     canConfigureMin,
     onSaveMinLevel: (stockId, value) => {
@@ -352,7 +376,7 @@ function refreshMovements(){
   const productId = qs('movement-filter-product').value;
   const warehouseId = qs('movement-filter-warehouse').value;
   renderMovementList(qs('movement-list-body'), qs('movement-list-empty'), listMovements({ productId, warehouseId }), {
-    canAdjust: canPerform(getActiveRole(), 'movements.adjust'),
+    canAdjust: currentCan('movements.adjust'),
     onAdjust: (movement, adjustmentType) => {
       if(!guardAction('movements.adjust', 'No tienes permisos para registrar ajustes de inventario con el perfil activo.')) return;
       prefillAdjustment(movement, adjustmentType);
@@ -385,8 +409,8 @@ function handleMovementSubmit(ev){
 function refreshTransfers(){
   if(!guardModuleAccess('transfers', { silent: true })) return;
   renderTransferList(qs('transfer-list-body'), qs('transfer-list-empty'), listTransfers(), {
-    canConfirm: canPerform(getActiveRole(), 'transfers.confirm'),
-    canCancel: canPerform(getActiveRole(), 'transfers.cancel'),
+    canConfirm: currentCan('transfers.confirm'),
+    canCancel: currentCan('transfers.cancel'),
     onConfirm: (t) => {
       if(!guardAction('transfers.confirm', 'No tienes permisos para confirmar transferencias con el perfil activo.')) return;
       if(!isValidActiveUser()){ alert('No existe un usuario activo válido para confirmar la transferencia.'); return; }
@@ -425,7 +449,7 @@ function refreshAlerts(){
   if(!guardModuleAccess('alerts', { silent: true })) return;
   const productId = qs('alert-filter-product').value;
   const warehouseId = qs('alert-filter-warehouse').value;
-  const canCreateRequest = canPerform(getActiveRole(), 'replenishments.create');
+  const canCreateRequest = currentCan('replenishments.create');
   renderAlertList(qs('alert-list-body'), qs('alert-list-empty'), listAlerts({ productId, warehouseId }), {
     canCreate: canCreateRequest,
     onCreateRequest: (alert) => {
@@ -441,10 +465,9 @@ function refreshAlerts(){
 }
 
 function isWarehouseManagerOnly(){
-  const role = getActiveRole();
-  return canPerform(role, 'replenishments.receive')
-    && !canPerform(role, 'replenishments.create')
-    && !canPerform(role, 'replenishments.approve');
+  return currentCan('replenishments.receive')
+    && !currentCan('replenishments.create')
+    && !currentCan('replenishments.approve');
 }
 
 function refreshReplenishments(){
@@ -461,16 +484,16 @@ function refreshReplenishments(){
   const warehouseId = qs('replenishment-filter-warehouse').value;
   renderReplenishmentCounts(replenishmentCounts());
   renderReplenishmentList(qs('replenishment-list-body'), qs('replenishment-list-empty'), listReplenishments({ status, productId, warehouseId }), {
-    canApprove: canPerform(role, 'replenishments.approve'),
-    canCancel: canPerform(role, 'replenishments.cancel'),
-    canReceive: canPerform(role, 'replenishments.receive'),
+    canApprove: currentCan('replenishments.approve'),
+    canCancel: currentCan('replenishments.cancel'),
+    canReceive: currentCan('replenishments.receive'),
     onApprove: (request) => {
       if(!guardAction('replenishments.approve', 'No tienes permisos para aprobar reposiciones con el perfil activo.')) return;
       if(!isValidActiveUser()){ alert('No existe un usuario activo válido para aprobar la reposición.'); return; }
       const result = approveRequest(request.request_id, activeUser.user_id);
       if(!result.success) alert(result.error);
       refreshReplenishments();
-      renderDashboard(role);
+      renderDashboard(role, getActiveUserId());
     },
     onCancel: (request) => {
       if(!guardAction('replenishments.cancel', 'No tienes permisos para cancelar reposiciones con el perfil activo.')) return;
@@ -478,7 +501,7 @@ function refreshReplenishments(){
       const result = cancelRequest(request.request_id, activeUser.user_id);
       if(!result.success) alert(result.error);
       refreshReplenishments();
-      renderDashboard(role);
+      renderDashboard(role, getActiveUserId());
     },
     onReceive: (request) => {
       if(!guardAction('replenishments.receive', 'Solo el encargado de bodega puede registrar la recepción con el perfil activo.')) return;
@@ -489,7 +512,7 @@ function refreshReplenishments(){
       refreshStock();
       refreshMovements();
       refreshAlerts();
-      renderDashboard(role);
+      renderDashboard(role, getActiveUserId());
     }
   });
 }
@@ -510,7 +533,7 @@ function handleReplenishmentSubmit(ev){
   const origin = qs('replenishment-form-origin');
   if(origin) origin.textContent = 'Origen: manual';
   refreshReplenishments();
-  renderDashboard(getActiveRole());
+  renderDashboard(getActiveRole(), getActiveUserId());
 }
 
 function onEditEntityChange(){
@@ -662,20 +685,20 @@ function setSectionDisabled(sectionSelector, disabled){
 
 function applyPermissionUiState(){
   const role = getActiveRole();
-  const canBase = canPerform(role, 'base.manage');
-  const canProducts = canPerform(role, 'products.manage');
-  const canWarehouses = canPerform(role, 'warehouses.manage');
-  const canMove = canPerform(role, 'movements.register');
-  const canAdjust = canPerform(role, 'movements.adjust');
-  const canTransferCreate = canPerform(role, 'transfers.create');
-  const canReplenishmentCreate = canPerform(role, 'replenishments.create');
+  const canBase = currentCan('base.manage');
+  const canProducts = currentCan('products.manage');
+  const canWarehouses = currentCan('warehouses.manage');
+  const canMove = currentCan('movements.register');
+  const canAdjust = currentCan('movements.adjust');
+  const canTransferCreate = currentCan('transfers.create');
+  const canReplenishmentCreate = currentCan('replenishments.create');
 
   // Dashboard quick actions: base advanced only for admin
   [['action-new-entity', 'entities', 'base.manage'], ['action-new-document', 'documents', 'base.manage'], ['action-open-entities', 'entities', 'base.manage'], ['action-find', 'search', 'base.manage']]
     .forEach(([id, mod, action]) => {
       const el = qs(id);
       if(!el) return;
-      const allowed = canAccessModule(role, mod) && canPerform(role, action);
+      const allowed = currentCanModule(mod) && currentCan(action);
       el.hidden = !allowed;
       el.disabled = !allowed;
     });
@@ -699,7 +722,7 @@ function applyPermissionUiState(){
   setSectionDisabled('#view-replenishments .card[aria-labelledby="replenishment-form-heading"]', !canReplenishmentCreate);
 
   // Active user selector always available in topbar
-  applyNavigationPermissions(role);
+  applyNavigationPermissions(role, getActiveUserId());
   refreshActiveUserBadge();
 }
 
@@ -749,14 +772,39 @@ function onActiveUserChange(){
   if(user){
     activeUser = user;
     setActiveUserId(user.user_id);
+    const landing = resolveLandingModule(user.role, user.user_id);
+    showModule(landing.module);
     setAccessNotice(`Perfil activo (simulación): ${user.user_name} — ${roleLabel(user.role)}. Sin autenticación real ni seguridad.`);
+    return;
   }
-  const currentActive = document.querySelector('.nav-module.active')?.dataset.module || 'dashboard';
-  if(!guardModuleAccess(currentActive, { silent: true })){
-    showModule('dashboard');
-  } else {
-    showModule(currentActive);
+  showModule('dashboard');
+}
+
+function refreshAfterPermissionChange(changedUserId){
+  populateActiveUserSelect();
+  if(changedUserId !== undefined){
+    const updated = loadUsers().find(u => Number(u.user_id) === Number(changedUserId));
+    if(updated) activeUser = updated;
   }
+  applyPermissionUiState();
+  const landing = resolveLandingModule(getActiveRole(), getActiveUserId());
+  showModule(currentCanAdminPanel() ? 'admin' : landing.module);
+}
+
+function handleHashChange(){
+  const raw = window.location.hash.replace(/^#\/?/, '').split(/[?/]/)[0];
+  if(!raw){
+    showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
+    return;
+  }
+  const moduleName = MODULES.includes(raw) ? raw : 'dashboard';
+  const allowed = moduleName === 'admin' ? currentCanAdminPanel() : currentCanModule(moduleName);
+  if(allowed){
+    showModule(moduleName);
+    return;
+  }
+  showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
+  setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).');
 }
 
 function wireEvents(){
@@ -765,6 +813,8 @@ function wireEvents(){
   document.querySelectorAll('.nav-module').forEach(btn => {
     btn.addEventListener('click', () => showModule(btn.dataset.module));
   });
+  const adminNav = qs('nav-admin');
+  if(adminNav) adminNav.addEventListener('click', () => showModule('admin'));
 
   const dashboardView = qs('view-dashboard');
   if(dashboardView){
@@ -789,7 +839,7 @@ function wireEvents(){
         }
         return;
       }
-      renderDashboard(getActiveRole());
+      renderDashboard(getActiveRole(), getActiveUserId());
       if(result.message){
         const status = qs('demo-data-status');
         const summary = result.summary;
@@ -817,11 +867,11 @@ function wireEvents(){
   qs('delete-document').addEventListener('click', handleDeleteSelectedDocument);
 
   qs('product-form').addEventListener('submit', handleProductSubmit);
-  qs('product-cancel-edit').addEventListener('click', () => { if(canPerform(getActiveRole(), 'products.manage')) clearProductForm(); });
+  qs('product-cancel-edit').addEventListener('click', () => { if(currentCan('products.manage')) clearProductForm(); });
   qs('product-search').addEventListener('input', refreshProducts);
 
   qs('warehouse-form').addEventListener('submit', handleWarehouseSubmit);
-  qs('warehouse-cancel-edit').addEventListener('click', () => { if(canPerform(getActiveRole(), 'warehouses.manage')) clearWarehouseForm(); });
+  qs('warehouse-cancel-edit').addEventListener('click', () => { if(currentCan('warehouses.manage')) clearWarehouseForm(); });
   qs('warehouse-search').addEventListener('input', refreshWarehouses);
 
   qs('stock-filter-product').addEventListener('change', refreshStock);
@@ -843,6 +893,7 @@ function wireEvents(){
 
   const activeUserSelect = qs('active-user-select');
   if(activeUserSelect) activeUserSelect.addEventListener('change', onActiveUserChange);
+  window.addEventListener('hashchange', handleHashChange);
 }
 
 export function initApp(resolved){
@@ -851,6 +902,8 @@ export function initApp(resolved){
   applyTheme(resolved.config);
   renderLogo(qs('logo-mark'));
   applyLabels(resolved.config);
+  const productCard = document.querySelector('#view-products .card[aria-labelledby="product-form-heading"]');
+  if(productCard) productCard.id = 'view-products .card[aria-labelledby="product-form-heading"]';
   seedLogisticsCatalogs();
   populateActiveUserSelect();
   wireEvents();
@@ -861,7 +914,7 @@ export function initApp(resolved){
   clearMovementForm();
   clearTransferForm();
   clearReplenishmentForm();
-  showModule('dashboard');
+  showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
   if(activeUser){
     setAccessNotice(`Perfil activo (simulación): ${activeUser.user_name} — ${roleLabel(activeUser.role)}. Sin autenticación real ni seguridad.`);
   }

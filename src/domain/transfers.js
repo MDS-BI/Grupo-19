@@ -1,4 +1,4 @@
-import { loadTransfers, saveTransfers, loadProducts, loadUsers, loadWarehouses, nextTransferId, isPositiveInteger } from '../storage.js';
+import { LOGISTICS_KEYS, loadTransfers, saveTransfers, loadProducts, loadUsers, loadWarehouses, nextTransferId, isPositiveInteger, withStorageRollback } from '../storage.js';
 import { getStockRecord, upsertStockForEntry, deductStockForExit } from './stock.js';
 
 function isActiveWarehouse(warehouseId){
@@ -61,13 +61,24 @@ export function confirmTransfer(transferId, confirmedBy){
   if(!isActiveWarehouse(transfer.source_warehouse_id) || !isActiveWarehouse(transfer.target_warehouse_id)){
     return { success: false, error: 'No es posible confirmar: la bodega de origen o destino está inactiva' };
   }
-  const deducted = deductStockForExit(transfer.product_id, transfer.source_warehouse_id, transfer.quantity);
-  if(!deducted.ok) return { success: false, error: deducted.reason };
-  upsertStockForEntry(transfer.product_id, transfer.target_warehouse_id, transfer.quantity);
+  const transaction = withStorageRollback(
+    [LOGISTICS_KEYS.stock, LOGISTICS_KEYS.transfers],
+    () => {
+      const deducted = deductStockForExit(transfer.product_id, transfer.source_warehouse_id, transfer.quantity);
+      if(!deducted.ok) return { failure: deducted.reason };
+      upsertStockForEntry(transfer.product_id, transfer.target_warehouse_id, transfer.quantity);
 
-  list[idx] = { ...transfer, status: 'confirmada', confirmed_by: Number(confirmedBy) };
-  saveTransfers(list);
-  return { success: true, transfer: list[idx] };
+      const current = loadTransfers();
+      const currentIdx = current.findIndex(t => t.transfer_id === Number(transferId));
+      current[currentIdx] = { ...transfer, status: 'confirmada', confirmed_by: Number(confirmedBy) };
+      saveTransfers(current);
+      return { transfer: current[currentIdx] };
+    }
+  );
+
+  if(!transaction.ok) return { success: false, error: transaction.error?.message || 'No fue posible confirmar la transferencia' };
+  if(transaction.value.failure) return { success: false, error: transaction.value.failure };
+  return { success: true, transfer: transaction.value.transfer };
 }
 
 /** Cancela una transferencia pendiente sin tocar STOCK (FR-085, FR-086). */

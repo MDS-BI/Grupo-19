@@ -74,3 +74,43 @@
 
 - Este checklist evalúa calidad de requisitos y consistencia documental; no sustituye la ejecución de T066 ni la validación manual de T067.
 - La sección original de 2026-11-03 se conserva intacta para mantener el historial de validación.
+
+---
+
+## Validación HU-08 — 2026-11-22
+
+**Propósito**: Validar la nueva historia de usuario de gestión de roles, redirección inicial y control de visibilidad antes de proceder a la planificación
+**Funcionalidad**: [Enlace a spec.md](../spec.md)
+
+### Calidad del Contenido
+
+- [x] Sin detalles de implementación (lenguajes, frameworks, APIs)
+- [x] Enfocada en el valor para el usuario y las necesidades del negocio
+- [x] Escrita para partes interesadas no técnicas
+- [x] Todas las secciones obligatorias completadas
+
+### Completitud de los Requisitos
+
+- [x] No quedan marcadores [NEEDS CLARIFICATION]
+- [x] Los requisitos son comprobables y sin ambigüedades
+- [x] Los criterios de éxito son medibles
+- [x] Los criterios de éxito son agnósticos a la tecnología (sin detalles de implementación)
+- [x] Todos los escenarios de aceptación están definidos (10 escenarios de HU-08)
+- [x] Los casos límite están identificados (10 casos límite nuevos)
+- [x] El alcance está claramente delimitado (sin autenticación real; coherente con FR-073)
+- [x] Dependencias y suposiciones identificadas
+
+### Preparación de la Funcionalidad
+
+- [x] Todos los requisitos funcionales tienen criterios de aceptación claros (FR-104–FR-123)
+- [x] Los escenarios de usuario cubren los flujos principales
+- [x] La funcionalidad cumple los resultados medibles definidos en los Criterios de Éxito (SC-040–SC-049)
+- [x] No hay filtración de detalles de implementación en la especificación
+
+### Notas
+
+- Se conservaron íntegramente las secciones y la numeración de HU-01 a HU-07; HU-08 se añadió como historia independiente y comprobable.
+- Las decisiones de diseño se registraron en la sesión de Clarificaciones 2026-11-22 y en la sección Suposiciones.
+- El bloqueo de acceso por URL se mantuvo como control de interfaz sobre roles simulados, en coherencia con FR-073; no se introduce autenticación real.
+- La fila de HU-08 en Trazabilidad de Implementación quedó completada en dominio y pruebas durante `/speckit.plan`; las tareas se definen en `/speckit.tasks`.
+- La especificación pasó por `/speckit.clarify` y `/speckit.plan`; está lista para `/speckit.tasks`.

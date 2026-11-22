@@ -59,22 +59,31 @@ If the configuration is invalid (unknown types, bad keys, transitions referencin
 
 ## Logística e Inventario
 
-On top of the generic Entity/Document base, this feature adds seven dedicated screens reachable from the sidebar: **Productos**, **Bodegas**, **Stock**, **Movimientos**, **Transferencias**, **Alertas** and **Reposiciones**. See `specs/002-logistica-inventario/` (`spec.md`, `plan.md`, `data-model.md`, `MER.md`, `contracts/`) for the full specification.
+On top of the generic Entity/Document base, this feature adds eight dedicated screens reachable from the sidebar: **Productos**, **Bodegas**, **Stock**, **Movimientos**, **Transferencias**, **Alertas**, **Reposiciones** and **Permisos**. See `specs/002-logistica-inventario/` (`spec.md`, `plan.md`, `data-model.md`, `MER.md`, `contracts/`) for the full specification.
 
 ### Domain layer
 
 - `src/domain/products.js`, `warehouses.js`, `stock.js`, `movements.js`, `transfers.js`, `alerts.js`, `replenishments.js` — business rules per user story, decoupled from the UI.
 - `src/components/replenishment-form.js` / `replenishment-list.js` — HU-07 form with alert prefill and status/action list.
-- `src/domain/seed.js` — raw seed data for the `PRODUCT_CATEGORIES` and `USERS` catalogs.
-- `src/storage.js` — extended with the logistics storage keys, sequential-id helpers, `escapeHtml`/validation helpers, and `seedLogisticsCatalogs()` (idempotent).
+- `src/domain/seed.js` — raw seed data for the `PRODUCT_CATEGORIES`, `USERS`, `ROLES` and `ROLE_PERMISSIONS` catalogs.
+- `src/domain/permissions.js` — effective-permission resolution combining business rules, individual overrides, stored role permissions and seed defaults.
+- `src/components/permissions-panel.js` — HU-08 role assignment and permission matrix.
+- `src/storage.js` — extended with the logistics storage keys, schema metadata, sequential-id helpers, `escapeHtml`/validation helpers, transactional `withStorageRollback()` and `seedLogisticsCatalogs()` (idempotent).
 
 ### Storage keys
 
-`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`, `logistics:replenishment_requests`.
+`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`, `logistics:replenishment_requests`, `logistics:roles`, `logistics:role_permissions`, `logistics:user_permission_overrides`.
 
 ### Seed catalogs
 
-`PRODUCT_CATEGORIES` and `USERS` are preloaded on first boot (no admin screens for them in this iteration). There is no real authentication: the active user is selected in the topbar and its identity is recorded automatically in movements, transfers and replenishment requests.
+`PRODUCT_CATEGORIES`, `USERS`, `ROLES` and `ROLE_PERMISSIONS` are preloaded on first boot (no admin screens for them in this iteration). There is no real authentication: the active user is selected in the topbar and its identity is recorded automatically in movements, transfers and replenishment requests.
+
+### Roles, landings and permissions (HU-08)
+
+- Roles: `administrador` (landing `dashboard`), `supervisor_inventario` (landing `alerts`), `encargado_bodega` (landing `movements`).
+- Effective permission: `businessRule && (individualOverride ?? rolePermission ?? roleSeed ?? false)`.
+- The administrator always retains the permissions panel (`admin:permissions`); business rules remain above configurable permissions.
+- On load, direct hash navigation or active-user change, the app routes to the role landing or falls back to `dashboard` with an access notice.
 
 ### Business rules worth knowing
 

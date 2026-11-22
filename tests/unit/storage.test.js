@@ -380,6 +380,12 @@ describe('logistics storage: schemas, repository helpers and seed loading', () =
     expect(escapeHtml(undefined)).toBe('');
   });
 
+  it('escapes quotes and backticks used in attributes and template strings (FR-092, FR-123)', () => {
+    expect(escapeHtml('" onclick="alert(1)')).toBe('&quot; onclick=&quot;alert(1)');
+    expect(escapeHtml("O'Brien")).toBe('O&#39;Brien');
+    expect(escapeHtml('`${alert(1)}`')).toBe('&#96;${alert(1)}&#96;');
+  });
+
   it('validates required text, non-negative numbers and positive integers', () => {
     expect(isNonEmptyText('  hola  ')).toBe(true);
     expect(isNonEmptyText('   ')).toBe(false);

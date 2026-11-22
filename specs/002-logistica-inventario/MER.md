@@ -3,7 +3,7 @@
 
 ## Módulo de Logística e Inventario
 
-El siguiente diagrama representa las ocho entidades del módulo, sus atributos y las relaciones entre ellas.
+El siguiente diagrama representa las once entidades del módulo, sus atributos y las relaciones entre ellas.
 
 ```mermaid
 erDiagram
@@ -50,6 +50,28 @@ erDiagram
         string role
         string email
         int assigned_warehouse_id FK
+    }
+
+    ROLES {
+        string role_key PK
+        string role_label
+        string default_landing_module
+        boolean is_admin
+        string description
+    }
+
+    ROLE_PERMISSIONS {
+        string role_key PK, FK
+        string scope PK
+        string resource_key PK
+        boolean allowed
+    }
+
+    USER_PERMISSION_OVERRIDES {
+        int user_id PK, FK
+        string scope PK
+        string resource_key PK
+        boolean allowed
     }
 
     STOCK {
@@ -116,6 +138,9 @@ erDiagram
     WAREHOUSES |o--o{ USERS : asignados
     USERS ||--o{ STOCK_TRANSFERS : crea
     USERS |o--o{ STOCK_TRANSFERS : confirma
+    ROLES ||--o{ USERS : clasifica
+    ROLES ||--o{ ROLE_PERMISSIONS : define
+    USERS ||--o{ USER_PERMISSION_OVERRIDES : exceptua
     PRODUCTS ||--o{ REPLENISHMENT_REQUESTS : repone
     WAREHOUSES ||--o{ REPLENISHMENT_REQUESTS : recibe
     USERS ||--o{ REPLENISHMENT_REQUESTS : crea
@@ -144,6 +169,12 @@ erDiagram
 - `REPLENISHMENT_REQUESTS.movement_id` se asigna solo al recibir; apunta a un movimiento de entrada inmutable de `INVENTORY_TRANSACTIONS`.
 - Solo se aprueban solicitudes pendientes; solo se cancelan solicitudes pendientes o aprobadas; solo se reciben solicitudes aprobadas.
 - `recibida` y `cancelada` son estados terminales: no se aprueban, cancelan ni reciben nuevamente.
+- `USERS.role` referencia `ROLES.role_key`; un cargo no reconocido se rechaza.
+- `ROLES.default_landing_module` debe ser un módulo conocido y permitido; la semilla usa `dashboard` para administrador, `alerts` para supervisor y `movements` para encargado, y usa `dashboard` como fallback con aviso no bloqueante.
+- En `ROLE_PERMISSIONS`, la combinación (`role_key`, `scope`, `resource_key`) es única; en `USER_PERMISSION_OVERRIDES`, la combinación (`user_id`, `scope`, `resource_key`) es única.
+- El permiso efectivo es `reglaDeNegocio && (excepciónIndividual ?? permisoDelCargo ?? semillaDelCargo)`; la configuración nunca otorga una acción prohibida por una regla de negocio.
+- `admin:permissions` siempre está permitido para el cargo con `is_admin = true`.
+- Los cambios de cargo y permisos no alteran entidades operativas ni el usuario activo.
 
 ## Referencia visual
 
