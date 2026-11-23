@@ -181,3 +181,183 @@ Los recursos se identifican con claves estables: `module:<nombre>`, `view:<nombr
 | Enrutado mínimo por hash `#/<module>` | Necesario para que FR-115 sea verificable sin añadir un router externo | Confiar solo en el estado interno de `showModule()`, sin acceso directo comprobable | Pruebas de integración derivadas de este plan |
 | Rediseño visual corporativo pendiente | Debe preservarse como iniciativa separada para no alterar la lógica logística | Aplicar cambios globales de estilo dentro de 002, con riesgo de regresiones visuales y funcionales | Feature posterior `003-rediseno-visual-corporativo` |
 
+## Ampliación: Plan de Documentación y Verificación de HU-09 (2026-11-23)
+
+### Alcance y restricción
+
+Esta ampliación cubre **exclusivamente HU-09 — Gestión de órdenes de adquisición y venta** sobre una funcionalidad OC/OV ya implementada. No reprograma, no reemplaza ni elimina la planificación de HU-01 a HU-08, no crea ramas ni altera el historial de Git. Se originó como documentación de decisiones, modelo, contrato de persistencia y guía de verificación; las tareas T104–T110 cerraron después la deuda detectada con cambios acotados y verificados.
+
+La implementación de referencia es:
+
+- `src/domain/orders.js`: `ORDER_CONFIG`, `nextOrderId()`, `createOrderForMovement()`, `listOrders()`.
+- `src/domain/movements.js`: generación dentro de `registerMovement()` y rollback conjunto de `stock`, `inventory_transactions` y `orders`.
+- `src/storage.js`: clave `logistics:orders`, esquema `orders`, `loadOrders()`/`saveOrders()` y `withStorageRollback()`.
+- `src/components/order-list.js`, `src/components/movement-list.js`, `index.html` y `src/app.js`: panel de órdenes dentro de Movimientos y columna Orden en el historial.
+- `tests/unit/orders.test.js` y `tests/integration/orders.test.js`: cobertura existente de OC/OV.
+
+### Contexto Técnico HU-09
+
+**Lenguaje/Versión**: JavaScript ES2022, sin cambios respecto al módulo.
+**Persistencia**: `logistics:orders` como lista completa de órdenes; `logistics:inventory_transactions` conserva `order_id` en el movimiento generado. La orden es informativa, inmutable y no se elimina de forma independiente.
+**Identificador**: `order_id` textual con prefijo `OC`/`OV` y cuatro dígitos; secuencias independientes derivadas del máximo existente. No se reutilizan valores mientras se conserve `logistics:orders`; no se añade contador ni migración.
+**Regla de generación**: `entrada` → OC, `salida` → OV; ajustes, reposiciones y transferencias no generan orden.
+**Atomicidad**: `withStorageRollback()` revierte stock, movimiento y orden ante fallo de escritura; el error `errors.storage` se muestra en el formulario de movimientos.
+**UI**: panel «Órdenes generadas» dentro de Movimientos, sin módulo ni permiso propio; los filtros y la columna de usuario quedan como T107 diferida.
+**Clarificaciones**: resueltas en `spec.md`, sesión 2026-11-23; no quedan `NEEDS CLARIFICATION`.
+
+### Verificación de la Constitución — HU-09
+
+- Calidad: la lógica OC/OV ya está aislada en `src/domain/orders.js` y se integra desde `movements.js` sin duplicar reglas en la interfaz; se conserva el diseño modular del módulo.
+- Pruebas: existen pruebas unitarias y de integración para numeración, vínculo con el movimiento, idempotencia, no generación en ajustes/reposiciones, rollback y visualización del panel.
+- Experiencia de Usuario: el panel reutiliza el marco y la vista de Movimientos; las órdenes aparecen también en el historial. T104 añadió el elemento visual para `errors.storage`; los filtros y la columna de usuario permanecen diferidos como T107.
+- Rendimiento: `listOrders()` calcula nombres en memoria sobre una lista ya cargada; no añade round-trips ni dependencias.
+- Seguridad/roles: no introduce autenticación ni permisos nuevos; hereda el guard de `movements` de HU-08.
+
+**Resultado**: sin violaciones bloqueantes introducidas. La deuda de UI y de esquema quedó cerrada en T104–T106 y T109; T107 se conserva como mejora UX opcional fuera de esta edición.
+
+### Puntos de cambio documentales
+
+- `research.md`: decisión de documentar sobre código existente, correspondencia de nombres y brechas detectadas.
+- `plan.md`: esta ampliación, con trazabilidad de requisitos y seguimiento de deuda.
+- `data-model.md`: entidad `PURCHASE_SALES_ORDERS`, campo `order_id` en `INVENTORY_TRANSACTIONS`, relaciones y reglas de validación.
+- `contracts/logistics-storage.md`: clave `logistics:orders`, operaciones de repositorio y expectativas de atomicidad.
+- `quickstart.md`: recorrido de verificación HU-09 documentado durante la planeación y ejecutado después en T110.
+
+No se crea un módulo `orders`, no se añaden claves de contador y no se renombran campos persistidos.
+
+### Trazabilidad de requisitos HU-09
+
+| Requisito | Evidencia en código/documentación |
+|---|---|
+| FR-125 | `createOrderForMovement()` persiste `order_id`, `order_type`, `transaction_id`, `product_id`, `warehouse_id`, `quantity`, `user_id` y `order_date`; sin importes ni estados |
+| FR-126 | `nextOrderId()` calcula el máximo por prefijo `OC`/`OV` con `padStart(4, '0')` y rechaza colisiones; sin reutilización mientras persista `logistics:orders` |
+| FR-127 | `ORDER_CONFIG` solo cubre `entrada`/`salida`; reposiciones pasan `generateOrder:false`; `confirmTransfer()` no crea órdenes |
+| FR-128 | `registerMovement()` incluye la escritura de órdenes en `withStorageRollback([...])`; T104 muestra `errors.storage` en `error-movement-storage` y conserva el rollback atómico |
+| FR-129 | `index.html` y `order-list.js` renderizan el panel dentro de Movimientos; `app.js` aplica `guardModuleAccess('movements')`; no hay permiso `orders` |
+| SC-051 | `tests/unit/orders.test.js`, `tests/unit/storage.test.js` y `tests/integration/orders.test.js` cubren generación exacta, numeración, validación, esquema, errores de escritura y visualización sobre movimientos nuevos |
+
+### Seguimiento de deuda existente
+
+| Hallazgo | Estado documental | Seguimiento |
+|---|---|---|
+| `errors.storage` sin mensaje visible en UI | Resuelto en T104: `error-movement-storage`, `ERROR_FIELDS` y prueba de integración | Cerrado con rollback atómico conservado |
+| Esquema `orders` no invocado desde `createOrderForMovement()` | Resuelto en T105: `validateRecord('orders', order, { list: orders })` antes de persistir | Cerrado con prueba unitaria de rechazo |
+| `order_id` ausente en `LOGISTICS_SCHEMAS.movements` | Resuelto en T106: campo declarado como opcional para datos legacy | Cerrado con verificación en `tests/unit/storage.test.js` |
+| Sin filtros ni columna de usuario en el panel | `listOrders()` solo añade nombres de producto/bodega | T107 diferida como mejora UX opcional |
+| Movimientos legacy sin orden | No se hace backfill, por decisión de preservar historial | SC-051 se verifica sobre movimientos nuevos |
+| Numeración dependiente de la lista persistida | Aclarado en T108: borrar `logistics:orders` reinicia la derivación del máximo | No se añade contador ni migración; los correlativos no se reutilizan mientras persista el historial |
+| `orderPrefixForMovementType()` sin consumidores; ordenación por `transaction_id` con `NaN` legacy | Resuelto en T109: helper eliminado y comparador numérico con valores no finitos al final | Cerrado con prueba de regresión |
+
+**Reevaluación post-implementación**: la ampliación mantiene la separación dominio/interfaz, no introduce dependencias, preserva HU-01–HU-08 y deja verificable HU-09. T104–T110 están completos; T107 permanece diferida sin afectar lo ya implementado.
+
+## Ampliación: Plan de Diseño para HU-10 y HU-11 (2026-11-23)
+
+### Alcance y restricción
+
+Esta ampliación cubre **exclusivamente HU-10 (buscador y filtros de transferencias)** y **HU-11 (seguimiento de envíos al comprador)**. No reprograma, reemplaza ni elimina la planificación de HU-01 a HU-09; no crea ramas, commits ni push; y no implementa código. Las tareas derivadas se generarán más adelante con `/speckit.tasks`.
+
+Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2026-11-23: búsqueda parcial e insensible a mayúsculas (HU-10), los tres roles pueden actualizar estados, una OV tiene como máximo un envío, avance secuencial con `Entregado` terminal, vista propia «Seguimiento de envíos» y relación 1:1 OV–envío.
+
+### Contexto Técnico HU-10/HU-11
+
+**Lenguaje/Versión**: JavaScript ES2022, HTML y CSS; sin cambios respecto al módulo.  
+**Persistencia**: claves `logistics:*` existentes más la nueva `logistics:shipments`; una lista completa por entidad.  
+**Dominio HU-10**: `listTransfers(filters)` con filtros opcionales; sin escritura.  
+**Dominio HU-11**: nuevo módulo `src/domain/shipments.js` con creación, avance de estado, consulta e historial embebido.  
+**Identidad**: usuario activo simulado de `logistics:active_user_id`; sin autenticación.  
+**Permisos**: matriz existente más `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status`; FR-124 se mantiene como límite superior.  
+**Navegación**: módulo `shipments`, vista `view-shipments` y ruta hash `#/shipments` gestionada por `showModule()`.  
+**Pruebas**: Vitest con jsdom; se amplían pruebas de transferencias y se añaden pruebas unitarias/de integración de envíos.  
+**Clarificaciones**: resueltas en `spec.md`; no quedan `NEEDS CLARIFICATION`.
+
+### Verificación de la Constitución — HU-10/HU-11
+
+- Calidad: los filtros de transferencias se concentran en `transfers.js` y el seguimiento en `shipments.js`; la interfaz solo consume esas APIs, sin duplicar reglas.
+- Pruebas: se cubren combinación de filtros, estado vacío, no mutación, unicidad OV–envío, transiciones secuenciales, historial y permisos con pruebas unitarias e integración.
+- Experiencia de Usuario: se reutilizan `.toolbar`, `.filter-grid`, `.empty`, `.data-table` y `.status-badge`; la nueva vista usa el mismo marco ERP y mensajes claros de denegación.
+- Rendimiento: el filtrado se resuelve en memoria sobre listas ya cargadas, sin round-trips ni dependencias; compatible con el objetivo de 500 registros.
+- Seguridad/roles: se mantiene el modelo de roles simulados; la matriz puede restringir pero no otorgar acciones prohibidas (FR-124), y los textos visibles se escapan con `escapeHtml`.
+
+**Resultado**: sin violaciones de la constitución. El diseño es aditivo y no altera los contratos de HU-01 a HU-09.
+
+### Diseño HU-10 — Búsqueda y filtros de transferencias
+
+**Contrato de dominio**
+
+- `listTransfers(filters = {})` conserva la firma sin argumentos y la ordenación actual por `transfer_id` descendente.
+- Filtros admitidos: `term`, `status`, `productId`, `sourceWarehouseId`, `targetWarehouseId`.
+- `term` aplica coincidencia parcial e insensible a mayúsculas sobre `product_name` y sobre `String(transfer_id)`; no se añade búsqueda por SKU porque no está en el alcance.
+- `status`, `productId`, `sourceWarehouseId` y `targetWarehouseId` se comparan de forma exacta; los IDs se normalizan con `Number(...)`.
+- Todos los filtros presentes se combinan con AND; un filtro vacío o `undefined` se ignora.
+- La operación es de solo lectura: no escribe `logistics:stock_transfers`, `logistics:stock`, catálogos ni movimientos.
+
+**Interfaz y puntos de cambio**
+
+- Controles nuevos dentro de `#view-transfers`, en la tarjeta «Transferencias registradas»: `transfer-search`, `transfer-filter-status`, `transfer-filter-product`, `transfer-filter-source` y `transfer-filter-target`.
+- `renderTransferList()` recibe la lista ya filtrada; se mantiene su actualización de `transfer-count` y del estado vacío `transfer-list-empty`.
+- Se añade una columna `#ID` al listado para hacer verificable la búsqueda por identificador de transferencia.
+- `refreshTransfers()` lee los controles y llama a `listTransfers(filters)`; los eventos `input`/`change` se registran junto a los filtros existentes.
+- No se añade permiso ni módulo: HU-10 hereda `module:transfers` y `view:transfers`.
+- Puntos de cambio previstos: `src/domain/transfers.js`, `src/app.js`, `src/components/transfer-list.js`, `index.html`, `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js` y, si el filtro incrementa el coste medido, `tests/unit/performance.test.js`.
+
+### Diseño HU-11 — Seguimiento de envíos al comprador
+
+**Persistencia y esquema**
+
+- Clave nueva: `logistics:shipments`, lista completa de registros `SHIPMENTS`.
+- Campos persistidos: `shipment_id` (int, PK), `order_id` (string, FK única a `PURCHASE_SALES_ORDERS`, solo OV), `carrier`, `tracking_code`, `status`, `created_by`, `created_at` e `history[]`.
+- `history[]` guarda eventos `{ status, changed_at, changed_by }` con fecha ISO y usuario responsable; el evento inicial `en_bodega` se crea junto con el envío.
+- Unicidad declarada como `unique: [['shipment_id'], ['order_id']]`; no se usa una unicidad compuesta plana.
+- `shipment_id` se deriva con el helper secuencial entero existente; no se reutilizan los prefijos `OC`/`OV`, que pertenecen a HU-09.
+- No se crea clave de contador ni migración; no se generan envíos retroactivos.
+
+**Reglas de dominio**
+
+- Estados persistidos: `en_bodega`, `en_transito`, `en_reparto`, `entregado`; etiquetas visibles: «En bodega», «En tránsito», «En reparto», «Entregado».
+- `advanceShipmentStatus(shipmentId, actorUserId)` solo permite avanzar al estado inmediatamente siguiente. Se rechazan saltos, retrocesos, repeticiones y cualquier cambio desde `entregado` (FR-132).
+- `actorUserId` se valida contra `USERS`; cada avance agrega un evento de historial con `new Date().toISOString()` y el `user_id` numérico.
+- `createShipment({ orderId, carrier, trackingCode, createdBy })` valida que la orden exista, sea `order_type = "venta"` y no tenga ya un envío (FR-131).
+- `listShipments(filters)` admite búsqueda parcial e insensible a mayúsculas por `orderId` y `trackingCode`, y filtro exacto por `status`.
+- El módulo no llama a `registerMovement()`, no modifica `STOCK` y no altera `logistics:orders` ni `logistics:inventory_transactions`.
+
+**Permisos y semilla**
+
+- Recursos nuevos: `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status`.
+- La semilla permite módulo, vista y acciones a `administrador`, `supervisor_inventario` y `encargado_bodega`, conforme a la clarificación de roles; FR-124 sigue vigente.
+- No se añaden entradas a `FORBIDDEN_BY_ROLE`: la matriz puede restringir, nunca conceder más de lo permitido por reglas de negocio.
+- No se sobrescribe `ROLE_PERMISSIONS` ya persistido; las filas ausentes se resuelven con el fallback de la semilla en `getEffectivePermission()`.
+
+**Interfaz y navegación**
+
+- Nuevo módulo `shipments` en `MODULES`/`VIEWS` de `app.js` y `permissions.js`, botón `nav-shipments` en la barra lateral y contenedor `view-shipments` en `index.html`.
+- Componentes nuevos: `shipment-form.js` (selección de OV elegible, transportista y código de seguimiento) y `shipment-list.js` (listado, búsqueda, historial y acción de avance).
+- `showModule()` aplica el guard `module:shipments`; la ruta directa `#/shipments` se bloquea con el mensaje de falta de permiso y redirección a la landing permitida.
+- La interfaz reutiliza tokens CSS existentes; no se crea un tema nuevo ni se modifica el marco ERP.
+- Puntos de cambio previstos: `src/storage.js`, `src/domain/shipments.js`, `src/domain/seed.js`, `src/domain/permissions.js`, `src/components/shipment-form.js`, `src/components/shipment-list.js`, `src/components/shell.js`, `src/app.js`, `index.html`, `tests/unit/shipments.test.js`, `tests/integration/shipments.test.js`, `tests/unit/storage.test.js`, `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` y `tests/integration/workspace-shell.test.js`.
+
+### Trazabilidad de requisitos HU-10/HU-11
+
+| Requisito | Evidencia prevista |
+|---|---|
+| FR-130 | `action:shipments.update_status` sembrado para los tres roles; guard de permisos en la vista |
+| FR-131 | `unique: [['order_id']]` y validación de orden OV sin envío en `createShipment()` |
+| FR-132 | Mapa de transición siguiente y rechazo de retrocesos/terminal en `advanceShipmentStatus()` |
+| FR-133 | Módulo `shipments`, vista `view-shipments`, ruta `#/shipments` y entrada en la matriz |
+| FR-134 | `listTransfers(filters)` con `term` parcial e insensible a mayúsculas sobre producto e ID |
+| Escenarios HU-10 | Controles `#transfer-*`, columna `#ID`, estado vacío y pruebas de combinación de filtros |
+| Escenarios HU-11 | Formulario/lista de envíos, historial con actor/fecha, búsqueda y no mutación de stock/movimientos |
+
+### Seguimiento de complejidad y riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| `listTransfers()` también alimenta el dashboard | Los filtros son opcionales y por defecto vacíos; sin filtros el resultado es idéntico al actual. |
+| Valores de filtro `string` frente a IDs numéricos | Normalización con `Number(...)` antes de comparar. |
+| Columna `#ID` nueva | Cambio de solo lectura; actualizar selectores y expectativas de las pruebas de transferencias. |
+| Unicidad 1:1 mal declarada | Usar `unique: [['shipment_id'], ['order_id']]`, nunca un array plano compuesto. |
+| Matriz persistida sin filas nuevas | Confiar en el fallback semilla sin sobrescribir la configuración guardada. |
+| Datos demo sin órdenes OV | Documentar la vista vacía hasta registrar una salida real; no generar backfill. |
+| Recuento de navegación | Ajustar la prueba que espera 11 botones a 12 al añadir `nav-shipments`. |
+
+**Reevaluación post-diseño (Fase 1)**: sin nuevas violaciones de la constitución. El diseño mantiene la separación dominio/interfaz, preserva HU-01–HU-09, agrega una vista con permisos coherentes y define criterios verificables antes de generar tareas.
+

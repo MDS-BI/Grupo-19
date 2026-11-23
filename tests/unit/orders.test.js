@@ -91,6 +91,13 @@ describe('orders domain', () => {
     expect(loadOrders()).toHaveLength(1);
   });
 
+  it('rejects an order that does not satisfy the orders schema', () => {
+    const movement = { transaction_id: 77, product_id: 1, warehouse_id: 1, quantity: 4, user_id: 1, transaction_type: 'entrada', transaction_date: '2026-11-23T00:00:00.000Z' };
+    delete movement.warehouse_id;
+    expect(() => createOrderForMovement(movement)).toThrow(/warehouse_id/);
+    expect(loadOrders()).toEqual([]);
+  });
+
   it('rolls back stock, movement and order when writing orders fails', () => {
     const originalSetItem = localStorage.setItem.bind(localStorage);
     const spy = vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
@@ -156,5 +163,14 @@ describe('orders domain', () => {
       product_name: 'Producto 1',
       warehouse_name: 'Bodega A'
     });
+  });
+
+  it('places legacy transaction ids after numeric ids when listing orders', () => {
+    saveOrders([
+      { order_id: 'OC-0001', transaction_id: 'legacy', product_id: 1, warehouse_id: 1, quantity: 1, user_id: 1, order_date: '2026-11-23T00:00:00.000Z' },
+      { order_id: 'OC-0002', transaction_id: 12, product_id: 1, warehouse_id: 1, quantity: 2, user_id: 1, order_date: '2026-11-23T00:00:01.000Z' },
+      { order_id: 'OV-0001', transaction_id: 7, product_id: 1, warehouse_id: 1, quantity: 3, user_id: 1, order_date: '2026-11-23T00:00:02.000Z' }
+    ]);
+    expect(listOrders().map(order => order.order_id)).toEqual(['OC-0002', 'OV-0001', 'OC-0001']);
   });
 });

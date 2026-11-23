@@ -37,9 +37,9 @@ export const ROLE_SEED = [
   }
 ];
 
-const ALL_MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments', 'entities', 'documents', 'search'];
-const OPERATION_MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments'];
-const SECTIONS = ['product-form', 'warehouse-form', 'movement-form', 'transfer-form', 'replenishment-form', 'base-module-card', 'entity-form', 'document-form'];
+const ALL_MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'shipments', 'alerts', 'replenishments', 'entities', 'documents', 'search'];
+const OPERATION_MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'shipments', 'alerts', 'replenishments'];
+const SECTIONS = ['product-form', 'warehouse-form', 'movement-form', 'transfer-form', 'shipment-form', 'replenishment-form', 'base-module-card', 'entity-form', 'document-form'];
 
 const ADMIN_ACTIONS = {
   'products.manage': true,
@@ -50,6 +50,8 @@ const ADMIN_ACTIONS = {
   'transfers.create': true,
   'transfers.confirm': true,
   'transfers.cancel': true,
+  'shipments.create': true,
+  'shipments.update_status': true,
   'replenishments.create': true,
   'replenishments.approve': true,
   'replenishments.cancel': true,
@@ -66,6 +68,8 @@ const SUPERVISOR_ACTIONS = {
   'transfers.create': false,
   'transfers.confirm': false,
   'transfers.cancel': false,
+  'shipments.create': true,
+  'shipments.update_status': true,
   'replenishments.create': true,
   'replenishments.approve': false,
   'replenishments.cancel': false,
@@ -82,6 +86,8 @@ const WAREHOUSE_ACTIONS = {
   'transfers.create': true,
   'transfers.confirm': true,
   'transfers.cancel': true,
+  'shipments.create': true,
+  'shipments.update_status': true,
   'replenishments.create': false,
   'replenishments.approve': false,
   'replenishments.cancel': false,
@@ -97,7 +103,7 @@ function roleEntries(roleKey, modules, actions, isAdmin){
       role_key: roleKey,
       scope: 'seccion',
       resource_key: `section:${section}`,
-      allowed: isAdmin || section === 'movement-form' || section === 'transfer-form' || section === 'replenishment-form'
+      allowed: isAdmin || ['movement-form', 'transfer-form', 'shipment-form', 'replenishment-form'].includes(section)
     })),
     ...Object.entries(actions).map(([action, allowed]) => ({ role_key: roleKey, scope: 'accion', resource_key: `action:${action}`, allowed })),
     { role_key: roleKey, scope: 'panel', resource_key: 'admin:permissions', allowed: isAdmin }

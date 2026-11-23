@@ -17,6 +17,7 @@ export const LOGISTICS_KEYS = {
   stock: 'logistics:stock',
   movements: 'logistics:inventory_transactions',
   orders: 'logistics:orders',
+  shipments: 'logistics:shipments',
   transfers: 'logistics:stock_transfers',
   replenishments: 'logistics:replenishment_requests',
   roles: 'logistics:roles',
@@ -30,8 +31,13 @@ export const LOGISTICS_SCHEMAS = {
   warehouses: { required: ['warehouse_id', 'name', 'location', 'status'], unique: ['warehouse_id', 'name'] },
   users: { required: ['user_id', 'user_name', 'role'], unique: ['user_id'], references: { role: 'roles' } },
   stock: { required: ['stock_id', 'product_id', 'warehouse_id', 'quantity_available'], unique: ['stock_id', ['product_id', 'warehouse_id']] },
-  movements: { required: ['transaction_id', 'product_id', 'warehouse_id', 'transaction_type', 'quantity', 'user_id', 'transaction_date'], unique: ['transaction_id'] },
+  movements: { required: ['transaction_id', 'product_id', 'warehouse_id', 'transaction_type', 'quantity', 'user_id', 'transaction_date'], optional: ['order_id'], unique: ['transaction_id'] },
   orders: { required: ['order_id', 'order_type', 'transaction_id', 'product_id', 'warehouse_id', 'quantity', 'user_id', 'order_date'], unique: ['order_id', 'transaction_id'] },
+  shipments: {
+    required: ['shipment_id', 'order_id', 'carrier', 'tracking_code', 'status', 'created_by', 'created_at', 'history'],
+    unique: [['shipment_id'], ['order_id']],
+    values: { status: ['en_bodega', 'en_transito', 'en_reparto', 'entregado'] }
+  },
   transfers: { required: ['transfer_id', 'product_id', 'source_warehouse_id', 'target_warehouse_id', 'quantity', 'status', 'transfer_date', 'created_by'], unique: ['transfer_id'] },
   replenishments: { required: ['request_id', 'product_id', 'warehouse_id', 'quantity', 'status', 'request_date', 'created_by'], unique: ['request_id'] },
   roles: { required: ['role_key', 'role_label', 'default_landing_module', 'is_admin'], unique: ['role_key'] },
@@ -105,6 +111,8 @@ export const loadMovements = () => loadList(LOGISTICS_KEYS.movements);
 export const saveMovements = (list) => saveList(LOGISTICS_KEYS.movements, list);
 export const loadOrders = () => loadList(LOGISTICS_KEYS.orders);
 export const saveOrders = (list) => saveList(LOGISTICS_KEYS.orders, list);
+export const loadShipments = () => loadList(LOGISTICS_KEYS.shipments);
+export const saveShipments = (list) => saveList(LOGISTICS_KEYS.shipments, list);
 export const loadTransfers = () => loadList(LOGISTICS_KEYS.transfers);
 export const saveTransfers = (list) => saveList(LOGISTICS_KEYS.transfers, list);
 export const loadReplenishments = () => loadList(LOGISTICS_KEYS.replenishments);
@@ -143,6 +151,15 @@ export function validateRecord(schemaName, record, context = {}){
       errors[field] = `El campo ${field} es obligatorio`;
     }
   }
+  if(schema.values){
+    for(const [field, allowed] of Object.entries(schema.values)){
+      const value = record[field];
+      if(value === undefined || value === null || value === '') continue;
+      if(!allowed.some(option => String(option) === String(value))){
+        errors[field] = `El campo ${field} no tiene un valor válido`;
+      }
+    }
+  }
   if(schema.unique && context.list){
     for(const key of schema.unique){
       if(hasDuplicateCompositeKey(context.list, key, record)){
@@ -164,6 +181,7 @@ export function nextProductId(){ return nextId(loadProducts(), 'product_id'); }
 export function nextWarehouseId(){ return nextId(loadWarehouses(), 'warehouse_id'); }
 export function nextStockId(){ return nextId(loadStock(), 'stock_id'); }
 export function nextMovementId(){ return nextId(loadMovements(), 'transaction_id'); }
+export function nextShipmentId(){ return nextId(loadShipments(), 'shipment_id'); }
 export function nextTransferId(){ return nextId(loadTransfers(), 'transfer_id'); }
 export function nextReplenishmentId(){ return nextId(loadReplenishments(), 'request_id'); }
 

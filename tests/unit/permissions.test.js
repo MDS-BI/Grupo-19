@@ -151,4 +151,28 @@ describe('HU-08 roles and permissions domain', () => {
     expect(loadUsers().find((u) => u.user_id === 4).role).toBe('supervisor_inventario');
     saveRolePermissions(loadRolePermissions());
   });
+
+  it('registers shipment permissions for all three roles without business-rule forbiddance (T122, FR-130, FR-133)', () => {
+    expect(MODULES).toContain('shipments');
+    for(const role of ['administrador', 'supervisor_inventario', 'encargado_bodega']){
+      expect(canAccessModule(role, 'shipments')).toBe(true);
+      expect(getEffectivePermission(role, 'vista', 'view:shipments')).toBe(true);
+      expect(canPerform(role, 'shipments.create')).toBe(true);
+      expect(canPerform(role, 'shipments.update_status')).toBe(true);
+      expect(setRolePermission(role, 'accion', 'action:shipments.create', true).success).toBe(true);
+      expect(setRolePermission(role, 'accion', 'action:shipments.update_status', true).success).toBe(true);
+    }
+  });
+
+  it('falls back to the seed for shipment rows missing from a persisted matrix without rewriting it (T122, FR-124, FR-133)', () => {
+    const trimmed = loadRolePermissions().filter(permission => !permission.resource_key.includes('shipments'));
+    saveRolePermissions(trimmed);
+    const before = loadRolePermissions();
+    expect(before.some(permission => permission.resource_key.includes('shipments'))).toBe(false);
+
+    expect(canAccessModule('administrador', 'shipments')).toBe(true);
+    expect(getEffectivePermission('supervisor_inventario', 'vista', 'view:shipments')).toBe(true);
+    expect(canPerform('encargado_bodega', 'shipments.update_status')).toBe(true);
+    expect(loadRolePermissions()).toEqual(before);
+  });
 });

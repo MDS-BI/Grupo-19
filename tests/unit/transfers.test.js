@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { saveProducts, saveWarehouses, saveUsers, loadTransfers } from '../../src/storage.js';
+import { saveProducts, saveTransfers, saveWarehouses, saveUsers, loadTransfers } from '../../src/storage.js';
 import { upsertStockForEntry, getStockRecord } from '../../src/domain/stock.js';
 import { requestTransfer, confirmTransfer, cancelTransfer, listTransfers } from '../../src/domain/transfers.js';
 
@@ -133,5 +133,44 @@ describe('transfers domain', () => {
     expect(all[0].product_name).toBe(PRODUCT.product_name);
     expect(all[0].source_warehouse_name).toBe(SOURCE.name);
     expect(all[0].transfer_id).toBeGreaterThan(all[1].transfer_id);
+  });
+
+  it('filters by partial case-insensitive term and exact normalized fields without writing storage (T111, FR-134)', () => {
+    const secondProduct = { product_id: 2, sku: 'SKU-2', product_name: 'Producto Segundo', status: 'activo' };
+    const thirdWarehouse = { warehouse_id: 3, name: 'Tercera', status: 'activo' };
+    saveProducts([PRODUCT, secondProduct]);
+    saveWarehouses([SOURCE, TARGET, thirdWarehouse]);
+    saveTransfers([
+      { transfer_id: 1, product_id: 1, source_warehouse_id: 1, target_warehouse_id: 2, quantity: 1, status: 'pendiente', transfer_date: '2026-11-20T10:00:00.000Z', created_by: 1 },
+      { transfer_id: 2, product_id: 2, source_warehouse_id: 1, target_warehouse_id: 3, quantity: 2, status: 'confirmada', transfer_date: '2026-11-21T10:00:00.000Z', created_by: 1 },
+      { transfer_id: 3, product_id: 2, source_warehouse_id: 2, target_warehouse_id: 1, quantity: 3, status: 'cancelada', transfer_date: '2026-11-22T10:00:00.000Z', created_by: 2 }
+    ]);
+
+    expect(listTransfers().map(t => t.transfer_id)).toEqual([3, 2, 1]);
+    expect(listTransfers()[2]).toMatchObject({
+      product_name: PRODUCT.product_name,
+      source_warehouse_name: SOURCE.name,
+      target_warehouse_name: TARGET.name,
+      created_by_name: CREATOR.user_name
+    });
+    expect(listTransfers({ term: 'segundo' }).map(t => t.transfer_id)).toEqual([3, 2]);
+    expect(listTransfers({ term: 'SEGUNDO' }).map(t => t.transfer_id)).toEqual([3, 2]);
+    expect(listTransfers({ term: '2' }).map(t => t.transfer_id)).toEqual([2]);
+    expect(listTransfers({ status: 'confirmada' }).map(t => t.transfer_id)).toEqual([2]);
+    expect(listTransfers({ productId: '2' }).map(t => t.transfer_id)).toEqual([3, 2]);
+    expect(listTransfers({ sourceWarehouseId: '1' }).map(t => t.transfer_id)).toEqual([2, 1]);
+    expect(listTransfers({ targetWarehouseId: '3' }).map(t => t.transfer_id)).toEqual([2]);
+    expect(listTransfers({
+      term: 'segundo',
+      status: 'confirmada',
+      productId: 2,
+      sourceWarehouseId: '1',
+      targetWarehouseId: '3'
+    }).map(t => t.transfer_id)).toEqual([2]);
+    expect(listTransfers({ term: '', status: undefined, productId: '', sourceWarehouseId: null }).map(t => t.transfer_id)).toEqual([3, 2, 1]);
+
+    const before = [...store.entries()];
+    listTransfers({ term: 'segundo', status: 'confirmada', productId: '2' });
+    expect([...store.entries()]).toEqual(before);
   });
 });

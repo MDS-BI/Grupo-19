@@ -2,7 +2,7 @@
 
 **Rama de la funcionalidad**: 002-logistica-inventario  
 **Creada**: 2026-10-29  
-**Estado**: HU-01 a HU-07 implementadas — pendiente de validación final; HU-08 planeada — pendiente de generación de tareas e implementación
+**Estado**: HU-01 a HU-07 implementadas — pendiente de validación final; HU-08 planeada — pendiente de generación de tareas e implementación; HU-09 implementada y verificada — deuda T104–T110 cerrada, T107 diferida
 **Entrada**: Descripción del usuario: "Desarrollar un módulo de Logística e Inventario para gestionar productos, bodegas y existencias, permitiendo registrar entradas y salidas de productos, realizar transferencias entre bodegas y generar alertas de stock mínimo".
 **Ampliación (2026-11-22)**: Descripción del usuario: "Agregar una nueva historia de usuario para la gestión de roles, redirección inicial y control de visibilidad por usuario: asignar y cambiar el cargo de un usuario con una página de inicio por rol; configurar qué módulos, vistas o secciones puede ver cada rol o usuario; mostrar u ocultar menús, rutas y botones según permisos y bloquear el acceso directo por URL a vistas no autorizadas".
 
@@ -73,6 +73,19 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Los cambios de permisos alteran datos operativos? → A: No; solo afectan la visibilidad y la navegación, sin modificar productos, bodegas, stock, movimientos, transferencias ni reposiciones.
 - Q: ¿Qué evento debe abrir automáticamente la página de inicio según el cargo, dado que en esta iteración no existe una pantalla de inicio de sesión? → A: Al cargar la aplicación con el usuario activo por defecto y también al cambiar de usuario activo en la cabecera del ERP.
 - Q: ¿Qué prevalece cuando la matriz de permisos permite una acción que una regla de negocio existente prohíbe para ese cargo, por ejemplo un encargado de bodega creando o aprobando reposiciones? → A: Las reglas de negocio existentes prevalecen siempre; la matriz solo puede restringir el acceso, nunca otorgarlo.
+
+### Session 2026-11-23 — HU-09
+
+- Q: ¿Qué información debe contener cada orden además de su identificador y del movimiento que la origina? → A: Solo producto, bodega, cantidad, fecha y usuario del movimiento; sin importes ni estados.
+- Q: ¿Cómo deben generarse los identificadores OC-0001 y OV-0001? → A: Dos secuencias independientes por tipo de orden, correlativas, persistentes entre sesiones y sin reutilizar identificadores.
+- Q: ¿Deben generar órdenes las transferencias confirmadas entre bodegas, además de las entradas y salidas normales? → A: No; solo las entradas y salidas normales generan órdenes.
+- Q: ¿Qué ocurre si falla la generación de la orden al guardar un movimiento? → A: Se rechaza toda la operación: no se guarda el movimiento, no se modifica el stock y se muestra un error.
+- Q: ¿Dónde deben consultarse las órdenes y qué roles pueden verlas? → A: Opción A; se conserva un panel de órdenes dentro de Movimientos, visible para todo rol con acceso a Movimientos, sin nueva vista ni permisos.
+- Q: ¿Qué roles pueden actualizar manualmente el estado de un envío al comprador? → A: Los tres roles definidos (`administrador`, `supervisor_inventario` y `encargado_bodega`) pueden actualizarlo; la matriz de HU-08 solo puede restringir ese acceso, nunca otorgarlo (FR-124).
+- Q: ¿Una orden de venta puede tener varios envíos con seguimiento independiente? → A: No; cada orden de venta tiene como máximo un envío y cada envío pertenece a una sola orden de venta (relación uno a uno).
+- Q: ¿Los estados de seguimiento pueden avanzar solo en orden o se puede retroceder a una etapa anterior? → A: Solo avance secuencial: En bodega → En tránsito → En reparto → Entregado; Entregado es final y no admite retrocesos.
+- Q: ¿Dónde deben registrarse y consultarse los envíos con su historial de estados? → A: En una vista dedicada "Seguimiento de envíos", con una entrada en la matriz de permisos de HU-08.
+- Q: ¿La búsqueda de transferencias debe exigir coincidencia exacta o aceptar coincidencias parciales sin distinguir mayúsculas? → A: Coincidencia parcial e insensible a mayúsculas para nombre de producto e identificador de transferencia.
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
@@ -221,6 +234,67 @@ Como administrador del sistema, quiero asignar y cambiar el cargo de los usuario
 10. **Dado que** se modifican roles, landing pages o permisos, **cuando** se consultan productos, bodegas, stock, movimientos, transferencias o reposiciones, **entonces** esos datos permanecen intactos y el usuario activo que registra operaciones no cambia.
 11. **Dado que** el administrador configura la matriz para otorgar al encargado de bodega acceso a crear o aprobar reposiciones, **cuando** el encargado consulta esa sección, **entonces** el sistema mantiene las restricciones de FR-099 y no le muestra el formulario de creación ni las acciones de aprobación o cancelación.
 
+### Historia de Usuario 9 - Gestión de órdenes de adquisición y venta (Prioridad: P2)
+
+Como encargado de bodega o supervisor de inventario, quiero que cada entrada y salida normal genere automáticamente una orden de adquisición o venta con identificador único, para mantener la trazabilidad de los movimientos.
+
+**Por qué es prioridad**: Cada entrada o salida normal ya altera `STOCK` y queda registrada como movimiento inmutable; la orden que asocia ese movimiento con un identificador de adquisición o venta hace verificable la trazabilidad sin introducir un flujo de aprobación ni importes que hoy no están en alcance.
+
+**Prueba independiente**: Registrar una entrada y una salida, comprobar que se generen OC-0001 y OV-0001 y que aparezcan vinculadas a sus movimientos.
+
+**Escenarios de aceptación**:
+1. Una entrada normal genera una orden OC.
+2. Una salida normal genera una orden OV.
+3. Cada orden tiene un identificador único y correlativo con formato `OC-0001`/`OV-0001`: OC y OV usan secuencias independientes, persisten entre sesiones y no reutilizan identificadores mientras se conserve el historial persistido en `logistics:orders`.
+4. Las órdenes aparecen en un panel dentro de la vista Movimientos, visible para todo rol con acceso a Movimientos, sin nueva vista ni permisos.
+5. Los ajustes, las reposiciones y las transferencias confirmadas no generan órdenes.
+6. El stock se actualiza una sola vez y, si falla la generación de la orden, se rechaza el movimiento completo sin modificar el stock, sin dejar registros parciales y mostrando el error de almacenamiento en el formulario de movimientos.
+7. Cada orden queda vinculada a su movimiento y registra producto, bodega, cantidad, fecha y usuario del movimiento, sin importes ni estados.
+
+**Definición operativa HU-09**: una entrada o salida normal es un movimiento registrado directamente desde Movimientos; quedan excluidos los ajustes, la recepción de reposiciones y las transferencias confirmadas, que conservan su trazabilidad en sus propias entidades.
+
+### Historia de Usuario 10 - Buscador y filtros para transferencias entre bodegas (Prioridad: P2)
+
+Como encargado de bodega o supervisor de inventario, quiero buscar y filtrar las transferencias registradas por producto, bodegas y estado, para encontrar rápidamente la información que necesito sin revisar manualmente todo el historial.
+
+**Por qué es prioridad**: El sistema ya permite registrar y gestionar transferencias entre bodegas. Sin embargo, cuando aumenta la cantidad de registros, resulta difícil localizar una transferencia específica. Incorporar búsquedas y filtros mejora la consulta sin alterar las operaciones existentes.
+
+**Prueba independiente**: Registrar varias transferencias con diferentes productos, bodegas y estados. Aplicar búsquedas y filtros individualmente y combinados, comprobando que se muestran únicamente los registros correspondientes.
+
+**Escenarios de aceptación**:
+
+1. El usuario puede buscar transferencias por nombre del producto o identificador de transferencia, aceptando coincidencias parciales e insensibles a mayúsculas.
+2. El usuario puede filtrar las transferencias por bodega de origen y bodega de destino.
+3. El usuario puede filtrar las transferencias según su estado: pendiente, confirmada o cancelada.
+4. El sistema permite combinar el buscador con varios filtros simultáneamente.
+5. El usuario puede limpiar los filtros para volver a visualizar todas las transferencias.
+6. Cuando no existen coincidencias, el sistema muestra un mensaje indicando que no se encontraron resultados.
+7. Las búsquedas y los filtros no modifican los registros de transferencias ni las existencias del inventario.
+
+---
+
+### Historia de Usuario 11 - Seguimiento de envíos al comprador (Prioridad: P2)
+
+Como encargado de bodega o supervisor de inventario, quiero registrar y consultar el seguimiento de los productos enviados al comprador, para conocer la etapa en que se encuentra cada entrega y mantener su trazabilidad.
+
+**Por qué es prioridad**: Actualmente, el sistema genera órdenes de venta cuando los productos salen de la bodega, pero estas órdenes no permiten conocer el avance del envío hasta el comprador. Incorporar un seguimiento vinculado a las órdenes de venta permite consultar el estado de las entregas y conservar un historial de sus cambios.
+
+**Prueba independiente**: Registrar una salida de inventario que genere una orden de venta, asociarle un envío con empresa transportista y código de seguimiento, actualizar sus estados y comprobar que el historial conserva cada modificación.
+
+**Escenarios de aceptación**:
+
+1. El usuario puede asociar un envío a una orden de venta (OV) existente, sin generar un movimiento adicional de inventario.
+2. Cada envío permite registrar una empresa transportista, como Blue Express, y su código de seguimiento.
+3. El sistema muestra el estado actual del envío mediante las etapas secuenciales: En bodega, En tránsito, En reparto y Entregado; la última es final.
+4. Cualquiera de los tres roles definidos (`administrador`, `supervisor_inventario` o `encargado_bodega`) puede actualizar manualmente el estado del envío solo a la etapa secuencial siguiente, sin retrocesos ni cambios desde Entregado, sujeto a las restricciones de la matriz de permisos de HU-08 (FR-124).
+5. Cada cambio de estado queda registrado en un historial que incluye fecha, hora y usuario responsable.
+6. El usuario puede buscar envíos por identificador de orden de venta, código de seguimiento o estado.
+7. El sistema conserva la relación uno a uno entre el envío y la orden de venta correspondiente: cada OV tiene como máximo un envío y cada envío pertenece a una sola OV.
+8. Las órdenes de adquisición (OC) no generan seguimiento de envíos al comprador.
+9. La actualización de estados no modifica nuevamente el stock ni los movimientos de inventario.
+10. En esta versión no se implementan conexiones automáticas con servicios de empresas transportistas; el seguimiento se actualiza manualmente dentro del ERP.
+11. El registro, la consulta y la actualización de estados se realizan desde la vista "Seguimiento de envíos", cuya visibilidad se controla mediante una entrada en la matriz de permisos de HU-08; sin permiso se aplican FR-113 a FR-115.
+
 ---
 
 ### Casos Límite
@@ -254,6 +328,7 @@ Como administrador del sistema, quiero asignar y cambiar el cargo de los usuario
 - ¿Qué ocurre cuando se intenta editar o eliminar un movimiento de inventario ya registrado?
 - ¿Qué ocurre cuando se intenta registrar un movimiento con un usuario que no existe?
 - ¿Qué ocurre cuando se registra una entrada de un producto con fecha de vencimiento? (Se difiere a una historia posterior).
+- ¿Qué ocurre si falla la generación de la orden al guardar una entrada o salida normal? (Se rechaza el movimiento completo, no se modifica `STOCK` y no quedan registros parciales).
 - ¿Qué ocurre cuando se registra un ajuste (`ajuste_entrada` o `ajuste_salida`) sobre un movimiento ya registrado? (Se crea un nuevo movimiento inmutable; el original no se modifica).
 - ¿Qué sucede si el administrador intenta registrar una nueva bodega utilizando un nombre o identificador que ya existe en el sistema?
 - ¿Cómo maneja el sistema la desactivación o eliminación lógica de una bodega que aún contiene stock de productos o historial de movimientos activos?
@@ -285,6 +360,9 @@ Como administrador del sistema, quiero asignar y cambiar el cargo de los usuario
 - ¿Qué ocurre si un usuario con permisos limitados consulta una vista permitida que contiene acciones de otras secciones? (Los botones no autorizados se ocultan o deshabilitan; el resto de la vista sigue operativa).
 - ¿Qué ocurre si cambia el cargo del usuario activo mientras tiene seleccionada una bodega operativa? (La bodega asignada no cambia; solo cambian permisos y navegación).
 - ¿Qué ocurre si la matriz de permisos intenta otorgar a un cargo una acción prohibida por una regla de negocio? (La regla de negocio prevalece; la configuración no concede ese acceso).
+- ¿Qué ocurre si un usuario sin acceso a Movimientos intenta consultar las órdenes? (No existe una vista propia de órdenes; se aplica el bloqueo de Movimientos de HU-08 y no se muestra el panel).
+- ¿Qué ocurre si se elimina o se intenta editar un movimiento que ya generó una orden? (El movimiento sigue siendo inmutable y la orden conserva el vínculo con él).
+- ¿Qué ocurre si se intenta retroceder el estado de un envío o modificar uno ya entregado? (Se rechaza el cambio; solo se permite avanzar a la etapa secuencial siguiente y Entregado es final).
 
 ## Requisitos *(obligatorio)*
 
@@ -416,6 +494,18 @@ Como administrador del sistema, quiero asignar y cambiar el cargo de los usuario
 - **FR-122**: El sistema DEBE conservar la configuración de cargos, landing pages y permisos entre sesiones dentro del mismo navegador.
 - **FR-123**: El sistema DEBE tratar los nombres de roles, módulos y secciones introducidos en la configuración de la misma forma que FR-046, FR-092 y FR-103 antes de mostrarlos.
 - **FR-124**: El sistema DEBE aplicar la matriz de permisos y las excepciones individuales solo para restringir el acceso permitido por las reglas de negocio vigentes, incluida FR-099; la configuración NO DEBE otorgar a un cargo acciones que esas reglas le prohíban.
+- **FR-125**: Cada orden generada DEBE registrar su identificador, el movimiento de origen y, tomados de ese movimiento, producto, bodega, cantidad, fecha y usuario; NO DEBE incluir importes ni estados.
+- **FR-126**: El sistema DEBE asignar los identificadores de orden desde dos secuencias independientes por tipo (`OC` y `OV`), con formato `OC-0001`/`OV-0001`, correlativas y persistentes entre sesiones; NO DEBE reutilizar valores mientras se conserve el historial persistido en `logistics:orders`.
+- **FR-127**: El sistema SOLO DEBE generar órdenes para movimientos con `transaction_type` "entrada" o "salida"; NO DEBE generarlas para ajustes, recepciones de reposición ni transferencias confirmadas.
+- **FR-128**: Si no se puede generar la orden de un movimiento normal, el sistema DEBE rechazar toda la operación, no DEBE persistir el movimiento, NO DEBE modificar `STOCK` y DEBE mostrar el error de almacenamiento en el formulario de movimientos.
+- **FR-129**: El sistema DEBE mostrar las órdenes en un panel dentro de la vista Movimientos para todo rol con acceso a Movimientos, sin crear una vista independiente ni un permiso nuevo en la matriz de HU-08.
+- **FR-130**: El sistema DEBE permitir a los roles `administrador`, `supervisor_inventario` y `encargado_bodega` actualizar manualmente el estado de un envío, sujeto a lo dispuesto en FR-124.
+- **FR-131**: El sistema DEBE asociar como máximo un envío a cada orden de venta y DEBE asociar cada envío a una sola orden de venta.
+- **FR-132**: El sistema DEBE permitir actualizar el estado de un envío solo a la etapa secuencial siguiente (En bodega → En tránsito → En reparto → Entregado) y DEBE rechazar retrocesos o cambios posteriores al estado Entregado.
+- **FR-133**: El sistema DEBE ofrecer una vista "Seguimiento de envíos" para registrar, consultar y actualizar envíos y su historial, con una entrada en la matriz de permisos de HU-08 sujeta a FR-113, FR-114, FR-115 y FR-124.
+- **FR-134**: El sistema DEBE buscar transferencias por nombre de producto o identificador de transferencia usando coincidencia parcial e insensible a mayúsculas.
+
+**Correspondencia de campos HU-09**: `movement_id` en esta especificación equivale a `transaction_id` en la persistencia; los valores `OC`/`OV` se expresan en `order_id` y `order_type` adopta `adquisicion`/`venta` en la implementación, sin renombrar campos persistidos.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
 
@@ -434,6 +524,8 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **Bodega (`WAREHOUSES`)**: Ubicación física donde se almacenan los productos. Atributos clave: `warehouse_id`, `name` (único y obligatorio), `location` (obligatorio), `description` (opcional), `capacity` (mayor o igual a cero), `status` (activo/inactivo) y `responsable_id` (FK opcional a `USERS`; identifica al responsable principal de la bodega).
 - **Stock (`STOCK`)**: Existencias disponibles de cada producto por bodega. Atributos clave: `stock_id`, `product_id`, `warehouse_id`, `quantity_available` (mayor o igual a cero), `min_stock_level` (nivel mínimo configurable por producto+bodega; genera alerta cuando `quantity_available` es menor o igual a `min_stock_level` y `min_stock_level` es mayor que cero), `expiration_date` (reservado para control de vencimientos futuro; opcional) y `update_date` (obligatorio). La combinación `product_id` + `warehouse_id` es única.
 - **Movimiento de Inventario (`INVENTORY_TRANSACTIONS`)**: Registro histórico e inmutable de entradas, salidas y ajustes. Atributos clave: `transaction_id`, `product_id`, `warehouse_id`, `transaction_type` ("entrada", "salida", "ajuste_entrada" o "ajuste_salida"), `quantity` (mayor que cero), `user_id` (FK obligatoria a `USERS`) y `transaction_date` (automática). Cada movimiento actualiza de inmediato `STOCK.quantity_available`; no se edita ni se elimina.
+- **Orden de Adquisición o Venta (`PURCHASE_SALES_ORDERS`)**: Registro informativo generado automáticamente desde un movimiento de entrada o salida normal. Atributos clave: `order_id` (identificador único y correlativo con formato `OC-0001`/`OV-0001`, con secuencias independientes y persistentes por tipo), `order_type` ("adquisicion" para OC y "venta" para OV; "OC"/"OV" en la documentación funcional), `transaction_id` (`movement_id` en esta especificación; FK obligatoria y única a `INVENTORY_TRANSACTIONS`) y, replicados del movimiento, `product_id`, `warehouse_id`, `quantity`, `order_date` y `user_id`. No incluye importes ni estados; es informativa e inmutable y no se elimina de forma independiente.
+- **Envío al Comprador (`SHIPMENTS`)**: Seguimiento de una orden de venta (OV). Atributos clave: `shipment_id`, `order_id` (FK obligatoria y única a `PURCHASE_SALES_ORDERS`, limitada a órdenes `OV`), `carrier`, `tracking_code`, `status` ("En bodega", "En tránsito", "En reparto" o "Entregado") e historial de cambios con fecha, hora y usuario responsable. No genera movimientos de inventario ni modifica `STOCK`.
 - **Transferencia de Stock (`STOCK_TRANSFERS`)**: Documento transaccional que traslada productos entre bodegas. Atributos clave: `transfer_id`, `product_id`, `source_warehouse_id`, `target_warehouse_id`, `quantity` (mayor que cero), `status` ("pendiente", "confirmada" o "cancelada"), `transfer_date` (automática), `created_by` (FK obligatoria a `USERS`; usuario que registra la solicitud), `confirmed_by` (FK a `USERS`; obligatoria al confirmar la recepción) y `cancelled_by` (FK a `USERS`; obligatoria al cancelar una transferencia pendiente).
 - **Solicitud de Reposición (`REPLENISHMENT_REQUESTS`)**: Documento que solicita reponer un producto en una bodega. Atributos clave: `request_id`, `product_id` (FK a `PRODUCTS`), `warehouse_id` (FK a `WAREHOUSES`, solo activas), `quantity` (entera mayor que cero), `observation` (opcional), `status` ("pendiente", "aprobada", "recibida" o "cancelada"), `request_date` (automática), `created_by` (FK a `USERS`), `approved_by`/`approved_at`, `received_by`/`received_at`, `cancelled_by`/`cancelled_at`, `movement_id` (FK a `INVENTORY_TRANSACTIONS`; presente al recibir) y `source` ("manual" o "alert").
 - **Usuario (`USERS`)**: Persona que opera el sistema y registra movimientos y transferencias. Atributos clave: `user_id`, `user_name`, `role`, `email` y `assigned_warehouse_id` (FK opcional a `WAREHOUSES`; identifica la bodega operativa asignada al usuario).
@@ -496,6 +588,17 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **SC-048**: El administrador conserva acceso al panel de permisos en el 100% de los casos, incluso si intenta desactivarlo.
 - **SC-049**: La aplicación permanece operativa en el 100% de los casos cuando falta una landing page configurada o esta deja de estar disponible.
 - **SC-050**: El 100% de los intentos de la matriz por otorgar una acción prohibida por una regla de negocio mantienen la restricción vigente y no conceden el acceso.
+- **SC-051**: El 100% de los movimientos nuevos de entrada o salida normales registrados desde Movimientos genera exactamente una orden vinculada por `transaction_id`, con `OC-0001`/`OV-0001` visible en el historial y en el panel, sin permisos adicionales para todo rol con acceso a Movimientos; se verifica con `tests/unit/orders.test.js` y `tests/integration/orders.test.js`, sin backfill de movimientos legacy.
+- **SC-052**: El 100% de las búsquedas HU-10 por nombre de producto o identificador de transferencia devuelve solo coincidencias parciales e insensibles a mayúsculas, conservando la ordenación por `transfer_id` descendente y los nombres enriquecidos; se verifica con `tests/unit/transfers.test.js`.
+- **SC-053**: El 100% de los filtros HU-10 por estado, producto, bodega de origen y bodega de destino, aplicados por separado y en combinación con el buscador, devuelve la intersección correcta y actualiza el contador; se verifica con `tests/unit/transfers.test.js` y `tests/integration/transfers.test.js`.
+- **SC-054**: El 100% de las combinaciones de búsqueda y filtros HU-10 sin coincidencias muestra `transfer-list-empty`, y el 100% de las limpiezas restaura el listado completo por defecto; se verifica con `tests/integration/transfers.test.js`.
+- **SC-055**: El 0% de las consultas HU-10 modifica transferencias, stock, movimientos o catálogos, y el panel general conserva el listado sin filtros; se verifica con `tests/unit/transfers.test.js` y `tests/integration/transfers.test.js`.
+- **SC-056**: El 100% de las órdenes `OV` existentes puede registrar como máximo un envío HU-11, el 100% de los intentos con `OC` o con una `OV` ya vinculada se rechaza y el 0% de estos registros crea movimientos de inventario; se verifica con `tests/unit/shipments.test.js`.
+- **SC-057**: El 100% de los envíos HU-11 rechaza transportista, código de seguimiento, usuario creador o actor vacíos o inválidos y estados fuera de `en_bodega`, `en_transito`, `en_reparto` o `entregado`, sin persistir registros parciales; se verifica con `tests/unit/storage.test.js` y `tests/unit/shipments.test.js`.
+- **SC-058**: El 100% de los avances HU-11 permitidos agrega un evento `history` con `changed_at` ISO y `changed_by` válido, y el 100% de retrocesos, saltos, repeticiones y cambios desde `entregado` se rechaza; se verifica con `tests/unit/shipments.test.js` y `tests/integration/shipments.test.js`.
+- **SC-059**: El 100% de las búsquedas HU-11 por identificador de OV, código de seguimiento o estado devuelve los envíos correctos, con etiquetas visibles para los cuatro estados y su historial; se verifica con `tests/unit/shipments.test.js` y `tests/integration/shipments.test.js`.
+- **SC-060**: El 100% de la navegación, acceso directo `#/shipments` y acciones de registro o avance HU-11 respeta `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status` bajo FR-113, FR-114, FR-115 y FR-124; se verifica con `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` y `tests/integration/workspace-shell.test.js`.
+- **SC-061**: El 100% de las operaciones HU-11 persiste envíos e historial bajo `logistics:shipments` tras recarga, sin modificar stock, movimientos ni órdenes, y sin conexiones automáticas con servicios de transportistas; se verifica con `tests/integration/shipments.test.js` y la validación manual de `quickstart.md`.
 
 ## Trazabilidad de Implementación
 
@@ -509,8 +612,11 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 | HU-06 Alertas de Stock Mínimo | Implementada | `src/domain/alerts.js` | `tests/unit/alerts.test.js`, `tests/integration/alerts.test.js` | T054–T062 |
 | HU-07 Solicitudes de Reposición | Implementada con atomicidad pendiente (T083) | `src/domain/replenishments.js`, `src/domain/permissions.js` | `tests/unit/replenishments.test.js`, `tests/integration/replenishments.test.js` | T069–T080 |
 | HU-08 Gestión de Roles, Redirección Inicial y Control de Visibilidad | Planeada — pendiente de implementación | `src/domain/permissions.js`, `src/components/permissions-panel.js` | `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` (por generar en `/speckit.tasks`) | Por definir en `/speckit.tasks` |
+| HU-09 Gestión de órdenes de adquisición y venta | Implementada y verificada; T104–T110 completados, T107 diferida | `src/domain/orders.js`, `src/domain/movements.js`, `src/storage.js`, `src/components/order-list.js`, `src/components/movement-form.js`, `src/app.js`, `index.html` | `tests/unit/orders.test.js`, `tests/unit/storage.test.js`, `tests/integration/orders.test.js` | T095–T110 (T107 diferida) |
+| HU-10 Buscador y filtros para transferencias entre bodegas | Planeada — pendiente de implementación | `src/domain/transfers.js`, `src/components/transfer-list.js`, `src/app.js` | `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js` | T111–T118 |
+| HU-11 Seguimiento de envíos al comprador | Planeada — pendiente de implementación | `src/storage.js`, `src/domain/shipments.js`, `src/domain/seed.js`, `src/domain/permissions.js`, `src/components/shipment-form.js`, `src/components/shipment-list.js`, `src/app.js` | `tests/unit/storage.test.js`, `tests/unit/shipments.test.js`, `tests/unit/permissions.test.js`, `tests/integration/shipments.test.js`, `tests/integration/permissions.test.js`, `tests/integration/workspace-shell.test.js` | T119–T137 |
 
-La ejecución completa de la suite no forma parte de esta edición documental; queda registrada como T066 en `tasks.md`.
+La ejecución completa de la suite en esta edición quedó registrada como T110; T066 conserva su evidencia histórica de 2026-11-22.
 
 ## Suposiciones
 
@@ -558,3 +664,4 @@ La ejecución completa de la suite no forma parte de esta edición documental; q
 - El control de visibilidad, el ocultamiento de navegación y el bloqueo de acceso directo por URL son mecanismos de interfaz dentro del modelo de roles simulados; no constituyen seguridad real y la autenticación/autorización reales quedan fuera de alcance (FR-073).
 - El panel de administración de permisos es accesible solo para el rol administrador, que conserva siempre ese acceso para evitar una configuración irreversible.
 - Cambiar el cargo de un usuario no altera su bodega asignada ni el usuario activo que registran movimientos, transferencias y reposiciones (FR-058, FR-073).
+- Solo los movimientos normales de entrada y salida generan órdenes; las transferencias confirmadas ya quedan trazadas en `STOCK_TRANSFERS` y no producen órdenes adicionales (FR-127).

@@ -41,7 +41,7 @@ export function populateMovementUserSelect(){
   // Usuario activo del ERP: el selector manual fue eliminado (HU-03).
 }
 
-const ERROR_FIELDS = ['type', 'productId', 'warehouseId', 'quantity', 'userId'];
+const ERROR_FIELDS = ['type', 'productId', 'warehouseId', 'quantity', 'userId', 'storage'];
 
 export function clearMovementForm(){
   qs('movement-type').value = 'entrada';

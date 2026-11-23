@@ -408,3 +408,158 @@ El modelo de datos se complementa con los siguientes archivos:
 
 - [MER en código Mermaid](MER.md): contiene las entidades y relaciones del módulo en un formato que puede ser interpretado por OpenCode y SpecKit.
 - [MER visual original](MER_logisica_visual.jpeg): corresponde al diagrama elaborado por nuestro grupo y se incluye como referencia visual.
+
+## Ampliación HU-09: Órdenes de Adquisición y Venta (2026-11-23)
+
+Esta sección documenta la entidad ya implementada por OC/OV. No sustituye ni reordena las entidades anteriores; añade la definición que faltaba, el campo opcional `order_id` en movimientos y las reglas de validación compartidas.
+
+### Entidad: PURCHASE_SALES_ORDERS (Órdenes de adquisición y venta)
+
+Registro informativo generado automáticamente desde un movimiento normal de entrada o salida.
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| order_id | string | Identificador correlativo de la orden | PK, obligatorio y único; formato `OC-0001` o `OV-0001`; secuencias independientes por prefijo |
+| order_type | string | Naturaleza de la orden | Obligatorio; en código: `"adquisicion"` para OC y `"venta"` para OV |
+| transaction_id | int | Movimiento de inventario que originó la orden | FK a `INVENTORY_TRANSACTIONS.transaction_id`, obligatorio y único |
+| product_id | int | Producto del movimiento | FK a `PRODUCTS.product_id`, obligatorio |
+| warehouse_id | int | Bodega del movimiento | FK a `WAREHOUSES.warehouse_id`, obligatorio |
+| quantity | int | Cantidad movida | Entera, mayor que cero; copiada del movimiento |
+| user_id | int | Usuario que registró el movimiento | FK a `USERS.user_id`, obligatorio |
+| order_date | datetime | Fecha del movimiento | Obligatoria, copiada de `INVENTORY_TRANSACTIONS.transaction_date` |
+
+**Correspondencia con `spec.md`**: el `movement_id` descrito en la especificación corresponde a `transaction_id` en la implementación; los valores `order_type` `"OC"`/`"OV"` de la especificación se expresan en código como `"adquisicion"`/`"venta"` junto al prefijo dentro de `order_id`. No se renombran campos persistidos. `order_date` conserva el timestamp ISO completo copiado de `transaction_date`; el tipo `date` de la tabla base de movimientos describe el concepto de fecha, no el formato persistido.
+
+### Campo añadido a INVENTORY_TRANSACTIONS
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| order_id | string | Orden generada para el movimiento | Opcional en datos legacy; obligatorio cuando el movimiento es `entrada` o `salida` normal |
+
+### Relaciones adicionales
+
+#### 19. INVENTORY_TRANSACTIONS - PURCHASE_SALES_ORDERS
+
+Cada orden se origina en exactamente un movimiento normal. Un movimiento normal tiene como máximo una orden; los ajustes, las recepciones de reposición y las transferencias no tienen orden.
+
+- Cardinalidad: 1:0..1
+- FK: `PURCHASE_SALES_ORDERS.transaction_id`
+
+#### 20. PRODUCTS - PURCHASE_SALES_ORDERS
+
+Un producto puede aparecer en varias órdenes; cada orden referencia un producto.
+
+- Cardinalidad: 1:N
+- FK: `PURCHASE_SALES_ORDERS.product_id`
+
+#### 21. WAREHOUSES - PURCHASE_SALES_ORDERS
+
+Una bodega puede aparecer en varias órdenes; cada orden referencia una bodega.
+
+- Cardinalidad: 1:N
+- FK: `PURCHASE_SALES_ORDERS.warehouse_id`
+
+#### 22. USERS - PURCHASE_SALES_ORDERS
+
+Un usuario puede registrar movimientos que generen varias órdenes; cada orden conserva el usuario del movimiento.
+
+- Cardinalidad: 1:N
+- FK: `PURCHASE_SALES_ORDERS.user_id`
+
+### Reglas de validación — Órdenes HU-09
+
+- Solo los movimientos con `transaction_type` `"entrada"` o `"salida"` generan orden; `"entrada"` produce OC y `"salida"` produce OV.
+- Los ajustes (`ajuste_entrada`, `ajuste_salida`) no generan orden.
+- La recepción de una reposición no genera orden aunque use `transaction_type` `"entrada"`.
+- La confirmación de una transferencia no genera orden; el traslado queda trazado en `STOCK_TRANSFERS`.
+- `order_id` se calcula como prefijo + máximo existente de ese prefijo + 1, con cuatro dígitos; si el valor calculado ya existe, la operación se rechaza. No se reutilizan correlativos mientras se conserve `logistics:orders`; borrar esa clave reinicia la derivación y no se añade contador ni migración.
+- `createOrderForMovement()` es idempotente: reutiliza la orden existente por `transaction_id` o por `order_id`; no reutiliza el identificador.
+- `createOrderForMovement()` valida cada orden con `validateRecord('orders', order, { list: orders })` antes de persistirla.
+- La escritura de `STOCK`, `INVENTORY_TRANSACTIONS` y `PURCHASE_SALES_ORDERS` ocurre bajo rollback conjunto; si falla la orden, no se persisten el movimiento ni el stock y el error se muestra en el formulario de movimientos.
+- La orden no modifica `STOCK`: la cantidad se copia del movimiento y el inventario se actualiza una sola vez desde `registerMovement()`.
+- La orden no tiene importes ni estados y no se edita ni se elimina de forma independiente.
+- `LOGISTICS_SCHEMAS.movements` declara `order_id` como campo opcional para preservar movimientos legacy; no se genera orden retroactiva.
+- `listOrders()` ordena por `transaction_id` numérico descendente y sitúa al final los identificadores legacy no numéricos.
+
+## Ampliación HU-10 y HU-11 (2026-11-23)
+
+Esta sección añade la semántica de consulta de HU-10 y la entidad de seguimiento de HU-11. No modifica entidades, campos ni relaciones de HU-01 a HU-09.
+
+### Búsqueda y filtros de STOCK_TRANSFERS (HU-10)
+
+HU-10 no añade campos a `STOCK_TRANSFERS`. La consulta `listTransfers(filters)` admite:
+
+| Filtro | Aplicación |
+|---|---|
+| `term` | Coincidencia parcial e insensible a mayúsculas sobre `product_name` y sobre `String(transfer_id)` |
+| `status` | Igualdad exacta con `pendiente`, `confirmada` o `cancelada` |
+| `productId` | Igualdad exacta con `product_id` |
+| `sourceWarehouseId` | Igualdad exacta con `source_warehouse_id` |
+| `targetWarehouseId` | Igualdad exacta con `target_warehouse_id` |
+
+Los filtros presentes se combinan con AND; los ausentes o vacíos se ignoran. La consulta no crea, edita ni elimina transferencias, stock, productos, bodegas ni movimientos. El resultado conserva la ordenación por `transfer_id` descendente y los nombres enriquecidos ya usados por el listado actual.
+
+### Entidad: SHIPMENTS (Envíos al comprador, HU-11)
+
+Registro de seguimiento asociado a una orden de venta (OV). No genera movimientos de inventario ni modifica `STOCK`.
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| shipment_id | int | Identificador del envío | PK, obligatorio y único; secuencia entera propia |
+| order_id | string | Orden de venta que origina el envío | FK a `PURCHASE_SALES_ORDERS.order_id`, obligatoria y única; la orden debe ser `order_type = "venta"` (OV) |
+| carrier | string | Empresa transportista | Obligatorio, no vacío; escapado antes de mostrarse |
+| tracking_code | string | Código de seguimiento | Obligatorio, no vacío; escapado antes de mostrarse |
+| status | string | Etapa actual del envío | Obligatorio; valores permitidos: `en_bodega`, `en_transito`, `en_reparto`, `entregado` |
+| created_by | int | Usuario que registra el envío | FK a `USERS.user_id`, obligatorio |
+| created_at | datetime | Fecha de creación del envío | Obligatoria, automática |
+| history | array | Historial de cambios de estado | Obligatorio; al menos el evento inicial `en_bodega` |
+
+Cada elemento de `history` tiene esta forma:
+
+| Campo | Tipo | Descripción | Restricciones |
+|---|---|---|---|
+| status | string | Estado alcanzado | Debe pertenecer a los cuatro estados permitidos |
+| changed_at | datetime | Fecha y hora del cambio | Obligatoria, automática |
+| changed_by | int | Usuario que realizó el cambio | FK a `USERS.user_id`, obligatorio |
+
+### Relaciones adicionales
+
+#### 23. PURCHASE_SALES_ORDERS - SHIPMENTS
+
+Cada orden de venta tiene como máximo un envío y cada envío pertenece a una sola orden de venta. Las órdenes de adquisición (OC) no tienen envío.
+
+- Cardinalidad: 1:0..1
+- FK: `SHIPMENTS.order_id`
+
+#### 24. USERS - SHIPMENTS
+
+Un usuario puede registrar envíos y realizar varios cambios de estado; cada envío conserva quién lo creó y cada evento de historial conserva quién lo actualizó.
+
+- Cardinalidad: 1:N
+- FK: `SHIPMENTS.created_by`
+- FK lógica: `SHIPMENTS.history[].changed_by`
+
+### Transiciones de estado — HU-11
+
+| Estado actual | Estado siguiente permitido | Observación |
+|---|---|---|
+| `en_bodega` | `en_transito` | Primer avance opcional desde la creación |
+| `en_transito` | `en_reparto` | Avance secuencial |
+| `en_reparto` | `entregado` | Último avance |
+| `entregado` | Ninguno | Estado terminal; no admite cambios |
+
+Se rechazan retrocesos, saltos de etapa, repeticiones del mismo estado y cualquier modificación posterior a `entregado`. Cada avance válido agrega un evento al historial.
+
+### Reglas de validación — HU-10 y HU-11
+
+- La búsqueda de transferencias es de solo lectura y no altera datos operativos.
+- `term` de HU-10 no considera SKU, ubicación ni nombres de usuario; solo producto e identificador de transferencia.
+- Un envío solo puede asociarse a una orden existente con `order_type = "venta"`.
+- Una orden OV no puede tener más de un envío; la restricción se valida tanto por unicidad de `order_id` como en la capa de dominio.
+- `shipment_id` se genera con una secuencia entera independiente; no se reutilizan identificadores de orden OC/OV.
+- `tracking_code` y `carrier` son obligatorios y se escapan antes de mostrarse.
+- El estado inicial de todo envío es `en_bodega` y su primer evento de historial usa el usuario activo que lo crea.
+- Solo se permite la transición inmediatamente siguiente; `entregado` es terminal.
+- Cada cambio de estado registra fecha ISO y usuario responsable en `history`.
+- La creación y el avance de envíos no llaman a `registerMovement()`, no modifican `STOCK` y no alteran órdenes ni movimientos existentes.
+- La vista de envíos depende de `module:shipments`; la matriz puede restringir el acceso pero no otorgar acciones prohibidas por reglas de negocio (FR-124).

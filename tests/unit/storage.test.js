@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   clearAll, loadEntities, addEntity, updateEntity, deleteEntity, validateEntity, searchEntities, loadDocuments, addDocument, updateDocument, deleteDocument, deleteDocumentsForEntity, validateDocument,
   loadProductCategories, loadUsers, loadProducts, loadWarehouses, loadStock, loadMovements, loadTransfers,
-  seedLogisticsCatalogs, nextProductId, nextWarehouseId, nextStockId, nextMovementId, nextTransferId,
-  escapeHtml, isNonEmptyText, isNonNegativeNumber, isPositiveInteger, isValidDate
+  loadShipments, saveShipments, seedLogisticsCatalogs, nextProductId, nextWarehouseId, nextStockId,
+  nextMovementId, nextTransferId, nextShipmentId, validateRecord,
+  escapeHtml, isNonEmptyText, isNonNegativeNumber, isPositiveInteger, isValidDate,
+  LOGISTICS_KEYS, LOGISTICS_SCHEMAS, getLogisticsSchema
 } from '../../src/storage.js';
 import { setActiveConfig } from '../../src/module-config.js';
 
@@ -341,6 +343,13 @@ describe('logistics storage: schemas, repository helpers and seed loading', () =
     expect(loadStock()).toEqual([]);
     expect(loadMovements()).toEqual([]);
     expect(loadTransfers()).toEqual([]);
+    expect(loadShipments()).toEqual([]);
+  });
+
+  it('declares order_id as optional in the movements schema', () => {
+    expect(getLogisticsSchema('movements')).toBe(LOGISTICS_SCHEMAS.movements);
+    expect(LOGISTICS_SCHEMAS.movements.optional).toContain('order_id');
+    expect(LOGISTICS_SCHEMAS.movements.required).not.toContain('order_id');
   });
 
   it('seeds product categories and users idempotently (FR-071)', () => {
@@ -372,6 +381,37 @@ describe('logistics storage: schemas, repository helpers and seed loading', () =
     expect(nextStockId()).toBe(1);
     expect(nextMovementId()).toBe(1);
     expect(nextTransferId()).toBe(1);
+    expect(nextShipmentId()).toBe(1);
+  });
+
+  it('declares the shipments schema with a unique order-shipment relationship and embedded history (T119, FR-131, FR-133)', () => {
+    const shipment = {
+      shipment_id: 1,
+      order_id: 'OV-0001',
+      carrier: 'Transportista Uno',
+      tracking_code: 'TRK-1',
+      status: 'en_bodega',
+      created_by: 1,
+      created_at: '2026-11-23T10:00:00.000Z',
+      history: [{ status: 'en_bodega', changed_at: '2026-11-23T10:00:00.000Z', changed_by: 1 }]
+    };
+    expect(LOGISTICS_KEYS.shipments).toBe('logistics:shipments');
+    expect(LOGISTICS_SCHEMAS.shipments.required).toEqual([
+      'shipment_id', 'order_id', 'carrier', 'tracking_code', 'status', 'created_by', 'created_at', 'history'
+    ]);
+    expect(LOGISTICS_SCHEMAS.shipments.unique).toEqual([['shipment_id'], ['order_id']]);
+    expect(LOGISTICS_SCHEMAS.shipments.values.status).toEqual(['en_bodega', 'en_transito', 'en_reparto', 'entregado']);
+    expect(validateRecord('shipments', shipment, { list: [] }).valid).toBe(true);
+    expect(validateRecord('shipments', { ...shipment, carrier: '  ' }, { list: [] }).valid).toBe(false);
+    expect(validateRecord('shipments', { ...shipment, shipment_id: 2 }, { list: [shipment] }).valid).toBe(false);
+    expect(validateRecord('shipments', { ...shipment, shipment_id: 2, order_id: 'OV-0002' }, { list: [shipment] }).valid).toBe(true);
+
+    saveShipments([shipment]);
+    expect(loadShipments()).toEqual([shipment]);
+    expect(nextShipmentId()).toBe(2);
+    expect(localStorage.getItem(LOGISTICS_KEYS.orders)).toBeNull();
+    expect(localStorage.getItem(LOGISTICS_KEYS.movements)).toBeNull();
+    expect(localStorage.getItem(LOGISTICS_KEYS.stock)).toBeNull();
   });
 
   it('escapes HTML-sensitive characters to prevent unwanted script execution (FR-046, FR-092)', () => {

@@ -19,6 +19,7 @@ export function renderTransferList(tbody, emptyEl, transfers, { onConfirm, onCan
   for(const t of transfers){
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td><span class="mono">${escapeHtml(t.transfer_id)}</span></td>
       <td><strong>${escapeHtml(t.product_name)}</strong></td>
       <td>${escapeHtml(t.source_warehouse_name)} <span class="route-arrow">→</span> ${escapeHtml(t.target_warehouse_name)}</td>
       <td class="num">${Number(t.quantity).toLocaleString('es-CL')}</td>

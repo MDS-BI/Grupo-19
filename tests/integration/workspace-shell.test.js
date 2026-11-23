@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { normalizeConfig } from '../../src/module-config.js';
 import { addEntity, addDocument, loadEntities, loadDocuments } from '../../src/storage.js';
+import { setRolePermission } from '../../src/domain/permissions.js';
 
 const html = fs.readFileSync(fileURLToPath(new URL('../../index.html', import.meta.url)), 'utf8');
 
@@ -65,7 +66,7 @@ describe('User Story 13 - branded ERP workspace shell', () => {
     expect(qs('nav-entities-label').textContent).toBe('Entidades');
     expect(qs('nav-documents-label').textContent).toBe('Documentos');
     expect(qs('nav-search-label').textContent).toBe('Búsqueda');
-    expect(document.querySelectorAll('.nav-module').length).toBe(11);
+    expect(document.querySelectorAll('.nav-module').length).toBe(12);
   });
 
   it('uses remapped terms on the sidebar for tailored modules', async () => {
@@ -131,5 +132,22 @@ describe('User Story 13 - branded ERP workspace shell', () => {
   it('falls back to the default accent when the color is invalid', async () => {
     await bootWith({ moduleName: 'X', theme: { accentColor: 'not-a-color' } });
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#2563eb');
+  });
+
+  it('exposes a labeled shipment module and hides it when access is denied (T123, FR-113, FR-115, FR-133)', async () => {
+    await bootWith(undefined);
+    const nav = qs('nav-shipments');
+    expect(nav).not.toBeNull();
+    expect(nav.classList.contains('nav-module')).toBe(true);
+    expect(nav.dataset.module).toBe('shipments');
+    expect(nav.querySelector('.nav-label').textContent).toBe('Seguimiento de envíos');
+
+    expect(setRolePermission('administrador', 'modulo', 'module:shipments', false).success).toBe(true);
+    window.location.hash = '#/shipments';
+    window.dispatchEvent(new dom.window.Event('hashchange'));
+    expect(nav.hidden).toBe(true);
+    expect(qs('access-notice').hidden).toBe(false);
+    expect(qs('view-dashboard').hidden).toBe(false);
+    expect(qs('view-shipments').hidden).toBe(true);
   });
 });

@@ -13,7 +13,7 @@ import { ROLE_PERMISSION_SEED, ROLE_SEED } from './seed.js';
 
 export const ACTIVE_USER_KEY = 'logistics:active_user_id';
 export const ADMIN_RESOURCE = 'admin:permissions';
-export const MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments', 'entities', 'documents', 'search'];
+export const MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'shipments', 'alerts', 'replenishments', 'entities', 'documents', 'search'];
 export const PERMISSION_SCOPES = ['modulo', 'vista', 'seccion', 'accion', 'panel'];
 export const ACTION_KEYS = [...new Set(ROLE_PERMISSION_SEED.filter(p => p.scope === 'accion').map(p => p.resource_key.replace('action:', '')))];
 

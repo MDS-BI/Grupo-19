@@ -12,6 +12,7 @@ import {
 } from '../../src/storage.js';
 import {
   ADMIN_RESOURCE,
+  setRolePermission,
   setUserPermissionOverride,
   setUserRole
 } from '../../src/domain/permissions.js';
@@ -127,5 +128,30 @@ describe('HU-08 roles, landing pages and visibility', () => {
     const result = setUserRole(1, 'inexistente');
     expect(result.success).toBe(false);
     expect(loadUsers().find((u) => u.user_id === 1).role).toBe('administrador');
+  });
+
+  it('shows shipment navigation for all roles and includes its resources in the matrix (T122, FR-130, FR-133)', () => {
+    for(const userId of [1, 3, 2]){
+      switchUser(userId);
+      expect(qs('nav-shipments').hidden).toBe(false);
+    }
+    switchUser(1);
+    qs('nav-admin').click();
+    const resources = [...qs('permission-matrix-body').querySelectorAll('input[data-resource]')]
+      .map(input => input.dataset.resource);
+    expect(resources).toContain('module:shipments');
+    expect(resources).toContain('view:shipments');
+    expect(resources).toContain('action:shipments.create');
+    expect(resources).toContain('action:shipments.update_status');
+  });
+
+  it('blocks direct #/shipments access and hides navigation when module:shipments is denied (T122, FR-113, FR-115)', () => {
+    expect(setRolePermission('administrador', 'modulo', 'module:shipments', false).success).toBe(true);
+    window.location.hash = '#/shipments';
+    window.dispatchEvent(new dom.window.Event('hashchange'));
+    expect(qs('access-notice').hidden).toBe(false);
+    expect(qs('view-dashboard').hidden).toBe(false);
+    expect(qs('view-shipments').hidden).toBe(true);
+    expect(qs('nav-shipments').hidden).toBe(true);
   });
 });

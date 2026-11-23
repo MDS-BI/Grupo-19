@@ -107,4 +107,20 @@ describe('Órdenes generadas desde movimientos', () => {
     expect(qs('order-count').textContent).toBe('0');
     expect(loadOrders()).toEqual([]);
   });
+
+  it('muestra el error de almacenamiento y revierte movimiento, stock y orden', () => {
+    const originalSetItem = dom.window.Storage.prototype.setItem;
+    const spy = vi.spyOn(dom.window.Storage.prototype, 'setItem').mockImplementation(function(key, value){
+      if(key === LOGISTICS_KEYS.orders) throw new Error('fallo de escritura de órdenes');
+      return originalSetItem.call(this, key, value);
+    });
+    fillMovement({ type: 'entrada', quantity: '10' });
+    submit(qs('movement-form'));
+    spy.mockRestore();
+    expect(qs('error-movement-storage')).not.toBeNull();
+    expect(loadOrders()).toEqual([]);
+    expect(loadMovements()).toEqual([]);
+    expect(qs('error-movement-storage').textContent).toContain('fallo de escritura de órdenes');
+    expect(qs('order-count').textContent).toBe('0');
+  });
 });

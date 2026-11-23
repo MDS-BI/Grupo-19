@@ -25,6 +25,7 @@ import { listStock, getProductTotal, setMinStockLevel } from './domain/stock.js'
 import { registerMovement, listMovements } from './domain/movements.js';
 import { listOrders } from './domain/orders.js';
 import { requestTransfer, confirmTransfer, cancelTransfer, listTransfers } from './domain/transfers.js';
+import { createShipment, advanceShipmentStatus, listShipments } from './domain/shipments.js';
 import { listAlerts } from './domain/alerts.js';
 import {
   requestReplenishment, approveRequest, cancelRequest, receiveRequest,
@@ -41,6 +42,8 @@ import { renderMovementList } from './components/movement-list.js';
 import { renderOrderList } from './components/order-list.js';
 import { populateTransferProductSelect, populateTransferWarehouseSelects, clearTransferForm, collectTransferPayload, showTransferErrors } from './components/transfer-form.js';
 import { renderTransferList } from './components/transfer-list.js';
+import { populateShipmentOrderSelect, clearShipmentForm, collectShipmentPayload, showShipmentErrors } from './components/shipment-form.js';
+import { renderShipmentList } from './components/shipment-list.js';
 import { renderAlertList } from './components/alert-list.js';
 import { populateReplenishmentProductSelect, populateReplenishmentWarehouseSelect, clearReplenishmentForm, collectReplenishmentPayload, showReplenishmentErrors, prefillReplenishmentFromAlert } from './components/replenishment-form.js';
 import { renderReplenishmentList, renderReplenishmentCounts } from './components/replenishment-list.js';
@@ -55,7 +58,7 @@ const articulo = (word) => esFemenina(word) ? 'la' : 'el';
 const demostrativo = (word) => esFemenina(word) ? 'esta' : 'este';
 const seleccionada = (word) => esFemenina(word) ? 'seleccionada' : 'seleccionado';
 
-const MODULES = ['dashboard', 'entities', 'documents', 'search', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments', 'admin'];
+const MODULES = ['dashboard', 'entities', 'documents', 'search', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'shipments', 'alerts', 'replenishments', 'admin'];
 const VIEWS = {
   dashboard: 'view-dashboard',
   entities: 'view-entities',
@@ -66,6 +69,7 @@ const VIEWS = {
   stock: 'view-stock',
   movements: 'view-movements',
   transfers: 'view-transfers',
+  shipments: 'view-shipments',
   alerts: 'view-alerts',
   replenishments: 'view-replenishments',
   admin: 'view-admin-permissions'
@@ -171,7 +175,11 @@ function showModule(name, opts = {}){
   if(name === 'transfers'){
     populateTransferProductSelect();
     populateTransferWarehouseSelects();
+    populateTransferFilterSelects();
     refreshTransfers();
+  }
+  if(name === 'shipments'){
+    refreshShipments();
   }
   if(name === 'alerts'){
     populateAlertFilterSelects();
@@ -285,6 +293,16 @@ function populateAlertFilterSelects(){
 function populateReplenishmentFilterSelects(){
   populateFilterSelect(qs('replenishment-filter-product'), productOptions(), 'Todos los productos');
   populateFilterSelect(qs('replenishment-filter-warehouse'), warehouseOptions(), 'Todas las bodegas');
+}
+function populateTransferFilterSelects(){
+  populateFilterSelect(qs('transfer-filter-status'), [
+    ['pendiente', 'Pendiente'],
+    ['confirmada', 'Confirmada'],
+    ['cancelada', 'Cancelada']
+  ], 'Todos los estados');
+  populateFilterSelect(qs('transfer-filter-product'), productOptions(), 'Todos los productos');
+  populateFilterSelect(qs('transfer-filter-source'), warehouseOptions(), 'Todas las bodegas');
+  populateFilterSelect(qs('transfer-filter-target'), warehouseOptions(), 'Todas las bodegas');
 }
 
 function refreshProducts(){
@@ -409,9 +427,22 @@ function handleMovementSubmit(ev){
   refreshStock();
 }
 
+function clearTransferFilters(){
+  ['transfer-search', 'transfer-filter-status', 'transfer-filter-product', 'transfer-filter-source', 'transfer-filter-target']
+    .forEach(id => { const el = qs(id); if(el) el.value = ''; });
+  refreshTransfers();
+}
+
 function refreshTransfers(){
   if(!guardModuleAccess('transfers', { silent: true })) return;
-  renderTransferList(qs('transfer-list-body'), qs('transfer-list-empty'), listTransfers(), {
+  const filters = {
+    term: qs('transfer-search')?.value,
+    status: qs('transfer-filter-status')?.value,
+    productId: qs('transfer-filter-product')?.value,
+    sourceWarehouseId: qs('transfer-filter-source')?.value,
+    targetWarehouseId: qs('transfer-filter-target')?.value
+  };
+  renderTransferList(qs('transfer-list-body'), qs('transfer-list-empty'), listTransfers(filters), {
     canConfirm: currentCan('transfers.confirm'),
     canCancel: currentCan('transfers.cancel'),
     onConfirm: (t) => {
@@ -446,6 +477,46 @@ function handleTransferSubmit(ev){
   if(!result.success) return;
   clearTransferForm();
   refreshTransfers();
+}
+
+function refreshShipments(){
+  if(!guardModuleAccess('shipments', { silent: true })) return;
+  populateShipmentOrderSelect();
+  const filters = {
+    term: qs('shipment-search')?.value,
+    status: qs('shipment-filter-status')?.value
+  };
+  renderShipmentList(qs('shipment-list-body'), qs('shipment-list-empty'), listShipments(filters), {
+    canUpdateStatus: currentCan('shipments.update_status'),
+    onAdvance: (shipment) => {
+      if(!guardAction('shipments.update_status', 'No tienes permisos para actualizar el estado del envío con el perfil activo.')) return;
+      if(!isValidActiveUser()){
+        alert('No existe un usuario activo válido para actualizar el envío.');
+        return;
+      }
+      const result = advanceShipmentStatus(shipment.shipment_id, activeUser.user_id);
+      if(!result.success){
+        alert(result.error || Object.values(result.errors || {})[0] || 'No fue posible avanzar el envío.');
+      }
+      refreshShipments();
+    }
+  });
+}
+
+function handleShipmentSubmit(ev){
+  ev.preventDefault();
+  if(!guardAction('shipments.create', 'No tienes permisos para registrar envíos con el perfil activo.')) return;
+  if(!guardModuleAccess('shipments', { silent: true })) return;
+  const payload = collectShipmentPayload();
+  if(!isValidActiveUser()){
+    showShipmentErrors({ createdBy: 'No existe un usuario activo válido para registrar el envío' });
+    return;
+  }
+  const result = createShipment({ ...payload, createdBy: activeUser.user_id });
+  showShipmentErrors(result.errors || {});
+  if(!result.success) return;
+  clearShipmentForm();
+  refreshShipments();
 }
 
 function refreshAlerts(){
@@ -694,6 +765,7 @@ function applyPermissionUiState(){
   const canMove = currentCan('movements.register');
   const canAdjust = currentCan('movements.adjust');
   const canTransferCreate = currentCan('transfers.create');
+  const canShipmentCreate = currentCan('shipments.create');
   const canReplenishmentCreate = currentCan('replenishments.create');
 
   // Dashboard quick actions: base advanced only for admin
@@ -722,6 +794,7 @@ function applyPermissionUiState(){
   setSectionDisabled('#view-warehouses .card[aria-labelledby="warehouse-form-heading"]', !canWarehouses);
   setSectionDisabled('#view-movements .card[aria-labelledby="movement-form-heading"]', !(canMove || canAdjust));
   setSectionDisabled('#view-transfers .card[aria-labelledby="transfer-form-heading"]', !canTransferCreate);
+  setSectionDisabled('#view-shipments .card[aria-labelledby="shipment-form-heading"]', !canShipmentCreate);
   setSectionDisabled('#view-replenishments .card[aria-labelledby="replenishment-form-heading"]', !canReplenishmentCreate);
 
   // Active user selector always available in topbar
@@ -885,6 +958,16 @@ function wireEvents(){
   qs('movement-filter-warehouse').addEventListener('change', refreshMovements);
 
   qs('transfer-form').addEventListener('submit', handleTransferSubmit);
+  qs('transfer-search').addEventListener('input', refreshTransfers);
+  qs('transfer-filter-status').addEventListener('change', refreshTransfers);
+  qs('transfer-filter-product').addEventListener('change', refreshTransfers);
+  qs('transfer-filter-source').addEventListener('change', refreshTransfers);
+  qs('transfer-filter-target').addEventListener('change', refreshTransfers);
+  qs('transfer-filters-clear').addEventListener('click', clearTransferFilters);
+
+  qs('shipment-form').addEventListener('submit', handleShipmentSubmit);
+  qs('shipment-search').addEventListener('input', refreshShipments);
+  qs('shipment-filter-status').addEventListener('change', refreshShipments);
 
   qs('alert-filter-product').addEventListener('change', refreshAlerts);
   qs('alert-filter-warehouse').addEventListener('change', refreshAlerts);
@@ -916,6 +999,7 @@ export function initApp(resolved){
   clearWarehouseForm();
   clearMovementForm();
   clearTransferForm();
+  clearShipmentForm();
   clearReplenishmentForm();
   showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
   if(activeUser){

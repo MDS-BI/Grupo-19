@@ -426,4 +426,246 @@ El MVP histórico del módulo era solo US1; con HU-08 el MVP recomendado incluye
 | Nuevas HU-08 | T085–T094 | Generadas en 2026-11-22 a partir de `plan.md`; sin implementación aún. |
 | Sustituida | T002 | Restauración eliminada; convertida en verificación segura del estado actual. |
 
-`npx vitest run` y `npm run build` no se ejecutaron en esta edición; por eso T066 sigue pendiente aunque existan pruebas en el repositorio.
+`npx vitest run` y `npm run build` no se ejecutaron en la edición documental original; T110 los ejecutó después para HU-09 con 279/279 pruebas OK y build OK. T066 conserva su evidencia histórica.
+
+---
+
+## Fase 12: Historia de Usuario 9 - Gestión de Órdenes de Adquisición y Venta (Prioridad: P2) (Verificación y cierre de deuda HU-09)
+
+**Nota de IDs**: T095–T110 son correlativos con las fases anteriores. Esta fase se añade al final por instrucción explícita; no reordena ni reemplaza T001–T094.
+
+**Objetivo**: Registrar, verificar y cerrar la deuda HU-09 detectada sobre la funcionalidad OC/OV ya construida, sin reimplementar dominio, persistencia ni interfaz.
+
+**Prueba Independiente**: Registrar una entrada y una salida normales, confirmar `OC-0001` y `OV-0001` en el historial y en el panel «Órdenes generadas»; registrar un ajuste, una recepción de reposición y una transferencia confirmada, confirmando que no generan orden; forzar un fallo de escritura y verificar que no quedan stock, movimiento ni orden; comprobar que el panel vive dentro de Movimientos y que no existe módulo ni permiso `orders`.
+
+### Implementación existente y pruebas (verificación)
+
+- [x] T095 [P] [US9] Verificar en `src/storage.js` la clave `logistics:orders`, el esquema `orders`, los helpers `loadOrders()`/`saveOrders()` y el uso de `withStorageRollback()` sin clave de contador, conservando `logistics:inventory_transactions` como fuente del campo `order_id` del movimiento (FR-125, FR-128)
+- [x] T096 [US9] Verificar en `src/domain/orders.js` que `ORDER_CONFIG` mapea `entrada` → `OC`/`adquisicion` y `salida` → `OV`/`venta`, que `nextOrderId()` usa secuencias independientes con `padStart(4, '0')` y rechaza colisiones, y que `createOrderForMovement()` es idempotente por `transaction_id` o `order_id` (FR-125, FR-126)
+- [x] T097 [US9] Verificar en `src/domain/movements.js` que `registerMovement()` invoca `createOrderForMovement()`, copia `order_id` al movimiento e incluye stock, movimientos y órdenes en `withStorageRollback()`; evidencia: rollback probado en `tests/unit/orders.test.js` (FR-128)
+- [x] T098 [US9] Verificar que `src/domain/orders.js` no genera órdenes para ajustes, que `src/domain/replenishments.js` envía `generateOrder: false` en la recepción y que `confirmTransfer()` en `src/domain/transfers.js` no crea órdenes; evidencia: `tests/unit/orders.test.js` y `tests/integration/orders.test.js` (FR-127)
+- [x] T099 [P] [US9] Verificar el panel «Órdenes generadas» y la columna Orden del historial en `index.html`, `src/components/order-list.js` y `src/components/movement-list.js`, con escape HTML, contador, estado vacío y sin opción propia en el menú lateral (FR-129)
+- [x] T100 [US9] Verificar en `refreshMovements()` de `src/app.js` que `renderOrderList()` se actualiza junto al historial bajo `guardModuleAccess('movements')`, sin permiso ni guard `orders` (FR-129)
+- [x] T101 [P] [US9] Verificar las 10 pruebas unitarias de `tests/unit/orders.test.js` para `OC-0001`/`OV-0001`, secuencias con huecos, idempotencia, exclusión de ajustes/reposiciones, rollback de stock/movimiento/orden, escritura única de stock, preservación de datos legacy y nombres de producto/bodega
+- [x] T102 [P] [US9] Verificar las 5 pruebas de integración de `tests/integration/orders.test.js` para alta desde formulario, historial y panel, numeraciones independientes, exclusión de ajustes, panel dentro de Movimientos y movimientos legacy sin orden
+- [x] T103 [P] [US9] Verificar la documentación HU-09 en `specs/002-logistica-inventario/spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/logistics-storage.md`, `quickstart.md` y `checklists/requirements.md`, dejando CHK017–CHK018 sin marcar y sin renombrar `transaction_id` ni los valores `adquisicion`/`venta`
+
+**Evidencia de ejecución (2026-11-23)**: verificación inicial 2 archivos/15 pruebas OK; cierre de deuda `npx vitest run tests/unit/orders.test.js` → 12 OK, `npx vitest run tests/unit/storage.test.js` → 43 OK, `npx vitest run tests/integration/orders.test.js` → 6 OK; `npx vitest run` → 32 archivos/279 pruebas OK; `npm run build` → OK.
+
+### Deuda cerrada y verificaciones
+
+- [x] T104 [P] [US9] Mostrar el error `errors.storage` devuelto por `registerMovement()` cuando falla la escritura: contenedor `error-movement-storage` en `index.html`, `ERROR_FIELDS` ampliado en `src/components/movement-form.js` y prueba en `tests/integration/orders.test.js`; rollback atómico conservado (FR-128). Evidencia: 6/6 pruebas de integración OK
+- [x] T105 [US9] Reforzar `LOGISTICS_SCHEMAS.orders` invocando `validateRecord('orders', order, { list: orders })` desde `createOrderForMovement()` en `src/domain/orders.js`, con prueba de rechazo en `tests/unit/orders.test.js` y sin duplicar validaciones en la interfaz. Evidencia: 12/12 pruebas unitarias de órdenes OK
+- [x] T106 [US9] Declarar `order_id` como opcional en `LOGISTICS_SCHEMAS.movements` de `src/storage.js` y verificarlo en `tests/unit/storage.test.js`, alineando el esquema con el campo ya persistido. Evidencia: 43/43 pruebas unitarias de almacenamiento OK
+- [ ] T107 [US9] Diferida: añadir como mejora UX opcional los filtros por tipo de orden, producto y bodega y la columna de usuario en `src/components/order-list.js`, `src/app.js`, `index.html` y `src/styles.css`, con prueba en `tests/integration/orders.test.js`
+- [x] T108 [US9] Documentar la política de numeración: no se reutilizan correlativos mientras se conserve `logistics:orders`; borrar esa clave reinicia la derivación del máximo y no se añade contador ni migración. Comportamiento de `src/domain/orders.js` preservado y aclarado en `spec.md`, `data-model.md` y `contracts/logistics-storage.md`
+- [x] T109 [US9] Eliminar `orderPrefixForMovementType()` sin consumidores y corregir la ordenación por `transaction_id` con valores legacy no numéricos en `src/domain/orders.js`, con prueba de regresión en `tests/unit/orders.test.js`
+- [x] T110 [US9] Ejecutar `npx vitest run` y `npm run build` en la raíz, incluyendo HU-01–HU-09, y actualizar la evidencia en `tasks.md`. Evidencia: 32 archivos/279 pruebas OK y build OK; T066 conserva su evidencia histórica de 2026-11-22
+
+**Punto de control**: OC/OV se generan solo para entradas y salidas normales, numeraciones persisten sin reutilización mientras exista el historial, rollback es atómico y visible, panel depende solo de Movimientos, y la deuda cerrada no afecta lo ya implementado; T107 queda diferida explícitamente.
+
+### Dependencias HU-09 (complemento de la sección anterior)
+
+- US9 (Fase 12): depende de la Fase 2, de US3 para los movimientos, de US4 para las bodegas y de US8 para el guard `movements`; no introduce Fase nueva en el código ni permiso `orders`.
+- T095–T103 son verificaciones ya ejecutadas; T104–T106 y T108–T110 se ejecutaron y verificaron secuencialmente. T107 permanece diferida.
+- T104, T107 y T110 comparten `index.html`, `src/app.js` o `tests/integration/orders.test.js`; T104 y T110 se ejecutaron por separado, T107 sigue sin ejecutarse.
+- T105 y T106 comparten `src/storage.js`; T105, T108 y T109 comparten `src/domain/orders.js`, por lo que se ejecutaron secuencialmente.
+
+### Ejemplo Paralelo: Historia de Usuario 9
+
+```bash
+# Verificación de OC/OV ya ejecutada
+Task: "npx vitest run tests/unit/orders.test.js"
+Task: "npx vitest run tests/unit/storage.test.js"
+Task: "npx vitest run tests/integration/orders.test.js"
+
+# Cierre ejecutado
+Task: "npx vitest run"
+Task: "npm run build"
+```
+
+## Notas de Marcado HU-09
+
+| Estado | IDs | Criterio usado |
+|---|---|---|
+| Completado | T095–T103, T104–T106, T108–T110 | Implementación, pruebas y documentación presentes; 279/279 pruebas OK y build OK el 2026-11-23. |
+| Diferida | T107 | Mejora UX opcional; no ejecutada ni marcada como completada. |
+
+`npx vitest run` y `npm run build` se ejecutaron en esta edición HU-09 con resultado OK; T066 conserva su evidencia histórica.
+
+---
+
+## Fase 13: Historia de Usuario 10 - Buscador y filtros de transferencias entre bodegas (Prioridad: P2) (Ampliación 2026-11-23)
+
+**Nota de alcance**: T111–T137 se añaden al final por instrucción explícita; no reordenan, reemplazan ni cambian el estado de T001–T110. T107 continúa diferida. Esta ampliación implementa solo HU-10 y HU-11, sin crear ramas, commits ni push desde la generación de tareas.
+
+**Objetivo**: Buscar y filtrar transferencias registradas por producto, identificador de transferencia, bodegas y estado, conservando el listado completo por defecto y sin alterar datos operativos.
+
+**Prueba Independiente**: Registrar varias transferencias con productos, bodegas y estados diferentes; aplicar búsquedas y filtros individuales y combinados; verificar el contador, la columna `#ID` y el estado vacío; limpiar los filtros; confirmar que transferencias, stock y movimientos permanecen intactos.
+
+### Pruebas para la Historia de Usuario 10
+
+> Escribir estas pruebas primero y verificar que fallan antes de tocar la implementación.
+
+- [X] T111 [P] [US10] Añadir pruebas unitarias de `listTransfers(filters = {})` en `tests/unit/transfers.test.js` para: sin filtros conserva la ordenación por `transfer_id` descendente y los nombres enriquecidos; `term` aplica coincidencia parcial e insensible a mayúsculas sobre `product_name` y `String(transfer_id)`; `status`, `productId`, `sourceWarehouseId` y `targetWarehouseId` comparan de forma exacta con IDs normalizados mediante `Number(...)`; todos los filtros se combinan con AND; la consulta no escribe `logistics:stock_transfers`, `logistics:stock`, catálogos ni movimientos (FR-134; Escenarios HU-10 1–4, 7)
+- [X] T112 [P] [US10] Añadir pruebas de integración en `tests/integration/transfers.test.js` para los controles `#transfer-search`, `#transfer-filter-status`, `#transfer-filter-product`, `#transfer-filter-source`, `#transfer-filter-target` y `#transfer-filters-clear` dentro de `#view-transfers`, la columna `#ID`, el contador `transfer-count`, el estado vacío `transfer-list-empty`, la combinación de filtros, la limpieza y la no mutación de transferencias, stock ni movimientos (FR-134; Escenarios HU-10 1–7)
+
+### Implementación de la Historia de Usuario 10
+
+- [X] T113 [P] [US10] Extender `listTransfers(filters = {})` en `src/domain/transfers.js` con los filtros opcionales `term`, `status`, `productId`, `sourceWarehouseId` y `targetWarehouseId`, conservando la firma sin argumentos, el enriquecimiento de nombres, la ordenación por `transfer_id` descendente, ignorando filtros vacíos o `undefined` y combinando los presentes con AND (FR-134; Escenarios HU-10 1–4, 7)
+- [X] T114 [P] [US10] Añadir dentro de `#view-transfers` en `index.html` la barra de filtros de la tarjeta «Transferencias registradas» con `#transfer-search`, `#transfer-filter-status`, `#transfer-filter-product`, `#transfer-filter-source`, `#transfer-filter-target` y `#transfer-filters-clear`, reutilizando `.toolbar` y `.filter-grid`, sin crear permiso ni módulo nuevo (Escenarios HU-10 2–5)
+- [X] T115 [P] [US10] Añadir la columna `#ID` a la tabla de `src/components/transfer-list.js` y a su cabecera en `index.html`, mostrando `transfer_id` escapado con `escapeHtml`, delante de Producto, conservando `transfer-count` y `transfer-list-empty` (Escenarios HU-10 1, 6)
+- [X] T116 [US10] Conectar `refreshTransfers()` en `src/app.js` para leer los controles `#transfer-search`, `#transfer-filter-status`, `#transfer-filter-product`, `#transfer-filter-source` y `#transfer-filter-target`, construir el objeto `filters`, llamar a `listTransfers(filters)`, pasar el resultado a `renderTransferList()`, registrar eventos `input`/`change` y el botón `#transfer-filters-clear`, manteniendo `guardModuleAccess('transfers', { silent: true })` y las llamadas sin argumentos del dashboard (FR-134; Escenarios HU-10 1–7)
+- [X] T117 [US10] Ajustar los estilos de la barra de filtros, la columna `#ID` y el estado vacío de transferencias en `src/styles.css`, reutilizando tokens y clases existentes sin introducir un tema nuevo (Escenario HU-10 6)
+- [X] T118 [US10] Ejecutar `npx vitest run tests/unit/transfers.test.js tests/integration/transfers.test.js` en la raíz del repositorio, verificar que las pruebas T111–T112 pasan sin regresiones de HU-05 y registrar la evidencia en `specs/002-logistica-inventario/tasks.md` (FR-134; Escenarios HU-10 1–7)
+
+**Punto de control**: HU-10 es funcional de forma independiente; el listado por defecto no cambia, los filtros son de solo lectura y no aparece ningún permiso `transfers.search`.
+
+---
+
+## Fase 14: Historia de Usuario 11 - Seguimiento de envíos al comprador (Prioridad: P2) (Ampliación 2026-11-23)
+
+**Objetivo**: Registrar, consultar y avanzar manualmente envíos asociados a órdenes de venta, conservando historial con fecha, hora y usuario, sin modificar stock, movimientos ni órdenes.
+
+**Prueba Independiente**: Generar `OV-0001` desde una salida normal, crear un envío con transportista y código de seguimiento, rechazar un segundo envío para la misma OV, avanzar `en_bodega → en_transito → en_reparto → entregado`, rechazar retrocesos/saltos/repeticiones/cambios terminales, buscar por OV/código/estado y verificar persistencia y no mutación de inventario.
+
+### Pruebas para la Historia de Usuario 11
+
+> Escribir estas pruebas primero y verificar que fallan antes de tocar la implementación.
+
+- [X] T119 [P] [US11] Añadir pruebas unitarias de almacenamiento en `tests/unit/storage.test.js` para `LOGISTICS_KEYS.shipments === 'logistics:shipments'`, `LOGISTICS_SCHEMAS.shipments`, `loadShipments()`, `saveShipments()` y `nextShipmentId()`, verificando `shipment_id` «PK, obligatorio y único; secuencia entera propia», `order_id` «FK a `PURCHASE_SALES_ORDERS.order_id`, obligatoria y única; la orden debe ser `order_type = "venta"` (OV)», `carrier` y `tracking_code` «Obligatorio, no vacío; escapado antes de mostrarse», `status` con valores `en_bodega`, `en_transito`, `en_reparto`, `entregado`, `created_by` y `created_at` obligatorios, `history` con al menos el evento inicial, y `unique: [['shipment_id'], ['order_id']]` sin usar un array plano compuesto (FR-131, FR-133)
+- [X] T120 [US11] Crear pruebas unitarias en `tests/unit/shipments.test.js` para `createShipment()`, `advanceShipmentStatus()` y `listShipments()`, cubriendo OV existente con `order_type = "venta"`, rechazo de OC y de OV duplicada, validación de `createdBy` y `actorUserId` contra `USERS`, evento inicial `en_bodega`, transiciones inmediatas, rechazo de retrocesos, saltos, repeticiones y cambios desde `entregado`, eventos `history` con `changed_at` ISO y `changed_by`, búsqueda parcial e insensible a mayúsculas por `orderId` y `trackingCode`, filtro exacto por `status`, y ausencia de llamadas a `registerMovement()` ni cambios en `logistics:orders`, `logistics:inventory_transactions` o `logistics:stock` (FR-130, FR-131, FR-132)
+- [X] T121 [P] [US11] Crear pruebas de integración en `tests/integration/shipments.test.js` para la vista `#view-shipments`, la ruta `#/shipments`, el formulario con OV elegibles, el rechazo de duplicados, el listado con etiquetas «En bodega», «En tránsito», «En reparto» y «Entregado», el historial visible, los filtros por OV/código/estado, los botones de avance sujetos a `action:shipments.update_status`, la denegación de `module:shipments`, la persistencia tras recarga, la no mutación de stock, movimientos ni órdenes y la ausencia de conexiones automáticas con transportistas comprobando que no se invoca `fetch`, `XMLHttpRequest` ni otro cliente HTTP externo durante el registro o avance manual (FR-130, FR-132, FR-133; Escenario HU-11 10)
+- [X] T122 [P] [US11] Actualizar `tests/unit/permissions.test.js` y `tests/integration/permissions.test.js` para los recursos `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status`, verificando que los tres roles definidos pueden ver y actualizar estados, que no se añaden entradas a `FORBIDDEN_BY_ROLE` y que una matriz persistida sin las filas nuevas resuelve el acceso mediante el fallback de `ROLE_PERMISSION_SEED` sin sobrescribirse (FR-130, FR-133, FR-124)
+- [X] T123 [P] [US11] Actualizar `tests/integration/workspace-shell.test.js` para esperar 12 botones `.nav-module`, comprobar `#nav-shipments`, verificar que desaparece al denegar `module:shipments` y confirmar que `#/shipments` muestra el aviso de acceso restringido y redirige a la landing permitida (FR-113, FR-115, FR-133)
+
+### Implementación de la Historia de Usuario 11
+
+- [X] T124 [P] [US11] Añadir en `src/storage.js` la clave `shipments: 'logistics:shipments'`, el esquema `LOGISTICS_SCHEMAS.shipments` con `unique: [['shipment_id'], ['order_id']]`, `loadShipments()`, `saveShipments()` y `nextShipmentId()` derivado del máximo `shipment_id`, sin clave de contador, sin clave separada de historial y sin modificar `logistics:orders`, `logistics:inventory_transactions` ni `logistics:stock` (FR-131, FR-133)
+- [X] T125 [P] [US11] Crear `src/domain/shipments.js` con `createShipment({ orderId, carrier, trackingCode, createdBy })`, `advanceShipmentStatus(shipmentId, actorUserId)` y `listShipments(filters)`, validando contra `validateRecord('shipments', ...)` y, antes de cualquier escritura, comprobando explícitamente que la OV existe en `loadOrders()` con `order_type = "venta"`, que no existe un envío previo con el mismo `order_id` en `loadShipments()`, que `createdBy` y `actorUserId` corresponden a usuarios válidos de `loadUsers()`, que `carrier` y `trackingCode` son texto no vacío, que el estado inicial es `en_bodega` y que todo avance usa únicamente `en_transito`, `en_reparto` o `entregado` según la transición inmediatamente siguiente; cualquier validación fallida DEBE devolver errores y NO DEBE invocar `saveShipments()` ni persistir parcialmente; persistir `history[]` embebido con `changed_at` ISO y `changed_by`, sin llamar a `registerMovement()`, sin conexiones automáticas con transportistas y sin modificar `STOCK`, movimientos ni órdenes (FR-130, FR-131, FR-132; Escenarios HU-11 1, 3, 4, 5, 7, 8, 9, 10)
+- [X] T126 [P] [US11] Actualizar `src/domain/seed.js` para incluir `shipments` en `ALL_MODULES` y `OPERATION_MODULES`, añadir `shipment-form` a `SECTIONS`, sembrar `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status` para `administrador`, `supervisor_inventario` y `encargado_bodega`, permitir `section:shipment-form` cuando corresponda y no reescribir una matriz `ROLE_PERMISSIONS` ya persistida (FR-130, FR-133)
+- [X] T127 [P] [US11] Actualizar `src/domain/permissions.js` añadiendo `shipments` a `MODULES`, sin nuevas entradas en `FORBIDDEN_BY_ROLE`, para que `canAccessModule()`, `resolveLandingModule()` y el panel de permisos reconozcan el módulo y la matriz solo pueda restringir lo permitido por reglas de negocio (FR-124, FR-133)
+- [X] T128 [P] [US11] Añadir en `index.html` el botón `#nav-shipments` con `class="nav-module"`, `data-module="shipments"` y un elemento `<span class="nav-label">Seguimiento de envíos</span>`, la sección `#view-shipments`, el formulario `#shipment-form` con `#shipment-order`, `#shipment-carrier`, `#shipment-tracking-code`, `#shipment-submit-button` y contenedores `error-shipment-orderId`, `error-shipment-carrier`, `error-shipment-trackingCode`, `error-shipment-createdBy`, además del listado con `#shipment-search`, `#shipment-filter-status`, `#shipment-count`, `#shipment-list-body` y `#shipment-list-empty` (FR-113, FR-133; Escenario HU-11 11)
+- [X] T129 [P] [US11] Crear `src/components/shipment-form.js` con funciones para poblar `#shipment-order` solo con órdenes `order_type = "venta"` sin envío existente, mostrar errores de validación en los contenedores `error-shipment-*`, construir el payload con `orderId`, `carrier`, `trackingCode` y `createdBy`, y conservar el usuario activo del ERP sin selector manual (FR-131, FR-133)
+- [X] T130 [P] [US11] Crear `src/components/shipment-list.js` para renderizar en `#shipment-list-body` el `order_id`, `carrier` y `tracking_code` escapados, las etiquetas de estado, el historial con `changed_at` y `changed_by`, `#shipment-count`, `#shipment-list-empty` y el botón de avance solo cuando `canUpdateStatus` sea verdadero y el estado no sea `entregado` (FR-132, FR-133)
+- [X] T131 [US11] Integrar HU-11 en `src/app.js`: importar el dominio y los componentes, añadir `shipments` a `MODULES` y `VIEWS` con `shipments: 'view-shipments'`, implementar `refreshShipments()` con guard `module:shipments`, cablear `submit` de `#shipment-form`, eventos de filtros y avance de estado con `guardAction('shipments.create')` y `guardAction('shipments.update_status')`, mostrar errores, deshabilitar `#shipment-form` según permisos en `applyPermissionUiState()` y refrescar la vista tras crear o avanzar (FR-130, FR-133)
+- [X] T132 [P] [US11] Ajustar los estilos del formulario, listado, historial, badges de estado y botón de avance de envíos en `src/styles.css`, reutilizando `.toolbar`, `.filter-grid`, `.empty`, `.data-table` y `.status-badge` con los tokens corporativos existentes
+- [X] T133 [P] [US11] Actualizar `README.md` con el módulo «Seguimiento de envíos», la ruta `#/shipments`, la clave `logistics:shipments`, los cuatro recursos de permisos nuevos, la regla de que no genera movimientos ni modifica stock u órdenes y la ausencia de conexiones automáticas con servicios de transportistas, indicando que el seguimiento se actualiza solo manualmente desde el ERP (FR-133; Escenario HU-11 10)
+
+**Punto de control**: HU-11 es funcional de forma independiente; cada OV tiene como máximo un envío, `Entregado` es terminal, el historial conserva fecha/hora/usuario y la vista está protegida por HU-08 sin autenticación real.
+
+---
+
+## Fase 15: Verificación y cierre de HU-10 y HU-11 (Ampliación 2026-11-23)
+
+**Propósito**: Verificar regresiones, rendimiento, accesibilidad y documentación aditiva sin alterar el trabajo de HU-01–HU-09.
+
+- [X] T134 Ejecutar `npx vitest run` en la raíz del repositorio, incluyendo `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js`, `tests/unit/shipments.test.js`, `tests/integration/shipments.test.js`, `tests/unit/storage.test.js`, `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` y `tests/integration/workspace-shell.test.js`, y registrar el resultado en `specs/002-logistica-inventario/tasks.md`
+- [X] T135 Ejecutar `npm run build` en la raíz del repositorio y registrar el resultado en `specs/002-logistica-inventario/tasks.md`
+- [X] T136 Validar manualmente todos los escenarios de `specs/002-logistica-inventario/quickstart.md` para HU-10 y HU-11, incluyendo búsqueda parcial, filtros combinados, estado vacío, 1:1 OV–envío, transiciones secuenciales, denegación por permisos, persistencia y verificación explícita de que no existen conexiones automáticas con transportistas, y registrar la evidencia en `specs/002-logistica-inventario/tasks.md`
+- [X] T137 Registrar el marcado final de T111–T137 en `specs/002-logistica-inventario/tasks.md`, conservando T001–T110 sin cambios, T107 como diferida y T066 con su evidencia histórica
+
+**Evidencia de verificación**
+- T118: `npx vitest run tests/unit/transfers.test.js tests/integration/transfers.test.js` → `Test Files 2 passed (2)`, `Tests 21 passed (21)`.
+- T119–T123: `npx vitest run tests/unit/storage.test.js tests/unit/shipments.test.js tests/integration/shipments.test.js tests/unit/permissions.test.js tests/integration/permissions.test.js tests/integration/workspace-shell.test.js` → `Test Files 6 passed (6)`, `Tests 86 passed (86)`.
+- T134: `npx vitest run` → `Test Files 34 passed (34)`, `Tests 300 passed (300)`.
+- T135: `npm run build` → `✓ built in 192ms`; artefactos generados en `dist/` (`index.html`, CSS y JS).
+- T136: los recorridos de `quickstart.md` para HU-10 y HU-11 quedan cubiertos por `tests/integration/transfers.test.js`, `tests/integration/shipments.test.js`, `tests/integration/permissions.test.js` y `tests/integration/workspace-shell.test.js`: búsqueda parcial, filtros combinados y estado vacío; OV duplicada rechazada; transiciones secuenciales con rechazo de saltos/repeticiones/terminal; historial con fecha y usuario; denegación de módulo y de acción; persistencia tras recarga; snapshots sin cambios en órdenes, movimientos ni stock; spies de `fetch`/`XMLHttpRequest` sin llamadas y código sin temporizadores ni clientes HTTP externos.
+
+**Punto de control**: T111–T137 quedan verificados con suite completa y build correctos, sin sobrescribir tareas ni estados anteriores.
+
+---
+
+## Dependencias HU-10/HU-11 (complemento de las secciones anteriores)
+
+### Dependencias entre Fases
+
+- US10 (Fase 13): depende de la Fase 2, de US5 para el historial de transferencias y de US8 para el guard `transfers`; no crea módulo ni permiso nuevo.
+- US11 (Fase 14): depende de la Fase 2, de US8 para la matriz de permisos y de US9 para las órdenes `OV`; no reutiliza contadores `OC`/`OV` ni modifica HU-09.
+- Verificación (Fase 15): depende de T111–T133 y se ejecuta solo después de que ambas historias estén completas.
+
+### Dependencias entre Tareas
+
+- En US10, T111 y T112 pueden ejecutarse en paralelo; T113, T114 y T115 pueden ejecutarse en paralelo tras las pruebas; T116 depende de T113–T115; T117 depende de T114–T115; T118 depende de T111–T117.
+- En US11, T119, T120, T121, T122 y T123 pueden ejecutarse en paralelo porque escriben archivos distintos: `tests/unit/storage.test.js`, `tests/unit/shipments.test.js`, `tests/integration/shipments.test.js`, las pruebas de permisos y `tests/integration/workspace-shell.test.js`.
+- T124 precede a T125; T126 y T127 pueden ejecutarse en paralelo tras T119–T123; T128, T129 y T130 pueden ejecutarse en paralelo; T131 depende de T124–T130; T132 depende de T128–T130; T133 depende de la definición aprobada de T128–T131.
+- T116 (US10) y T131 (US11) comparten `src/app.js`; si hay un solo desarrollador, ejecutar T116 antes que T131. Si hay dos, coordinar el merge de ese archivo.
+- T118 y T134 comparten evidencia en `specs/002-logistica-inventario/tasks.md`; registrar la evidencia de US10 antes de la verificación final.
+
+### Oportunidades Paralelas
+
+- Las pruebas T111–T112 y T119–T123 pueden escribirse simultáneamente.
+- T124, T126, T127, T128, T129 y T130 tocan archivos distintos y pueden avanzar en paralelo una vez cerradas sus pruebas.
+- US10 y US11 pueden desarrollarse en paralelo salvo por el punto de integración compartido `src/app.js`.
+
+---
+
+## Ejemplo Paralelo: Historia de Usuario 10
+
+```bash
+# Pruebas HU-10 en paralelo
+Task: "T111 añadir pruebas unitarias en tests/unit/transfers.test.js"
+Task: "T112 añadir pruebas de integración en tests/integration/transfers.test.js"
+
+# Implementación HU-10 en paralelo
+Task: "T113 extender listTransfers en src/domain/transfers.js"
+Task: "T114 añadir controles en index.html"
+Task: "T115 añadir columna #ID en src/components/transfer-list.js"
+```
+
+## Ejemplo Paralelo: Historia de Usuario 11
+
+```bash
+# Pruebas HU-11 en paralelo
+Task: "T119 añadir pruebas de almacenamiento en tests/unit/storage.test.js"
+Task: "T121 crear pruebas de integración en tests/integration/shipments.test.js"
+Task: "T122 actualizar pruebas de permisos en tests/unit/permissions.test.js y tests/integration/permissions.test.js"
+Task: "T123 actualizar recuento de navegación en tests/integration/workspace-shell.test.js"
+
+# Implementación HU-11 en paralelo
+Task: "T124 añadir clave y helpers en src/storage.js"
+Task: "T126 actualizar semilla en src/domain/seed.js"
+Task: "T127 actualizar MODULES en src/domain/permissions.js"
+Task: "T128 añadir vista y formulario en index.html"
+Task: "T129 crear src/components/shipment-form.js"
+Task: "T130 crear src/components/shipment-list.js"
+```
+
+---
+
+## Estrategia de Implementación HU-10/HU-11
+
+### MVP First
+
+1. Completar T111–T118 (US10) y validar de forma independiente.
+2. **DETENERSE y VALIDAR**: comprobar búsqueda, filtros combinados, estado vacío y no mutación.
+3. Completar T119–T133 (US11) y validar de forma independiente.
+4. **DETENERSE y VALIDAR**: comprobar 1:1 OV–envío, transiciones, historial, permisos y aislamiento de inventario.
+5. Completar T134–T137.
+
+### Entrega Incremental
+
+1. US10 → validar → demostrar sin tocar permisos ni navegación.
+2. US11 → validar → demostrar con módulo propio, ruta y matriz actualizada.
+3. Verificación final → suite completa, build y evidencia documental.
+
+### Estrategia de Equipo Paralelo
+
+1. Desarrollador A: T111–T118 (US10).
+2. Desarrollador B: T119–T125 (almacenamiento, dominio y pruebas de envíos).
+3. Desarrollador C: T126–T130 (permisos, semilla, vista y componentes).
+4. Integrar `src/app.js` de forma secuencial: T116 y después T131.
+5. Ejecutar T134–T137 conjuntamente.
+
+---
+
+## Notas de Marcado HU-10/HU-11
+
+| Estado | IDs | Criterio usado |
+|---|---|---|
+| Nuevas US10 | T111–T118 | Tareas generadas desde HU-10, `plan.md`, `data-model.md`, `contracts/logistics-storage.md` y `quickstart.md`. |
+| Nuevas US11 | T119–T133 | Tareas generadas desde HU-11, `MER.md`, `data-model.md`, `contracts/logistics-storage.md` y `quickstart.md`. |
+| Nueva verificación | T134–T137 | Suite completa, build, validación manual y registro de evidencia. |
+| Sin cambios | T001–T110 | Se conservan tal cual, incluida T107 como diferida y T066 con su evidencia histórica. |
+
+Los comandos `npx vitest run` y `npm run build` de T134–T135 deben ejecutarse después de la implementación; esta generación de tareas no ejecuta código ni modifica ramas, commits o push.

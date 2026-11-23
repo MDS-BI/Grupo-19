@@ -183,3 +183,47 @@ El MER original elaborado por nuestro grupo se conserva como referencia visual.
 
 ![MER visual original](MER_logisica_visual.jpeg)
 
+## Ampliación HU-11: Seguimiento de envíos al comprador (2026-11-23)
+
+El diagrama anterior se conserva íntegramente. Esta sección añade la entidad `SHIPMENTS` y sus relaciones con órdenes y usuarios. HU-10 no incorpora entidades nuevas: solo consulta `STOCK_TRANSFERS` con filtros.
+
+```mermaid
+erDiagram
+    PURCHASE_SALES_ORDERS {
+        string order_id PK
+        string order_type
+        string transaction_id FK
+    }
+
+    USERS {
+        int user_id PK
+        string user_name
+        string role
+    }
+
+    SHIPMENTS {
+        int shipment_id PK
+        string order_id FK, UK
+        string carrier
+        string tracking_code
+        string status
+        int created_by FK
+        datetime created_at
+        array history
+    }
+
+    PURCHASE_SALES_ORDERS ||--o| SHIPMENTS : genera
+    USERS ||--o{ SHIPMENTS : registra
+    USERS ||--o{ SHIPMENTS : actualiza
+```
+
+### Restricciones adicionales HU-11
+
+- `SHIPMENTS.order_id` referencia una orden OV existente (`PURCHASE_SALES_ORDERS.order_type = "venta"`) y es única: una OV tiene como máximo un envío.
+- `SHIPMENTS.shipment_id` es una secuencia entera independiente; no reutiliza correlativos `OC`/`OV`.
+- `carrier` y `tracking_code` son obligatorios.
+- `status` solo admite `en_bodega`, `en_transito`, `en_reparto` o `entregado`.
+- `history` conserva `{ status, changed_at, changed_by }` para cada cambio, incluido el estado inicial `en_bodega`.
+- Solo se permite avanzar al estado inmediatamente siguiente; `entregado` es terminal.
+- El envío no genera movimientos de inventario ni modifica `STOCK`, órdenes ni movimientos.
+

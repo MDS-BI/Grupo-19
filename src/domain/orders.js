@@ -1,13 +1,9 @@
-import { loadOrders, saveOrders, loadProducts, loadWarehouses } from '../storage.js';
+import { loadOrders, saveOrders, loadProducts, loadWarehouses, validateRecord } from '../storage.js';
 
 const ORDER_CONFIG = {
   entrada: { prefix: 'OC', orderType: 'adquisicion' },
   salida: { prefix: 'OV', orderType: 'venta' }
 };
-
-export function orderPrefixForMovementType(type){
-  return ORDER_CONFIG[type]?.prefix || null;
-}
 
 export function nextOrderId(type){
   const config = ORDER_CONFIG[type];
@@ -45,6 +41,8 @@ export function createOrderForMovement(movement){
     user_id: movement.user_id,
     order_date: movement.transaction_date
   };
+  const validation = validateRecord('orders', order, { list: orders });
+  if(!validation.valid) throw new Error(`Orden inválida: ${Object.values(validation.errors).join(', ')}`);
   orders.push(order);
   saveOrders(orders);
   return order;
@@ -59,5 +57,14 @@ export function listOrders(){
       product_name: products.find(p => p.product_id === order.product_id)?.product_name || 'Producto desconocido',
       warehouse_name: warehouses.find(w => w.warehouse_id === order.warehouse_id)?.name || 'Bodega desconocida'
     }))
-    .sort((a, b) => Number(b.transaction_id) - Number(a.transaction_id));
+    .sort((a, b) => {
+      const left = Number(a.transaction_id);
+      const right = Number(b.transaction_id);
+      const leftValid = Number.isFinite(left);
+      const rightValid = Number.isFinite(right);
+      if(!leftValid && !rightValid) return 0;
+      if(!leftValid) return 1;
+      if(!rightValid) return -1;
+      return right - left;
+    });
 }

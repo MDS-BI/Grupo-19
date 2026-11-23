@@ -12,6 +12,26 @@ function userExists(userId){
 
 const INVALID_ACTIVE_USER_MSG = 'No existe un usuario activo válido para realizar esta operación';
 
+function hasFilter(value){
+  return value !== undefined && value !== null && String(value).trim() !== '';
+}
+
+function matchesTerm(transfer, term){
+  if(!hasFilter(term)) return true;
+  const query = String(term).trim().toLowerCase();
+  return [transfer.product_name, String(transfer.transfer_id)]
+    .some(value => String(value ?? '').toLowerCase().includes(query));
+}
+
+function matchesTransferFilters(transfer, filters = {}){
+  if(!matchesTerm(transfer, filters.term)) return false;
+  if(hasFilter(filters.status) && String(transfer.status) !== String(filters.status)) return false;
+  if(hasFilter(filters.productId) && Number(transfer.product_id) !== Number(filters.productId)) return false;
+  if(hasFilter(filters.sourceWarehouseId) && Number(transfer.source_warehouse_id) !== Number(filters.sourceWarehouseId)) return false;
+  if(hasFilter(filters.targetWarehouseId) && Number(transfer.target_warehouse_id) !== Number(filters.targetWarehouseId)) return false;
+  return true;
+}
+
 /** Crea una solicitud de transferencia en estado "pendiente" (FR-065 a FR-067, FR-074). */
 export function requestTransfer({ productId, sourceWarehouseId, targetWarehouseId, quantity, createdBy }){
   const errors = {};
@@ -95,7 +115,7 @@ export function cancelTransfer(transferId, cancelledBy){
   return { success: true, transfer: list[idx] };
 }
 
-export function listTransfers(){
+export function listTransfers(filters = {}){
   const products = loadProducts();
   const warehouses = loadWarehouses();
   const users = loadUsers();
@@ -111,5 +131,6 @@ export function listTransfers(){
       confirmed_by_name: t.confirmed_by ? userName(t.confirmed_by) : undefined,
       cancelled_by_name: t.cancelled_by ? userName(t.cancelled_by) : undefined
     }))
+    .filter(t => matchesTransferFilters(t, filters))
     .sort((a, b) => b.transfer_id - a.transfer_id);
 }
