@@ -16,6 +16,7 @@ export const LOGISTICS_KEYS = {
   users: 'logistics:users',
   stock: 'logistics:stock',
   movements: 'logistics:inventory_transactions',
+  orders: 'logistics:orders',
   transfers: 'logistics:stock_transfers',
   replenishments: 'logistics:replenishment_requests',
   roles: 'logistics:roles',
@@ -30,6 +31,7 @@ export const LOGISTICS_SCHEMAS = {
   users: { required: ['user_id', 'user_name', 'role'], unique: ['user_id'], references: { role: 'roles' } },
   stock: { required: ['stock_id', 'product_id', 'warehouse_id', 'quantity_available'], unique: ['stock_id', ['product_id', 'warehouse_id']] },
   movements: { required: ['transaction_id', 'product_id', 'warehouse_id', 'transaction_type', 'quantity', 'user_id', 'transaction_date'], unique: ['transaction_id'] },
+  orders: { required: ['order_id', 'order_type', 'transaction_id', 'product_id', 'warehouse_id', 'quantity', 'user_id', 'order_date'], unique: ['order_id', 'transaction_id'] },
   transfers: { required: ['transfer_id', 'product_id', 'source_warehouse_id', 'target_warehouse_id', 'quantity', 'status', 'transfer_date', 'created_by'], unique: ['transfer_id'] },
   replenishments: { required: ['request_id', 'product_id', 'warehouse_id', 'quantity', 'status', 'request_date', 'created_by'], unique: ['request_id'] },
   roles: { required: ['role_key', 'role_label', 'default_landing_module', 'is_admin'], unique: ['role_key'] },
@@ -101,6 +103,8 @@ export const loadStock = () => loadList(LOGISTICS_KEYS.stock);
 export const saveStock = (list) => saveList(LOGISTICS_KEYS.stock, list);
 export const loadMovements = () => loadList(LOGISTICS_KEYS.movements);
 export const saveMovements = (list) => saveList(LOGISTICS_KEYS.movements, list);
+export const loadOrders = () => loadList(LOGISTICS_KEYS.orders);
+export const saveOrders = (list) => saveList(LOGISTICS_KEYS.orders, list);
 export const loadTransfers = () => loadList(LOGISTICS_KEYS.transfers);
 export const saveTransfers = (list) => saveList(LOGISTICS_KEYS.transfers, list);
 export const loadReplenishments = () => loadList(LOGISTICS_KEYS.replenishments);

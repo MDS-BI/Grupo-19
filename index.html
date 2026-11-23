@@ -792,8 +792,25 @@
             <div id="movement-list-empty" class="empty" hidden aria-live="polite">No se encontraron movimientos.</div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th scope="col">Fecha</th><th scope="col">Tipo</th><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Usuario</th><th scope="col">Ajustar</th></tr></thead>
+                <thead><tr><th scope="col">Fecha</th><th scope="col">Orden</th><th scope="col">Tipo</th><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Usuario</th><th scope="col">Ajustar</th></tr></thead>
                 <tbody id="movement-list-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="order-list-heading">
+            <div class="card-head">
+              <div>
+                <h2 id="order-list-heading">Órdenes generadas</h2>
+                <p class="card-subtitle">Adquisiciones (OC) y ventas (OV) vinculadas a entradas y salidas normales.</p>
+              </div>
+              <span class="count-badge" id="order-count">0</span>
+            </div>
+            <div id="order-list-empty" class="empty" hidden aria-live="polite">Todavía no se generaron órdenes.</div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th scope="col">Orden</th><th scope="col">Tipo</th><th scope="col">Movimiento</th><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Fecha</th></tr></thead>
+                <tbody id="order-list-body"></tbody>
               </table>
             </div>
           </section>

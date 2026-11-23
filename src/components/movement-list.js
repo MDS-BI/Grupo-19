@@ -32,6 +32,7 @@ export function renderMovementList(tbody, emptyEl, movements, { onAdjust, canAdj
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${escapeHtml(new Date(m.transaction_date).toLocaleString('es-CL'))}</td>
+      <td class="mono">${escapeHtml(m.order_id || '—')}</td>
       <td><span class="type-badge ${TYPE_CLASSES[m.transaction_type] || ''}">${escapeHtml(TYPE_LABELS[m.transaction_type] || m.transaction_type)}</span></td>
       <td><strong>${escapeHtml(m.product_name)}</strong></td>
       <td>${escapeHtml(m.warehouse_name)}</td>

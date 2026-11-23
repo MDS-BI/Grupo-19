@@ -1,12 +1,13 @@
 import { LOGISTICS_KEYS, loadMovements, saveMovements, loadProducts, loadUsers, loadWarehouses, nextMovementId, isPositiveInteger, withStorageRollback } from '../storage.js';
 import { listActiveWarehouses } from './warehouses.js';
 import { upsertStockForEntry, deductStockForExit } from './stock.js';
+import { createOrderForMovement } from './orders.js';
 
 export const MOVEMENT_TYPES = ['entrada', 'salida', 'ajuste_entrada', 'ajuste_salida'];
 const ENTRY_TYPES = new Set(['entrada', 'ajuste_entrada']);
 
 /** Registra una entrada, salida o ajuste (FR-053 a FR-059, FR-072). Inmutable: no hay update/delete. */
-export function registerMovement({ type, productId, warehouseId, quantity, userId }){
+export function registerMovement({ type, productId, warehouseId, quantity, userId, generateOrder = true }){
   const errors = {};
   if(!MOVEMENT_TYPES.includes(type)) errors.type = 'Tipo de movimiento inválido';
   if(!productId || !loadProducts().some(p => p.product_id === Number(productId))) errors.productId = 'Selecciona un producto existente';
@@ -22,7 +23,7 @@ export function registerMovement({ type, productId, warehouseId, quantity, userI
   const qty = Number(quantity);
 
   const transaction = withStorageRollback(
-    [LOGISTICS_KEYS.stock, LOGISTICS_KEYS.movements],
+    [LOGISTICS_KEYS.stock, LOGISTICS_KEYS.movements, LOGISTICS_KEYS.orders],
     () => {
       if(ENTRY_TYPES.has(type)){
         upsertStockForEntry(pId, wId, qty);
@@ -40,6 +41,10 @@ export function registerMovement({ type, productId, warehouseId, quantity, userI
         user_id: Number(userId),
         transaction_date: new Date().toISOString()
       };
+      if(generateOrder){
+        const order = createOrderForMovement(movement);
+        if(order) movement.order_id = order.order_id;
+      }
       const list = loadMovements();
       list.push(movement);
       saveMovements(list);

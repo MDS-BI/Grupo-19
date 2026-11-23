@@ -23,6 +23,7 @@ import { createProduct, updateProduct, setProductStatus, searchProducts } from '
 import { createWarehouse, updateWarehouse, setWarehouseStatus, listActiveWarehouses, searchWarehouses } from './domain/warehouses.js';
 import { listStock, getProductTotal, setMinStockLevel } from './domain/stock.js';
 import { registerMovement, listMovements } from './domain/movements.js';
+import { listOrders } from './domain/orders.js';
 import { requestTransfer, confirmTransfer, cancelTransfer, listTransfers } from './domain/transfers.js';
 import { listAlerts } from './domain/alerts.js';
 import {
@@ -37,6 +38,7 @@ import { renderWarehouseList } from './components/warehouse-list.js';
 import { renderStockList, renderStockTotal } from './components/stock-list.js';
 import { populateMovementProductSelect, populateMovementWarehouseSelect, clearMovementForm, prefillAdjustment, collectMovementPayload, showMovementErrors } from './components/movement-form.js';
 import { renderMovementList } from './components/movement-list.js';
+import { renderOrderList } from './components/order-list.js';
 import { populateTransferProductSelect, populateTransferWarehouseSelects, clearTransferForm, collectTransferPayload, showTransferErrors } from './components/transfer-form.js';
 import { renderTransferList } from './components/transfer-list.js';
 import { renderAlertList } from './components/alert-list.js';
@@ -382,6 +384,7 @@ function refreshMovements(){
       prefillAdjustment(movement, adjustmentType);
     }
   });
+  renderOrderList(qs('order-list-body'), qs('order-list-empty'), listOrders());
 }
 
 function isValidActiveUser(){

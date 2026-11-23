@@ -96,7 +96,8 @@ export function receiveRequest(requestId, receivedBy){
         productId: request.product_id,
         warehouseId: request.warehouse_id,
         quantity: request.quantity,
-        userId: receivedBy
+        userId: receivedBy,
+        generateOrder: false
       });
       if(!movementResult.success){
         const firstError = movementResult.errors ? Object.values(movementResult.errors)[0] : undefined;
