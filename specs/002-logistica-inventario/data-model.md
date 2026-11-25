@@ -110,6 +110,10 @@ Permite al administrador conceder o quitar un permiso concreto a un usuario, por
 | resource_key | string | Clave del recurso exceptuado | PK compuesta, obligatoria; mismo dominio que `ROLE_PERMISSIONS.resource_key` |
 | allowed | boolean | Valor individual del permiso | Obligatorio; prevalece sobre el cargo, sin saltarse FR-124 |
 
+## Navegación: pestañas del navegador (FR-125–FR-128)
+
+Los módulos principales de la barra lateral se abren en pestañas nuevas del navegador con `window.open` apuntando a la misma página más el hash `#/<modulo>`. No hay barra de pestañas interna ni entidad `WORKSPACE_TABS`: cada pestaña carga la aplicación de forma independiente y muestra solo el módulo indicado por su hash. No se persiste una lista de pestañas ni borradores entre pestañas, y ninguna apertura modifica entidades operativas ni el usuario activo. El guard de permisos se aplica antes de abrir; un módulo no autorizado no abre pestaña y muestra el aviso de acceso. Los flujos internos (`data-goto`, crear reposición desde una alerta) navegan en la misma pestaña; si el navegador bloquea ventanas emergentes, se navega en la pestaña actual como respaldo.
+
 ## Entidad: STOCK (Existencias)
 
 Registra las cantidades disponibles de cada producto en las distintas bodegas.
@@ -370,6 +374,14 @@ Para mantener la información del inventario correcta, el sistema deberá consid
 - El recurso `admin:permissions` siempre está permitido para el cargo con `is_admin = true`; intentar desactivarlo muestra una advertencia sin quitar el acceso (FR-118).
 - Cambiar un cargo o un permiso no modifica productos, bodegas, stock, movimientos, transferencias ni reposiciones, y no cambia el usuario activo (FR-120, FR-121).
 - La configuración persiste entre sesiones del mismo navegador (FR-122).
+
+### Pestañas del navegador
+
+- No existe clave, versión ni estado persistido para las pestañas: no hay `tabs`, `activeTab`, `dirtyTabs` ni `draftSnapshots` compartidos entre pestañas (FR-126, FR-128).
+- Cada pestaña resuelve su módulo desde `#/<modulo>` al cargar; un hash desconocido o no autorizado muestra el aviso de acceso y redirige a una vista permitida (FR-115, FR-127).
+- La decisión de permisos se toma antes de llamar a `window.open`; un módulo no autorizado no abre pestaña y muestra el aviso de acceso (FR-127).
+- Los flujos internos (`data-goto`, crear reposición desde una alerta) navegan en la pestaña actual; si se bloquea la apertura emergente, la navegación de respaldo también ocurre en la pestaña actual (FR-128).
+- Ninguna apertura modifica productos, bodegas, stock, movimientos, transferencias ni reposiciones, ni cambia el usuario activo (FR-120, FR-121).
 
 ## Catálogos semilla y alcance de la iteración
 

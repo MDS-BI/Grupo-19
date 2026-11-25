@@ -39,7 +39,7 @@ export const ROLE_SEED = [
 
 const ALL_MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments', 'entities', 'documents', 'search'];
 const OPERATION_MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts', 'replenishments'];
-const SECTIONS = ['product-form', 'warehouse-form', 'movement-form', 'transfer-form', 'replenishment-form', 'base-module-card', 'entity-form', 'document-form'];
+const SECTIONS = ['product-form', 'warehouse-form', 'movement-form', 'transfer-form', 'replenishment-form', 'entity-form', 'document-form'];
 
 const ADMIN_ACTIONS = {
   'products.manage': true,

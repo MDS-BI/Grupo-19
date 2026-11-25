@@ -98,10 +98,10 @@ describe('module-config', () => {
     expect(config.statusLifecycle).toBeNull();
   });
 
-  it('loadModuleConfig reflects the userConfig slot (Grupo 19 branding)', async () => {
+  it('loadModuleConfig reflects the userConfig slot', async () => {
     const { config, errors } = await loadModuleConfig();
     expect(errors).toEqual([]);
-    expect(config.moduleName).toBe('Logística e Inventario | Grupo 19');
+    expect(config.moduleName).toBe('Logística e Inventario');
     expect(config.theme.accentColor).toBe('#0f766e');
   });
 

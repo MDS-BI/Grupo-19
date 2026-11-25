@@ -72,7 +72,7 @@ On top of the generic Entity/Document base, this feature adds eight dedicated sc
 
 ### Storage keys
 
-`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`, `logistics:replenishment_requests`, `logistics:roles`, `logistics:role_permissions`, `logistics:user_permission_overrides`.
+`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`, `logistics:replenishment_requests`, `logistics:roles`, `logistics:role_permissions`, `logistics:user_permission_overrides`. No tab list or form drafts are persisted.
 
 ### Seed catalogs
 
@@ -84,6 +84,13 @@ On top of the generic Entity/Document base, this feature adds eight dedicated sc
 - Effective permission: `businessRule && (individualOverride ?? rolePermission ?? roleSeed ?? false)`.
 - The administrator always retains the permissions panel (`admin:permissions`); business rules remain above configurable permissions.
 - On load, direct hash navigation or active-user change, the app routes to the role landing or falls back to `dashboard` with an access notice.
+
+### Browser tabs (FR-125–FR-128)
+
+- Each main sidebar module opens in a new browser tab via `window.open`, using the same page URL with the hash `#/<module>`; there is no internal tab bar.
+- The active user's permissions are checked before opening: an unauthorized module does not open a tab and shows the access notice.
+- Each tab loads the app independently and shows only the module indicated by its hash. No tab list or form drafts are persisted or shared between tabs.
+- Internal flows (`data-goto` buttons, creating a replenishment from an alert) keep navigating in the same tab. If the browser blocks pop-ups, navigation falls back to the current tab.
 
 ### Business rules worth knowing
 

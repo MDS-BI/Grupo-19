@@ -182,11 +182,10 @@ describe('User Story 7 - solicitudes de reposición con trazabilidad', () => {
     qs('nav-dashboard').click();
     expect(qs('stat-replenishment-pending').textContent).toBe('1');
     expect(qs('dashboard-replenishments').textContent).toContain('Producto Reposición');
-    expect([...qs('dashboard-quick-actions').querySelectorAll('button')].some(b => b.textContent.includes('Solicitar reposición'))).toBe(true);
 
     switchUser(2);
     qs('nav-dashboard').click();
-    expect([...qs('dashboard-quick-actions').querySelectorAll('button')].some(b => b.textContent.includes('Solicitar reposición'))).toBe(false);
+    expect(qs('dashboard-replenishments').textContent).toContain('Producto Reposición');
   });
 
   it('filtra solicitudes por estado sin alterar los indicadores globales', () => {

@@ -20,6 +20,8 @@ El desarrollo se basará en el Modelo Entidad-Relación que diseñamos, donde se
 **Control de Acceso (HU-08)**: Matriz de permisos por rol y excepciones por usuario persistidas en `localStorage`, con las reglas de negocio vigentes como límite superior (FR-124)  
 **Persistencia HU-08**: Claves `logistics:roles`, `logistics:role_permissions` y `logistics:user_permission_overrides`, junto a `logistics:active_user_id` existente  
 **Navegación (HU-08)**: `showModule()` sigue siendo el único punto de cambio de vista; se añade enrutado por hash `#/<module>` para hacer verificable el bloqueo de acceso directo (FR-115)  
+**Pestañas del navegador (FR-125–FR-128)**: los módulos principales de la barra lateral se abren con `window.open` en una pestaña nueva con la URL de la misma página más `#/<modulo>`; no hay barra de pestañas interna ni estado persistido  
+**Arranque por hash**: cada pestaña carga la aplicación de forma independiente y muestra solo el módulo indicado por su hash; los flujos internos navegan en la misma pestaña y, si se bloquea la apertura emergente, se usa la pestaña actual como respaldo  
 **Identidad**: Usuario activo simulado desde `USERS` y `logistics:active_user_id`; sin login, contraseñas ni backend
 
 ## Verificación de la Constitución
@@ -34,8 +36,12 @@ El desarrollo se basará en el Modelo Entidad-Relación que diseñamos, donde se
 - Pruebas (HU-08): Se cubrirán con Vitest la semilla de roles, el cálculo de permisos efectivos, la precedencia de FR-124, las landing pages, el cambio de usuario/cargo, el bloqueo de ruta y la no mutación de datos operativos.
 - Experiencia de Usuario (HU-08): La navegación no autorizada se ocultará o deshabilitará y el acceso denegado mostrará un aviso claro no bloqueante; el administrador conservará siempre el panel de permisos (FR-118).
 - Rendimiento (HU-08): La evaluación de permisos se resolverá en memoria a partir de la configuración cargada una sola vez por cambio de usuario/cargo, cumpliendo el objetivo de propagación en menos de 2 segundos (SC-042).
+- Calidad (pestañas): La apertura se orquestará en `src/app.js` sobre la navegación existente; no se añaden módulos de estado ni componentes de barra. Las reglas de permisos siguen centralizadas en `src/domain/permissions.js`.
+- Pruebas (pestañas): Se cubrirán con Vitest la URL pasada a `window.open`, el guard que impide abrir módulos no autorizados, la carga por hash `#/<module>`, el respaldo en la pestaña actual y la permanencia de los flujos internos en la misma pestaña.
+- Experiencia de Usuario (pestañas): No hay barra de pestañas interna; el usuario abre módulos desde la barra lateral, ve el aviso de acceso cuando corresponde y mantiene una navegación predecible con el botón atrás del navegador mediante hash.
+- Rendimiento (pestañas): Cada pestaña carga solo su módulo desde el hash; la apertura no recarga colecciones operativas ni escribe en `localStorage`.
 
-**Resultado de la comprobación**: sin violaciones de la constitución. La HU-08 refuerza los principios existentes (dominio separado, pruebas automatizadas, UX consistente y rendimiento) y no introduce dependencias externas.
+**Resultado de la comprobación**: sin violaciones de la constitución. La HU-08 y las pestañas del navegador refuerzan los principios existentes (dominio separado, pruebas automatizadas, UX consistente y rendimiento) y no introducen dependencias externas.
 
 ## Estructura del Proyecto
 
@@ -69,7 +75,7 @@ src/
 ├── module-config.js
 ├── components/
 │   ├── shell.js          (marco del espacio de trabajo: barra superior, logotipo SVG, barra lateral con las pantallas base y logísticas, estado de módulo activo)
-│   ├── dashboard.js      (vista de inicio: cuadrícula de acciones rápidas + tarjetas de estadísticas en vivo)
+│   ├── dashboard.js      (vista de inicio: tarjetas de estadísticas logísticas y paneles de actividad en vivo)
 │   ├── entity-form.js    (formulario de creación/edición de entidades base, con campos personalizados)
 │   ├── document-form.js  (formulario de creación/edición de documentos base, con campos personalizados y ciclo de vida de estados)
 │   ├── product-form.js / product-list.js       (US1 — productos)
@@ -97,7 +103,7 @@ tests/
 └── setup/
 ```
 
-**Decisión de Estructura**: Una aplicación Vite simple con un único punto de entrada HTML, un pequeño conjunto de módulos JavaScript y CSS en un archivo separado. Se usará localStorage para la persistencia de modo que la aplicación permanezca ligera y autónoma. El módulo base (Entidad/Documento, `entity-form.js`/`document-form.js`) se conserva intacto para no introducir regresiones (ver FR-001–039), mientras que el dominio de Logística e Inventario se construye como una capa adicional: `src/storage.js` concentra los esquemas, la persistencia y los helpers de validación/saneamiento compartidos por las entidades logísticas (`PRODUCTS`, `PRODUCT_CATEGORIES`, `WAREHOUSES`, `USERS`, `STOCK`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS`, `REPLENISHMENT_REQUESTS`); `src/domain/` concentra las reglas de negocio de cada historia de usuario (productos, bodegas, movimientos, transferencias, stock, alertas y reposiciones) desacopladas de la interfaz; y `src/components/` añade un formulario y un listado por historia de usuario junto a los componentes base. `shell.js` posee el marco del espacio de trabajo ERP — un logotipo monograma SVG en línea derivado del nombre del módulo, la barra superior y la barra lateral de módulos (ahora incluyendo Productos, Bodegas, Stock, Movimientos, Transferencias, Alertas y Reposiciones) — envolviendo todas las vistas para que la marca y la navegación permanezcan consistentes sin duplicar marcado. `dashboard.js` renderiza los botones de acción rápida y las tarjetas de estadísticas de la pantalla de entrada, leyendo los recuentos del almacenamiento cada vez que se vuelve visible. `module-config.js` centraliza todos los puntos de adaptación — nombre del módulo, etiquetas de términos, definiciones de campos personalizados, ciclo de vida de estados y color de acento — manteniendo la personalización del dominio fuera del código central; el estilo se controla mediante propiedades personalizadas de CSS (tokens de diseño) en `styles.css` para que el color de acento configurado se aplique globalmente.
+**Decisión de Estructura**: Una aplicación Vite simple con un único punto de entrada HTML, un pequeño conjunto de módulos JavaScript y CSS en un archivo separado. Se usará localStorage para la persistencia de modo que la aplicación permanezca ligera y autónoma. El módulo base (Entidad/Documento, `entity-form.js`/`document-form.js`) se conserva intacto para no introducir regresiones (ver FR-001–039), mientras que el dominio de Logística e Inventario se construye como una capa adicional: `src/storage.js` concentra los esquemas, la persistencia y los helpers de validación/saneamiento compartidos por las entidades logísticas (`PRODUCTS`, `PRODUCT_CATEGORIES`, `WAREHOUSES`, `USERS`, `STOCK`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS`, `REPLENISHMENT_REQUESTS`); `src/domain/` concentra las reglas de negocio de cada historia de usuario (productos, bodegas, movimientos, transferencias, stock, alertas y reposiciones) desacopladas de la interfaz; y `src/components/` añade un formulario y un listado por historia de usuario junto a los componentes base. `shell.js` posee el marco del espacio de trabajo ERP — un logotipo monograma SVG en línea derivado del nombre del módulo, la barra superior y la barra lateral de módulos (ahora incluyendo Productos, Bodegas, Stock, Movimientos, Transferencias, Alertas y Reposiciones) — envolviendo todas las vistas para que la marca y la navegación permanezcan consistentes sin duplicar marcado. `dashboard.js` renderiza las tarjetas de estadísticas logísticas y los paneles de actividad de la pantalla de entrada, leyendo los recuentos del almacenamiento cada vez que se vuelve visible. `module-config.js` centraliza todos los puntos de adaptación — nombre del módulo, etiquetas de términos, definiciones de campos personalizados, ciclo de vida de estados y color de acento — manteniendo la personalización del dominio fuera del código central; el estilo se controla mediante propiedades personalizadas de CSS (tokens de diseño) en `styles.css` para que el color de acento configurado se aplique globalmente.
 
 ## Ampliación: Diseño para HU-08
 
@@ -162,13 +168,57 @@ Los recursos se identifican con claves estables: `module:<nombre>`, `view:<nombr
 
 **Reevaluación post-diseño (Fase 1)**: sin nuevas violaciones de la constitución. El diseño mantiene la separación dominio/interfaz, centraliza la decisión de permisos, define pruebas verificables y conserva el rendimiento de la navegación existente.
 
+## Ampliación: Diseño para pestañas del navegador (FR-125–FR-128)
+
+### Alcance
+
+Los módulos principales de la barra lateral se abren en pestañas nuevas del navegador. No se crea una capa de navegación dentro del ERP: cada pestaña carga la aplicación por su cuenta y `showModule()` sigue siendo el único punto que hace visible una sola vista. No se alteran datos operativos ni la semántica de permisos de HU-08.
+
+### Capas y puntos de cambio
+
+- `src/app.js`: al pulsar un módulo de la barra lateral se comprueban los permisos efectivos del usuario activo; si está permitido se llama a `window.open` con la URL de la misma página más `#/<module>`. Si no está permitido, no se abre pestaña y se muestra el aviso de acceso existente. Si `window.open` no devuelve ventana (bloqueo de emergentes), se navega en la pestaña actual con el mismo hash.
+- `src/app.js`: `initApp()` y `hashchange` resuelven el módulo desde `#/<module>` dentro de cada pestaña y delegan en `showModule()`, manteniendo el guard de FR-115 y la landing del rol como fallback.
+- `src/app.js`: los botones internos `data-goto` y la creación de reposición desde una alerta continúan navegando en la misma pestaña, sin pasar por `window.open`.
+- `index.html` y `src/styles.css`: no hay contenedor ni estilos de barra de pestañas interna; `[hidden]` continúa gobernando la visibilidad de vistas y el marco de barra lateral permanece igual.
+- `src/storage.js`: no se añade ninguna clave ni helper de persistencia de pestañas; no se guardan listas de pestañas ni borradores de formularios entre pestañas.
+- Se retiran los módulos y pruebas de la barra de pestañas interna; la cobertura se incorpora a la suite de navegación existente en `tests/unit/` y `tests/integration/`.
+
+### Arranque de cada pestaña
+
+- El hash `#/<module>` es la fuente de la vista visible de esa pestaña. Al cargar, si el hash es válido y autorizado se muestra ese módulo; si falta, es desconocido o no está autorizado, se aplica el aviso de acceso y la redirección a landing ya definida para FR-115.
+- Recargar una pestaña reproduce el mismo resultado a partir de su hash; no hay estado de pestañas que restaurar ni borradores compartidos entre pestañas.
+- Los cambios de usuario, cargo o permisos se evalúan con las reglas de HU-08 en cada pestaña cuando esta carga o navega; no se cierran pestañas del navegador de forma automática.
+
+### Permisos y respaldo
+
+- La decisión de permisos usa `canAccessModule()` y el guard especial del panel de administración; las reglas de negocio de FR-124 siguen siendo el límite superior.
+- Un módulo no autorizado no abre pestaña nueva y muestra el aviso de acceso denegado existente.
+- Si el navegador bloquea ventanas emergentes, la navegación se realiza en la pestaña actual con el mismo hash como respaldo, sin dejar la acción sin efecto.
+
+### Flujos internos y persistencia
+
+- Los flujos dentro de una vista (`data-goto`, «Solicitar» desde una alerta de HU-06/HU-07) siguen navegando en la misma pestaña.
+- No existe `logistics:workspace_tabs`, ni estructuras `dirtyTabs`/`draftSnapshots` compartidas. Cada pestaña mantiene sus propios formularios mientras permanece abierta; al cerrarla no se transfiere estado a otra pestaña.
+
+### Trazabilidad rápida
+
+| Requisitos | Cubierto por |
+|---|---|
+| FR-125 | Botones de módulos de la barra lateral → `window.open` con `#/<module>`; sin barra interna |
+| FR-126 | Carga independiente por hash en `initApp()`/`hashchange`; sin persistencia de pestañas ni borradores |
+| FR-127 | Guard de permisos previo a la apertura y aviso de acceso para módulos no autorizados |
+| FR-128 | `data-goto` y reposición desde alerta en la misma pestaña; respaldo en la pestaña actual si se bloquea el emergente |
+
+**Reevaluación post-diseño (Fase 1, pestañas)**: sin nuevas violaciones de la constitución. El diseño reutiliza la navegación por hash y la matriz de permisos, no añade dependencias ni módulos de estado, y define verificaciones automáticas para cada requisito nuevo.
+
 ## Verificación
 
 - `T066`: `npx vitest run` y `npm run build` desde la raíz del repositorio.
-- `T067`: validación manual de los escenarios de aceptación de HU-01 a HU-08 con `spec.md`, incluyendo el recorrido de `quickstart.md`.
+- `T067`: validación manual de los escenarios de aceptación de HU-01 a HU-08 y de FR-125–FR-128 con `spec.md`, incluyendo el recorrido de `quickstart.md`.
 - `T068`: reconciliación de `spec.md`, `plan.md`, `tasks.md` y `checklists/requirements.md` con la implementación actual.
-- Los casos de HU-08 quedarán incorporados a la suite cuando se generen las tareas derivadas de este plan; su ejecución está cubierta por `T066`.
-- La ejecución de la suite no se realizó durante la reconciliación documental de 2026-11-17; por eso T066 permanece pendiente en `tasks.md`.
+- Los casos de HU-08 y de navegación por pestañas del navegador se verifican en la suite de `tests/`; su ejecución está cubierta por `T066` y `T104`.
+- La verificación de pestañas debe cubrir: clic en un módulo permitido → pestaña nueva con `#/<module>`, módulo no autorizado → sin pestaña y aviso de acceso, recarga → solo el módulo del hash, flujos internos → misma pestaña, bloqueo de emergentes → respaldo en la pestaña actual, y ausencia de barra interna y de estado persistido.
+- La ejecución final tras el cambio a pestañas del navegador se registrará en T104; T066 permanece pendiente en `tasks.md`.
 
 ## Seguimiento de Complejidad
 
@@ -180,4 +230,6 @@ Los recursos se identifican con claves estables: `module:<nombre>`, `view:<nombr
 | Matriz persistida junto a una semilla estática del rol | La semilla preserva el comportamiento actual y permite reiniciar la configuración sin romper HU-01–HU-07 | Partir de una matriz vacía y denegar todo hasta configurarlo, con riesgo de bloquear a todos los roles | Resuelto en `research.md`; se valida con pruebas de semilla |
 | Enrutado mínimo por hash `#/<module>` | Necesario para que FR-115 sea verificable sin añadir un router externo | Confiar solo en el estado interno de `showModule()`, sin acceso directo comprobable | Pruebas de integración derivadas de este plan |
 | Rediseño visual corporativo pendiente | Debe preservarse como iniciativa separada para no alterar la lógica logística | Aplicar cambios globales de estilo dentro de 002, con riesgo de regresiones visuales y funcionales | Feature posterior `003-rediseno-visual-corporativo` |
+| Estado de pestañas internas sustituido por pestañas del navegador | La solicitud vigente es abrir módulos con `window.open` y hash, sin barra interna ni estado compartido | Mantener la barra WAI-ARIA y la clave persistida anteriores, que ya no describen el comportamiento | Resuelto en `research.md`; verificación en T104 |
+| Borradores y lista de pestañas no compartidos | Cada pestaña carga la aplicación de forma independiente desde su hash | Persistir valores de formularios o una lista global de pestañas, con riesgo de datos obsoletos y sensibles | Resuelto en `research.md`; se valida en T104 |
 

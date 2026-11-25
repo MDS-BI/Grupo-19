@@ -2,8 +2,8 @@
 
 **Feature**: `002-logistica-inventario`  
 **Fecha**: 2026-11-17  
-**Actualizado**: 2026-11-22 (HU-08)  
-**Estado**: Decisiones consolidadas a partir de `plan.md`, `spec.md` y del código implementado, ampliadas con la gestión de roles y visibilidad
+**Actualizado**: 2026-11-25 (HU-08 + pestañas del navegador)  
+**Estado**: Decisiones consolidadas a partir de `plan.md`, `spec.md` y del código implementado, ampliadas con la gestión de roles, visibilidad y apertura de módulos en pestañas del navegador
 
 Este documento completa la estructura SpecKit de la funcionalidad. No registra una investigación nueva ni sustituye decisiones ya aplicadas; consolida las elecciones técnicas que hicieron posible la implementación actual sin modificarla.
 
@@ -37,17 +37,53 @@ Este documento completa la estructura SpecKit de la funcionalidad. No registra u
 | Persistencia | Tres claves nuevas bajo la convención `logistics:*`: `logistics:roles`, `logistics:role_permissions` y `logistics:user_permission_overrides`; semillas idempotentes. | Conserva el despliegue sin backend y la persistencia entre sesiones exigida por FR-122. |
 | Saneamiento | Los textos configurables del panel pasan por `escapeHtml` antes de renderizarse. | Extiende FR-046, FR-092 y FR-103 a los nuevos campos de configuración (FR-123). |
 
+## Decisiones para pestañas del navegador (2026-11-25)
+
+Las decisiones sustituyen la barra de pestañas interna anterior por pestañas nuevas del navegador para los requisitos FR-125–FR-128.
+
+### Alcance y apertura
+
+- **Decisión**: los módulos principales de la barra lateral se abren con `window.open` usando la URL de la misma página más el hash `#/<module>`. No se renderiza una barra de pestañas interna y no se abren pestañas para vistas o secciones internas.
+- **Justificación**: conserva el enrutado por hash existente y hace que cada módulo sea enlazable y recargable de forma independiente, sin estado de navegación adicional en la aplicación.
+- **Alternativas rechazadas**: mantener la barra WAI-ARIA y el estado persistido anteriores; abrir ventanas sin hash, porque no permitirían cargar directamente el módulo indicado.
+
+### Permisos antes de abrir
+
+- **Decisión**: la decisión se toma antes de llamar a `window.open`, reutilizando los permisos efectivos de HU-08 y el guard especial del panel de administración. Un módulo no autorizado no abre pestaña y muestra el aviso de acceso denegado existente.
+- **Justificación**: evita crear pestañas para destinos prohibidos y mantiene una sola fuente de verdad para permisos (FR-115, FR-124, FR-127).
+- **Alternativas rechazadas**: abrir primero y validar dentro de la pestaña nueva, lo que dejaría una pestaña inútil para el usuario.
+
+### Carga independiente y persistencia
+
+- **Decisión**: cada pestaña carga la aplicación por su cuenta; al arrancar o recibir `hashchange` resuelve el módulo desde `#/<module>` y delega en `showModule()`. No se persiste lista de pestañas ni borradores entre pestañas y no se cierran pestañas del navegador al cambiar cargo o permisos.
+- **Justificación**: el hash es suficiente para reproducir la vista en cada carga (SC-040, SC-043) y evita escribir datos de formularios en `localStorage`.
+- **Alternativas rechazadas**: restaurar un `activeTab` global o sincronizar borradores entre pestañas, que reintroduciría el estado que se quiere eliminar.
+
+### Flujos internos y respaldo
+
+- **Decisión**: los botones internos `data-goto` y la creación de reposición desde una alerta navegan en la misma pestaña. Si el navegador bloquea ventanas emergentes (`window.open` no devuelve ventana), se navega en la pestaña actual con el mismo hash como respaldo.
+- **Justificación**: los flujos dentro de una vista no son módulos principales y la acción del usuario no debe quedar sin efecto por la política del navegador (FR-128).
+- **Alternativas rechazadas**: forzar todas las navegaciones a pestañas nuevas o mostrar solo un error cuando se bloquea el emergente.
+
+### Verificación
+
+- **Decisión**: la suite existente de `tests/unit/` y `tests/integration/` cubre la URL entregada a `window.open`, el bloqueo por permisos, la carga por hash, el respaldo en la pestaña actual y la navegación en la misma pestaña de los flujos internos, usando el patrón JSDOM ya adoptado.
+- **Justificación**: mantiene pruebas deterministas de la capa de navegación sin introducir módulos de estado ni pruebas de una barra que ya no existe.
+- **Alternativas rechazadas**: confiar solo en verificación manual o conservar pruebas del estado de pestañas internas, que ya no describen el comportamiento.
+
 ## Decisiones pendientes de refuerzo
 
 - Atomicidad de escrituras multi-clave en `movements.js`, `transfers.js` y `replenishments.js`: ver T081–T083.
 - Escape completo de HTML en `storage.js`: ver T084.
-- Verificación ejecutable de la suite, incluidos los casos HU-08 derivados de `plan.md`: ver T066.
-- Implementación de las decisiones HU-08 anteriores: se incorporará como tareas nuevas cuando se ejecute `/speckit.tasks`.
+- Verificación ejecutable de la suite, incluidos los casos HU-08 y de navegación por pestañas del navegador derivados de `plan.md`: pendiente de registrar en T066/T104 con el comportamiento vigente.
+- Implementación de las decisiones HU-08 y de pestañas del navegador: incorporada como T085–T094 y T095–T104 tras ejecutar `/speckit.tasks`; sustituye la anterior aproximación de pestañas internas.
 
 ## Fuente
 
 - `spec.md`: historias HU-01..HU-08, clarificaciones y criterios de éxito.
 - `plan.md`: pila técnica, decisión de estructura y diseño de HU-08.
 - `data-model.md`, `MER.md` y `contracts/logistics-storage.md`: esquemas, relaciones y claves de persistencia.
-- `src/domain/permissions.js`, `src/components/shell.js` y `src/app.js`: matriz vigente, navegación y cambio de usuario.
+- `src/domain/permissions.js`, `src/components/shell.js` y `src/app.js`: matriz vigente, navegación, enrutado por hash y cambio de usuario.
+- `src/storage.js`: convención de claves `logistics:*` y helpers de persistencia.
+- Comportamiento de `window.open` y del hash del navegador: base de la apertura de pestañas y de la carga independiente por módulo.
 - `tasks.md`: estado real y trabajo residual.

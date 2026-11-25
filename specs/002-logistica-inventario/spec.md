@@ -74,6 +74,14 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Qué evento debe abrir automáticamente la página de inicio según el cargo, dado que en esta iteración no existe una pantalla de inicio de sesión? → A: Al cargar la aplicación con el usuario activo por defecto y también al cambiar de usuario activo en la cabecera del ERP.
 - Q: ¿Qué prevalece cuando la matriz de permisos permite una acción que una regla de negocio existente prohíbe para ese cargo, por ejemplo un encargado de bodega creando o aprobando reposiciones? → A: Las reglas de negocio existentes prevalecen siempre; la matriz solo puede restringir el acceso, nunca otorgarlo.
 
+### Session 2026-11-25
+
+- Q: ¿Qué significa abrir varias "pestañas" en esta aplicación: pestañas internas dentro del espacio de trabajo o pestañas nuevas del navegador? → A: Pestañas nuevas del navegador; no hay barra de pestañas interna en el ERP.
+- Q: ¿Qué opciones de navegación deben abrir una pestaña nueva del navegador: solo los módulos principales de la barra lateral o también vistas y secciones dentro de ellos? → A: Solo los módulos principales de la barra lateral, según los permisos vigentes del usuario activo; los flujos internos permanecen en la misma pestaña.
+- Q: ¿Deben permanecer abiertas las pestañas al recargar la página o al volver a abrir la aplicación en el mismo navegador? → A: Cada pestaña carga la aplicación de forma independiente y muestra solo el módulo indicado por su hash `#/<modulo>`; no se persiste una lista de pestañas ni borradores entre pestañas.
+- Q: ¿Qué debe ocurrir con las pestañas del navegador cuando cambia el cargo o los permisos del usuario activo? → A: No se cierran automáticamente; cada pestaña aplica los permisos vigentes al cargar o navegar. Un módulo no autorizado no abre pestaña y muestra el aviso de acceso.
+- Q: ¿Qué debe hacer el sistema si el navegador bloquea la apertura de ventanas emergentes? → A: Navegar en la pestaña actual con el mismo hash `#/<modulo>` como respaldo.
+
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
 ### Historia de Usuario 1 - Registro y Modificación de Productos (Prioridad: P1)
@@ -236,7 +244,7 @@ Como administrador del sistema, quiero asignar y cambiar el cargo de los usuario
 - ¿Qué ocurre cuando los registros almacenados contienen valores de campos personalizados que ya no están declarados en la configuración?
 - ¿Qué ocurre cuando un usuario abre la aplicación directamente en la pantalla de gestión o búsqueda (p. ej., vía enlace profundo o recarga del navegador) sin pasar por el panel de inicio?
 - ¿Qué ocurre cuando un usuario pulsa el botón atrás del navegador estando en la pantalla de gestión o búsqueda?
-- ¿Qué ocurre si un usuario navega fuera de la pantalla de gestión mientras un formulario aún tiene cambios sin guardar?
+- ¿Qué ocurre si un usuario navega fuera de la pantalla de gestión mientras un formulario aún tiene cambios sin guardar? (Los flujos internos navegan en la misma pestaña y conservan el comportamiento de formulario existente; no hay pestañas internas que cerrar).
 - ¿Permanecen intactas las entidades y los documentos al navegar entre el panel, la gestión y la búsqueda?
 - ¿Qué ocurre cuando el panel se abre con cero entidades o cero documentos (valores estadísticos)?
 - ¿Qué ocurre cuando el color de acento configurado no es un valor de color válido?
@@ -285,6 +293,7 @@ Como administrador del sistema, quiero asignar y cambiar el cargo de los usuario
 - ¿Qué ocurre si un usuario con permisos limitados consulta una vista permitida que contiene acciones de otras secciones? (Los botones no autorizados se ocultan o deshabilitan; el resto de la vista sigue operativa).
 - ¿Qué ocurre si cambia el cargo del usuario activo mientras tiene seleccionada una bodega operativa? (La bodega asignada no cambia; solo cambian permisos y navegación).
 - ¿Qué ocurre si la matriz de permisos intenta otorgar a un cargo una acción prohibida por una regla de negocio? (La regla de negocio prevalece; la configuración no concede ese acceso).
+- ¿Qué ocurre con las pestañas del navegador abiertas cuando cambia el cargo o los permisos del usuario activo? (No se cierran automáticamente; cada una aplica los permisos vigentes al cargar o navegar y el módulo no autorizado muestra el aviso de acceso sin abrir pestaña).
 
 ## Requisitos *(obligatorio)*
 
@@ -416,6 +425,10 @@ Como administrador del sistema, quiero asignar y cambiar el cargo de los usuario
 - **FR-122**: El sistema DEBE conservar la configuración de cargos, landing pages y permisos entre sesiones dentro del mismo navegador.
 - **FR-123**: El sistema DEBE tratar los nombres de roles, módulos y secciones introducidos en la configuración de la misma forma que FR-046, FR-092 y FR-103 antes de mostrarlos.
 - **FR-124**: El sistema DEBE aplicar la matriz de permisos y las excepciones individuales solo para restringir el acceso permitido por las reglas de negocio vigentes, incluida FR-099; la configuración NO DEBE otorgar a un cargo acciones que esas reglas le prohíban.
+- **FR-125**: El sistema DEBE abrir cada módulo principal accesible desde la barra lateral en una pestaña nueva del navegador mediante `window.open` con la URL de la misma página seguida de `#/<modulo>`. NO DEBE renderizar una barra de pestañas interna.
+- **FR-126**: Cada pestaña DEBE cargar la aplicación de forma independiente y mostrar solo el módulo indicado por su hash `#/<modulo>`; si no hay hash o este no es válido, se aplica la navegación habitual por landing del rol. No se persiste una lista de pestañas ni borradores entre pestañas.
+- **FR-127**: El sistema DEBE comprobar los permisos efectivos del usuario activo antes de abrir la pestaña. Un módulo no autorizado NO DEBE abrir pestaña y DEBE mostrar el aviso de acceso denegado existente.
+- **FR-128**: Los flujos internos (botones `data-goto`, crear reposición desde una alerta) DEBEN seguir navegando en la misma pestaña. Si el navegador bloquea ventanas emergentes, la navegación DEBE realizarse en la pestaña actual con el mismo hash como respaldo.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
 
@@ -509,6 +522,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 | HU-06 Alertas de Stock Mínimo | Implementada | `src/domain/alerts.js` | `tests/unit/alerts.test.js`, `tests/integration/alerts.test.js` | T054–T062 |
 | HU-07 Solicitudes de Reposición | Implementada con atomicidad pendiente (T083) | `src/domain/replenishments.js`, `src/domain/permissions.js` | `tests/unit/replenishments.test.js`, `tests/integration/replenishments.test.js` | T069–T080 |
 | HU-08 Gestión de Roles, Redirección Inicial y Control de Visibilidad | Planeada — pendiente de implementación | `src/domain/permissions.js`, `src/components/permissions-panel.js` | `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` (por generar en `/speckit.tasks`) | Por definir en `/speckit.tasks` |
+| US9 Pestañas del navegador | Diseñada — verificación en T104 | `src/app.js`, `src/components/shell.js` | Cobertura de navegación en la suite de `tests/` | T095–T104 |
 
 La ejecución completa de la suite no forma parte de esta edición documental; queda registrada como T066 en `tasks.md`.
 
@@ -523,7 +537,7 @@ La ejecución completa de la suite no forma parte de esta edición documental; q
 - La navegación entre áreas ocurre mediante una barra lateral persistente; la pantalla de gestión aloja ambos paneles de gestión y no muestra la lista de entidades.
 - El logotipo se genera como un monograma SVG en línea derivado del nombre del módulo; no se requieren recursos de imagen externos.
 - Se puede configurar un color de acento opcional para la marca; el resto de la paleta base permanece fija.
-- Solo se muestra una pantalla a la vez; no hay diseño lado a lado del contenido de gestión y búsqueda.
+- La navegación a los módulos principales ocurre mediante pestañas nuevas del navegador abiertas con `window.open` y un hash `#/<modulo>`; no hay barra de pestañas interna ni diseño lado a lado del contenido de gestión y búsqueda. Los flujos internos navegan en la misma pestaña y no se comparten pestañas ni borradores entre cargas.
 - La navegación entre pantallas se maneja dentro de la aplicación (p. ej., cambio de vistas), y el botón atrás del navegador debe comportarse de forma predecible.
 - Los datos permanecen disponibles entre sesiones dentro del mismo navegador y no se ven afectados por la navegación entre pantallas.
 - El contenido introducido por el usuario (nombres, descripciones, notas) DEBE tratarse de forma segura antes de mostrarse para evitar la ejecución de contenido no deseado.

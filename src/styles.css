@@ -123,7 +123,6 @@ h3 { font-size: 0.98rem; font-weight: 650; letter-spacing: -0.01em; }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .brand-copy { display: flex; flex-direction: column; min-width: 0; }
 .brand-name { font-weight: 750; font-size: 1.02rem; letter-spacing: -0.01em; color: var(--navy); white-space: nowrap; }
-.brand-tagline { font-size: 0.74rem; color: var(--muted); letter-spacing: 0.01em; white-space: nowrap; }
 .logo-mark { display: inline-flex; flex-shrink: 0; }
 .logo-mark svg { display: block; border-radius: 10px; box-shadow: 0 4px 12px rgba(15, 118, 110, 0.28); }
 
@@ -706,7 +705,6 @@ textarea:focus-visible {
   :root { --topbar-h: auto; }
   .workspace { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .topbar { position: static; flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px; }
-  .brand-tagline { display: none; }
   .active-user-panel { justify-content: space-between; }
   .active-user-panel select { min-width: 0; width: 100%; }
   .active-user-copy { flex: 1; }
@@ -726,7 +724,7 @@ textarea:focus-visible {
 }
 
 /* ==========================================================================
-   Corporate dark theme — Logística e Inventario | Grupo 19
+   Corporate dark theme — Logística e Inventario
    ========================================================================== */
 :root {
   --accent-bright: #18b6a8;
@@ -792,7 +790,6 @@ body {
   }
 }
 .brand-name { color: #f2f8ff; }
-.brand-tagline { color: var(--muted); }
 .logo-mark svg { box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.32); }
 .active-user-panel { background: var(--glass-surface-soft); border-color: var(--glass-border); box-shadow: none; }
 .active-user-label { color: var(--muted); }
@@ -1023,10 +1020,6 @@ textarea:focus-visible { outline-color: var(--accent-bright); }
 .card { padding: 16px 18px; margin-bottom: 16px; }
 .card-head { margin-bottom: 12px; gap: 12px; }
 .card-subtitle { font-size: 0.82rem; }
-.card--quick-actions { margin-bottom: 18px; border-color: rgba(var(--violet-rgb), 0.28); }
-.card--quick-actions .card-head { margin-bottom: 12px; }
-.card--quick-actions .action-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
-.card--quick-actions .action-card { min-height: 78px; padding: 12px 14px; }
 @media (max-width: 640px) {
   .card { padding: 15px 14px; }
 }
@@ -1078,7 +1071,6 @@ body::after {
 .topbar .brand { gap: 12px; }
 .topbar .logo-mark svg { border-radius: 11px; box-shadow: 0 8px 20px rgba(var(--accent-rgb), 0.26); }
 .topbar .brand-name { font-size: 1.08rem; letter-spacing: -0.015em; }
-.topbar .brand-tagline { color: #8fb6ce; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
 
 .topbar .active-user-panel {
   gap: 11px;
@@ -1195,7 +1187,6 @@ body::after {
 }
 @media (max-width: 640px) {
   .topbar { padding: 0 14px; gap: 10px; }
-  .topbar .brand-tagline { font-size: 0.64rem; }
   .topbar .active-user-panel { gap: 8px; padding-right: 8px; }
   .topbar .user-role { max-width: 120px; font-size: 0.78rem; }
   .topbar .active-user-panel select { min-width: 108px; }

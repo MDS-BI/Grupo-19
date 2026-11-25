@@ -71,12 +71,27 @@ const VIEWS = {
 
 let wired = false;
 let activeUser = null;
+let lastHash = '';
 
 function getActiveRole(){ return activeUser ? activeUser.role : ''; }
 function getActiveUserId(){ return activeUser ? Number(activeUser.user_id) : undefined; }
 function currentCan(action){ return canPerform(getActiveRole(), action, getActiveUserId()); }
 function currentCanModule(moduleName){ return canAccessModule(getActiveRole(), moduleName, getActiveUserId()); }
 function currentCanAdminPanel(){ return getEffectivePermission(getActiveRole(), 'panel', ADMIN_RESOURCE, getActiveUserId()); }
+function currentLanding(){ return resolveLandingModule(getActiveRole(), getActiveUserId()).module; }
+function isModuleAllowed(moduleName){
+  if(!MODULES.includes(moduleName)) return false;
+  return moduleName === 'admin' ? currentCanAdminPanel() : currentCanModule(moduleName);
+}
+function moduleFromHash(hash){
+  const raw = String(hash || '').replace(/^#\/?/, '').split(/[?/]/)[0];
+  return MODULES.includes(raw) ? raw : null;
+}
+function browserTabUrl(module){
+  const url = new URL(window.location.href);
+  url.hash = `#/${module}`;
+  return url.href;
+}
 
 function setAccessNotice(message = ''){
   const el = qs('access-notice');
@@ -113,6 +128,49 @@ function guardAction(action, message){
   return deny(message || 'Acción no permitida para el perfil activo (simulación).');
 }
 
+function syncHash(module){
+  const hash = `#/${module}`;
+  lastHash = hash;
+  if(window.location.hash !== hash) window.location.hash = hash;
+}
+
+function navigateToModule(name, opts = {}){
+  let module = MODULES.includes(name) ? name : 'dashboard';
+
+  if(!isModuleAllowed(module)){
+    const message = 'Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).';
+    if(!opts.silentDeny) setAccessNotice(message);
+    const landing = currentLanding();
+    if(landing !== module && isModuleAllowed(landing)){
+      const result = navigateToModule(landing, { ...opts, silentDeny: true });
+      if(!opts.silentDeny) setAccessNotice(message);
+      return result;
+    }
+    module = 'dashboard';
+  }
+
+  showModule(module, opts);
+  syncHash(module);
+  return module;
+}
+
+function openModuleInBrowserTab(module){
+  if(!MODULES.includes(module)) return;
+  if(!isModuleAllowed(module)){
+    setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).');
+    return;
+  }
+
+  const opened = window.open(browserTabUrl(module), '_blank');
+  if(!opened){
+    navigateToModule(module);
+    return;
+  }
+  if(opened.opener){
+    try{ opened.opener = null; }catch(e){}
+  }
+}
+
 function showModule(name, opts = {}){
   if(!MODULES.includes(name)) name = 'dashboard';
   if(!guardModuleAccess(name)){
@@ -123,7 +181,7 @@ function showModule(name, opts = {}){
   MODULES.forEach(m => { const el = qs(VIEWS[m]); if(el) el.hidden = m !== name; });
   setActiveModule(name);
 
-  if(name === 'dashboard') renderDashboard(getActiveRole(), getActiveUserId());
+  if(name === 'dashboard') renderDashboard();
   if(name === 'admin'){
     const panel = qs('view-admin-permissions');
     renderPermissionsPanel(panel);
@@ -459,7 +517,7 @@ function refreshAlerts(){
       prefillReplenishmentFromAlert({ productId: alert.product_id, warehouseId: alert.warehouse_id, quantity: alert.deficit });
       const origin = qs('replenishment-form-origin');
       if(origin) origin.textContent = 'Origen: alerta HU-06';
-      showModule('replenishments', { focusForm: true });
+      navigateToModule('replenishments', { focusForm: true });
     }
   });
 }
@@ -493,7 +551,7 @@ function refreshReplenishments(){
       const result = approveRequest(request.request_id, activeUser.user_id);
       if(!result.success) alert(result.error);
       refreshReplenishments();
-      renderDashboard(role, getActiveUserId());
+      renderDashboard();
     },
     onCancel: (request) => {
       if(!guardAction('replenishments.cancel', 'No tienes permisos para cancelar reposiciones con el perfil activo.')) return;
@@ -501,7 +559,7 @@ function refreshReplenishments(){
       const result = cancelRequest(request.request_id, activeUser.user_id);
       if(!result.success) alert(result.error);
       refreshReplenishments();
-      renderDashboard(role, getActiveUserId());
+      renderDashboard();
     },
     onReceive: (request) => {
       if(!guardAction('replenishments.receive', 'Solo el encargado de bodega puede registrar la recepción con el perfil activo.')) return;
@@ -512,7 +570,7 @@ function refreshReplenishments(){
       refreshStock();
       refreshMovements();
       refreshAlerts();
-      renderDashboard(role, getActiveUserId());
+      renderDashboard();
     }
   });
 }
@@ -533,7 +591,7 @@ function handleReplenishmentSubmit(ev){
   const origin = qs('replenishment-form-origin');
   if(origin) origin.textContent = 'Origen: manual';
   refreshReplenishments();
-  renderDashboard(getActiveRole(), getActiveUserId());
+  renderDashboard();
 }
 
 function onEditEntityChange(){
@@ -624,27 +682,14 @@ function applyLabels(config){
   const entities = config.labels.entities;
   const document_ = config.labels.document;
   const documents = config.labels.documents;
-  const femEntity = esFemenina(entity);
-  const femDocument = esFemenina(document_);
 
   document.title = config.moduleName;
   const brandParts = config.moduleName.split('|');
   qs('brand-name').textContent = brandParts[0].trim();
-  qs('brand-tagline').textContent = brandParts.length > 1 ? brandParts.slice(1).join('|').trim() : 'Grupo 19';
   applyShellLabels();
 
   qs('dashboard-heading').textContent = config.moduleName;
-  qs('dashboard-subtitle').textContent = `Gestiona inventario, bodegas y operaciones logísticas. (Módulo base disponible en sección avanzada para administrador)`;
-  qs('stat-entities-label').textContent = entities;
-  qs('stat-documents-label').textContent = documents;
-  qs('action-new-entity-title').textContent = `${femEntity ? 'Nueva' : 'Nuevo'} ${entity}`;
-  qs('action-new-entity-sub').textContent = `Crear un registro de ${entity.toLowerCase()}`;
-  qs('action-new-document-title').textContent = `${femDocument ? 'Nueva' : 'Nuevo'} ${document_}`;
-  qs('action-new-document-sub').textContent = `Registrar un registro de ${document_.toLowerCase()}`;
-  qs('action-open-entities-title').textContent = entities;
-  qs('action-open-entities-sub').textContent = `Abrir la gestión de ${entities.toLowerCase()}`;
-  qs('action-find-title').textContent = 'Buscar registros';
-  qs('action-find-sub').textContent = `Buscar ${entities.toLowerCase()}`;
+  qs('dashboard-subtitle').textContent = 'Gestiona inventario, bodegas y operaciones logísticas.';
 
   qs('entities-view-heading').textContent = entities;
   qs('documents-view-heading').textContent = documents;
@@ -693,18 +738,6 @@ function applyPermissionUiState(){
   const canTransferCreate = currentCan('transfers.create');
   const canReplenishmentCreate = currentCan('replenishments.create');
 
-  // Dashboard quick actions: base advanced only for admin
-  [['action-new-entity', 'entities', 'base.manage'], ['action-new-document', 'documents', 'base.manage'], ['action-open-entities', 'entities', 'base.manage'], ['action-find', 'search', 'base.manage']]
-    .forEach(([id, mod, action]) => {
-      const el = qs(id);
-      if(!el) return;
-      const allowed = currentCanModule(mod) && currentCan(action);
-      el.hidden = !allowed;
-      el.disabled = !allowed;
-    });
-
-  const baseCard = qs('base-module-card');
-  if(baseCard) baseCard.hidden = !canBase;
   const demoCard = qs('demo-data-card');
   if(demoCard) demoCard.hidden = !canBase;
 
@@ -772,12 +805,11 @@ function onActiveUserChange(){
   if(user){
     activeUser = user;
     setActiveUserId(user.user_id);
-    const landing = resolveLandingModule(user.role, user.user_id);
-    showModule(landing.module);
+    navigateToModule(resolveLandingModule(user.role, user.user_id).module);
     setAccessNotice(`Perfil activo (simulación): ${user.user_name} — ${roleLabel(user.role)}. Sin autenticación real ni seguridad.`);
     return;
   }
-  showModule('dashboard');
+  navigateToModule('dashboard');
 }
 
 function refreshAfterPermissionChange(changedUserId){
@@ -787,23 +819,23 @@ function refreshAfterPermissionChange(changedUserId){
     if(updated) activeUser = updated;
   }
   applyPermissionUiState();
-  const landing = resolveLandingModule(getActiveRole(), getActiveUserId());
-  showModule(currentCanAdminPanel() ? 'admin' : landing.module);
+  navigateToModule(currentCanAdminPanel() ? 'admin' : currentLanding());
 }
 
 function handleHashChange(){
   const raw = window.location.hash.replace(/^#\/?/, '').split(/[?/]/)[0];
+  const last = lastHash.replace(/^#\/?/, '').split(/[?/]/)[0];
+  if(raw === last) return;
+
   if(!raw){
-    showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
+    navigateToModule(currentLanding());
     return;
   }
-  const moduleName = MODULES.includes(raw) ? raw : 'dashboard';
-  const allowed = moduleName === 'admin' ? currentCanAdminPanel() : currentCanModule(moduleName);
-  if(allowed){
-    showModule(moduleName);
+  if(isModuleAllowed(raw)){
+    navigateToModule(raw);
     return;
   }
-  showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
+  navigateToModule(currentLanding(), { silentDeny: true });
   setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).');
 }
 
@@ -811,10 +843,10 @@ function wireEvents(){
   if(wired) return;
   wired = true;
   document.querySelectorAll('.nav-module').forEach(btn => {
-    btn.addEventListener('click', () => showModule(btn.dataset.module));
+    btn.addEventListener('click', () => openModuleInBrowserTab(btn.dataset.module));
   });
   const adminNav = qs('nav-admin');
-  if(adminNav) adminNav.addEventListener('click', () => showModule('admin'));
+  if(adminNav) adminNav.addEventListener('click', () => openModuleInBrowserTab('admin'));
 
   const dashboardView = qs('view-dashboard');
   if(dashboardView){
@@ -822,7 +854,7 @@ function wireEvents(){
       const trigger = ev.target.closest('[data-goto]');
       if(!trigger || trigger.disabled) return;
       const opts = trigger.dataset.newRecord === 'true' ? { newRecord: true, focusForm: true } : {};
-      showModule(trigger.dataset.goto, opts);
+      navigateToModule(trigger.dataset.goto, opts);
     });
   }
 
@@ -839,7 +871,7 @@ function wireEvents(){
         }
         return;
       }
-      renderDashboard(getActiveRole(), getActiveUserId());
+      renderDashboard();
       if(result.message){
         const status = qs('demo-data-status');
         const summary = result.summary;
@@ -852,10 +884,6 @@ function wireEvents(){
     });
   }
 
-  qs('action-new-entity').addEventListener('click', () => { if(guardAction('base.manage')) showModule('entities', { newRecord: true, focusForm: true }); });
-  qs('action-new-document').addEventListener('click', () => { if(guardAction('base.manage')) showModule('documents', { newRecord: true, focusForm: true }); });
-  qs('action-open-entities').addEventListener('click', () => { if(guardAction('base.manage')) showModule('entities'); });
-  qs('action-find').addEventListener('click', () => { if(guardAction('base.manage')) showModule('search', { focusSearch: true }); });
   qs('entity-form').addEventListener('submit', handleEntitySubmit);
   qs('cancel-edit').addEventListener('click', clearEntityForm);
   qs('document-form').addEventListener('submit', handleDocumentSubmit);
@@ -906,6 +934,8 @@ export function initApp(resolved){
   if(productCard) productCard.id = 'view-products .card[aria-labelledby="product-form-heading"]';
   seedLogisticsCatalogs();
   populateActiveUserSelect();
+
+  const landing = currentLanding();
   wireEvents();
   clearEntityForm();
   clearDocumentForm();
@@ -914,9 +944,23 @@ export function initApp(resolved){
   clearMovementForm();
   clearTransferForm();
   clearReplenishmentForm();
-  showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
+
+  const rawHash = moduleFromHash(window.location.hash);
+  let deniedHash = false;
+  let bootModule = landing;
+  if(window.location.hash && window.location.hash !== '#/'){
+    bootModule = rawHash && isModuleAllowed(rawHash) ? rawHash : landing;
+    deniedHash = !rawHash || !isModuleAllowed(rawHash);
+  }
+
+  showModule(bootModule);
+  lastHash = `#/${bootModule}`;
+  if(window.location.hash !== lastHash) window.location.hash = lastHash;
+
   if(activeUser){
-    setAccessNotice(`Perfil activo (simulación): ${activeUser.user_name} — ${roleLabel(activeUser.role)}. Sin autenticación real ni seguridad.`);
+    setAccessNotice(deniedHash
+      ? 'Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).'
+      : `Perfil activo (simulación): ${activeUser.user_name} — ${roleLabel(activeUser.role)}. Sin autenticación real ni seguridad.`);
   }
 }
 
