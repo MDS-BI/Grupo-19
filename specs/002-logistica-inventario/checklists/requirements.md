@@ -46,7 +46,7 @@
 
 - [x] CHK001 Las siete historias HU-01..HU-07 siguen presentes en `spec.md` y en `tasks.md`.
 - [x] CHK002 La sección `## Trazabilidad de Implementación` relaciona cada historia con dominio, pruebas y tareas.
-- [x] CHK003 FR-001–FR-039 están identificados como heredados del módulo base y no como alcance nuevo de 002.
+- [x] CHK003 FR-001–FR-039 están identificados como heredados adaptados, interfaz vigente de 002 o reglas propias; FR-001–FR-024 fueron reclasificados en la revalidación de 2026-11-25.
 - [x] CHK004 La contradicción sobre el usuario de movimientos/transferencias quedó resuelta: prevalece el usuario activo del ERP sin selector manual.
 - [x] CHK005 No quedan marcadores `[NEEDS CLARIFICATION]` en `spec.md`.
 
@@ -67,7 +67,7 @@
 - [x] CHK015 Los criterios de atomicidad de reposición están definidos en SC-037/SC-038 y vinculados a T083.
 - [x] CHK016 Los roles simulados y la ausencia de autenticación están documentados como decisión explícita.
 - [ ] CHK017 Los criterios de éxito con umbrales temporales (SC-011, SC-015, SC-017, SC-024, SC-027, SC-030, SC-033) tienen método de medición registrado. Pendiente: definir instrumentación o evidencia manual en T067.
-- [ ] CHK018 Existe evidencia de ejecución de `npx vitest run` y `npm run build`. Pendiente: T066.
+- [x] CHK018 Existe evidencia de ejecución de `npx vitest run` y `npm run build`: T066 registra 34 archivos/302 pruebas OK y build correcto; T152 registra 34 archivos/304 pruebas OK y build correcto tras HU-12/HU-14 (2026-11-25).
 - [x] CHK019 El rediseño visual corporativo queda fuera de 002 y se propone como feature posterior separada.
 
 ### Notas
@@ -143,11 +143,25 @@
 
 - [x] SIN-013 Los catorce escenarios de aceptación nuevos (4 de HU-12, 5 de HU-13 y 5 de HU-14) tienen formato Dado/Cuando/Entonces.
 - [x] SIN-014 Cada cambio solicitado por el usuario coincide con una historia y con criterios de aceptación explícitos.
-- [x] SIN-015 La sección `## Trazabilidad de Implementación` incluye HU-12, HU-13 y HU-14 como pendientes de tareas.
+- [x] SIN-015 La sección `## Trazabilidad de Implementación` incluye HU-12, HU-13 y HU-14 con tareas asignadas T146–T152; la condición inicial de pendientes se conserva solo como registro histórico.
 - [x] SIN-016 La especificación actualizada tiene requisitos y criterios suficientes para planificar HU-12 a HU-14 con `/speckit.plan`.
 
 ### Notas
 
-- Se conservaron intactas las validaciones históricas de 2026-11-03, 2026-11-17 y 2026-11-22, incluidos los elementos CHK017 y CHK018 que quedaron como seguimiento de ejecución; no se presume que HU-12 a HU-14 hayan pasado por `/speckit.clarify` o `/speckit.plan`.
-- El checklist evalúa la calidad documental; la implementación y sus pruebas se definen en fases posteriores.
+- Se conservaron intactas las validaciones históricas de 2026-11-03, 2026-11-17 y 2026-11-22, incluidos los elementos CHK017 y CHK018 que quedaron como seguimiento de ejecución; esas validaciones no cubrían originalmente HU-12 a HU-14, pero `plan.md`, `tasks.md` y REV-007 registran su ejecución posterior.
+- El checklist evalúa la calidad documental; la implementación quedó registrada en T095–T152, T107 conserva su condición diferida y T136/T145 tienen confirmación manual parcial con criterios pendientes.
 - La HU-08 pasó por `/speckit.clarify` y `/speckit.plan`; esa validación histórica no cubre HU-12 a HU-14.
+
+---
+
+## Revalidación de correcciones — 2026-11-25
+
+**Propósito**: Registrar la verificación de FR, tareas, HU-01/T017 y contradicción resuelta de HU-12/HU-14.
+
+- [x] REV-001 FR-001–FR-024 conservan su numeración y distinguen requisitos heredados adaptados, interfaz vigente de 002 y requisitos propios.
+- [x] REV-002 Los casos límite genéricos quedan etiquetados como heredados de la plantilla y no se presentan como historias de 002.
+- [x] REV-003 FR-085–FR-092 existen en `spec.md` y son citados por T012, T014, T017, T020, T039, T041 y T045 sin renumeración.
+- [x] REV-004 HU-01 a HU-14 y sus aclaraciones se conservan; HU-01 incorpora nota de vigencia para el usuario activo del ERP y HU-12 a HU-14 se añadieron sin renumerar las anteriores.
+- [x] REV-005 T002–T068 fueron auditados contra archivos reales; las tareas parciales conservan `[ ]` y describen la brecha.
+- [x] REV-006 T017 ya no depende de un selector manual de usuario; hay prueba de integración para auditoría con usuario activo y rechazo cuando no es válido.
+- [x] REV-007 HU-12/HU-14 quedan implementadas y verificadas por pruebas automatizadas: la UI base se oculta sin borrar sus vistas ni datos, el menú lateral tiene seis secciones, el panel principal solo cuatro indicadores y las secciones integradas usan pestañas; T068 quedó reconciliado y T146–T152 pasan con 34 archivos/304 pruebas y build correcto (2026-11-25). T145 tiene confirmación manual parcial de menú/pestañas; falta la revisión visual de dashboard, panel de permisos y estilos globales.

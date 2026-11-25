@@ -16,7 +16,6 @@ function setupProductAndWarehouse(){
   qs('product-name').value = 'Producto 1';
   qs('product-category').value = '1';
   qs('product-sale-price').value = '1000';
-  qs('product-user').value = '1';
   submit(qs('product-form'));
   qs('nav-warehouses').click();
   qs('warehouse-name').value = 'Bodega A';

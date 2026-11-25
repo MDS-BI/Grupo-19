@@ -17,13 +17,11 @@ function setupLowStock(){
   qs('product-name').value = 'Producto 1';
   qs('product-category').value = '1';
   qs('product-sale-price').value = '1000';
-  qs('product-user').value = '1';
   submit(qs('product-form'));
   qs('product-sku').value = 'SKU-2';
   qs('product-name').value = 'Producto 2';
   qs('product-category').value = '1';
   qs('product-sale-price').value = '500';
-  qs('product-user').value = '1';
   submit(qs('product-form'));
 
   qs('nav-warehouses').click();

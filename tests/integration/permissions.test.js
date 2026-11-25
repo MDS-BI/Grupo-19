@@ -130,10 +130,11 @@ describe('HU-08 roles, landing pages and visibility', () => {
     expect(loadUsers().find((u) => u.user_id === 1).role).toBe('administrador');
   });
 
-  it('shows shipment navigation for all roles and includes its resources in the matrix (T122, FR-130, FR-133)', () => {
+  it('keeps the shipment tab available for all roles and includes its resources in the matrix (T122, T146, FR-130, FR-133, FR-142)', () => {
     for(const userId of [1, 3, 2]){
       switchUser(userId);
-      expect(qs('nav-shipments').hidden).toBe(false);
+      expect(qs('nav-shipments').hidden).toBe(true);
+      expect(qs('tab-movements-shipments').hidden).toBe(false);
     }
     switchUser(1);
     qs('nav-admin').click();
@@ -152,6 +153,7 @@ describe('HU-08 roles, landing pages and visibility', () => {
     expect(qs('access-notice').hidden).toBe(false);
     expect(qs('view-dashboard').hidden).toBe(false);
     expect(qs('view-shipments').hidden).toBe(true);
+    expect(qs('tab-movements-shipments').hidden).toBe(true);
     expect(qs('nav-shipments').hidden).toBe(true);
   });
 });

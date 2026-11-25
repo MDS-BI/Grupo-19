@@ -47,6 +47,16 @@ describe('User Story 3 - home dashboard with quick actions and record stats', ()
     expect(qs('view-search').hidden).toBe(true);
   });
 
+  it('shows only the four required indicators as visible dashboard content', async () => {
+    await bootWith(undefined);
+    const visibleStatIds = [...qs('view-dashboard').querySelectorAll('.stat-card')]
+      .filter(card => !card.closest('[hidden]'))
+      .map(card => card.querySelector('.stat-value')?.id);
+    expect(visibleStatIds).toEqual(['stat-products', 'stat-warehouses', 'stat-units', 'stat-alerts']);
+    expect(qs('dashboard-quick-actions').closest('[hidden]')).not.toBeNull();
+    expect([...qs('view-dashboard').querySelectorAll('[data-goto]')].some(el => !el.closest('[hidden]'))).toBe(false);
+  });
+
   it('shows at least four quick-action buttons covering key ERP tasks', async () => {
     await bootWith(undefined);
     expect(qs('action-new-entity-title').textContent).toBe('Nueva Entidad');

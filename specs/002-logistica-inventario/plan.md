@@ -167,8 +167,8 @@ Los recursos se identifican con claves estables: `module:<nombre>`, `view:<nombr
 - `T066`: `npx vitest run` y `npm run build` desde la raíz del repositorio.
 - `T067`: validación manual de los escenarios de aceptación de HU-01 a HU-08 con `spec.md`, incluyendo el recorrido de `quickstart.md`.
 - `T068`: reconciliación de `spec.md`, `plan.md`, `tasks.md` y `checklists/requirements.md` con la implementación actual.
-- Los casos de HU-08 quedarán incorporados a la suite cuando se generen las tareas derivadas de este plan; su ejecución está cubierta por `T066`.
-- La ejecución de la suite no se realizó durante la reconciliación documental de 2026-11-17; por eso T066 permanece pendiente en `tasks.md`.
+- Los casos de HU-08 quedaron incorporados a la suite en T085–T086; su ejecución está cubierta por `T066`.
+- La ejecución de la suite no se realizó durante la reconciliación documental de 2026-11-17; T066 conserva esa evidencia histórica y quedó verificado nuevamente el 2026-11-25 con 34 archivos/302 pruebas OK y build correcto. T067 sigue parcial hasta registrar la validación manual por escenario.
 
 ## Seguimiento de Complejidad
 
@@ -360,4 +360,14 @@ Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2
 | Recuento de navegación | Ajustar la prueba que espera 11 botones a 12 al añadir `nav-shipments`. |
 
 **Reevaluación post-diseño (Fase 1)**: sin nuevas violaciones de la constitución. El diseño mantiene la separación dominio/interfaz, preserva HU-01–HU-09, agrega una vista con permisos coherentes y define criterios verificables antes de generar tareas.
+
+## Reconciliación de interfaz para HU-12/HU-14 (2026-11-25)
+
+- La descripción estructural previa se conserva como historial; la interfaz vigente se resuelve en T146–T152.
+- `index.html` mantiene el marco persistente, pero el menú lateral solo muestra Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas. El panel principal se alcanza desde la barra superior y el panel de permisos desde un botón de la misma barra, visible solo para `administrador`.
+- Entidades, Documentos, Búsqueda, Reposiciones y Envíos conservan sus vistas, formularios, listados y funciones internas; quedan `hidden` y sin accesos visibles para cumplir HU-12/HU-14 sin pérdida de datos.
+- Movimientos organiza Entradas, Salidas, Historial, Órdenes y Seguimiento de envíos en pestañas; Alertas organiza Alertas y Reposiciones. `src/app.js` resuelve rutas antiguas y alias a la pestaña correspondiente, aplica el guard de permisos por pestaña y mantiene una pestaña activa por defecto.
+- `src/components/dashboard.js` y la vista del panel principal informan cuatro indicadores: productos, bodegas, stock total y alertas activas; no hay botones ni enlaces visibles hacia las seis secciones.
+- `src/styles.css` reutiliza tokens existentes para pestañas, botones superiores y panel de indicadores; no se introduce un tema nuevo.
+- Verificación: `npx vitest run` con 34 archivos/304 pruebas OK y `npm run build` correcto; sin crear ramas, commits ni push adicionales durante esta corrección documental, conservando el historial previo del repositorio.
 

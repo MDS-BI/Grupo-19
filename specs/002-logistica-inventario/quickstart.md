@@ -1,9 +1,9 @@
 # Guía Rápida: Módulo de Logística e Inventario
 
 **Feature**: `002-logistica-inventario`  
-**Fecha**: 2026-11-17
+**Fecha**: 2026-11-17 (estado de navegación actualizado el 2026-11-25)
 
-Esta guía describe cómo arrancar y verificar la implementación actual sin regenerar artefactos ni modificar datos.
+Esta guía describe cómo arrancar y verificar la implementación actual sin regenerar artefactos ni modificar datos. Los recorridos históricos se conservan como registro incremental; el estado visible vigente se resume al final.
 
 ## Requisitos
 
@@ -26,7 +26,7 @@ npx vitest run
 npm run build
 ```
 
-Estos comandos corresponden a T066 y no se ejecutaron durante la reconciliación documental de 2026-11-17. La suite debe incorporar los casos HU-08 descritos en `plan.md` cuando se generen sus tareas.
+Estos comandos corresponden a T066 y no se ejecutaron durante la reconciliación documental de 2026-11-17. T110 los ejecutó después para HU-09 y T152 registró la verificación final de 2026-11-25: 34 archivos/304 pruebas OK y build correcto. T067 sigue pendiente de la validación manual escenario por escenario de US1–US8.
 
 ## Recorrido funcional
 
@@ -38,7 +38,7 @@ Estos comandos corresponden a T066 y no se ejecutaron durante la reconciliación
 6. HU-02: consultar existencias por producto/bodega y su total.
 7. HU-06: configurar `min_stock_level`, provocar una alerta y comprobar que desaparece al reponer stock.
 8. HU-07: desde una alerta, presionar «Solicitar», aprobar la reposición y recibirla; verificar que se crea un único movimiento de entrada y que la alerta desaparece.
-9. HU-08: cambiar el usuario activo y comprobar que se abre la landing de su cargo; entrar al panel de administración, redefinir una landing y desmarcar un módulo; verificar que el enlace desaparece, que la ruta directa `#/<modulo>` muestra el aviso de falta de permiso y que los datos de HU-01–HU-07 permanecen sin cambios.
+9. HU-08: cambiar el usuario activo y comprobar que se abre la landing de su cargo; entrar al panel de permisos desde la barra superior, redefinir una landing y desmarcar un módulo; verificar que el enlace desaparece, que la ruta directa `#/<modulo>` muestra el aviso de falta de permiso y que los datos de HU-01–HU-07 permanecen sin cambios.
 
 ## Verificación específica de HU-08
 
@@ -82,10 +82,10 @@ Cobertura esperada según el estado actual del repositorio: OC-0001/OV-0001, sec
 2. Registrar una entrada normal: debe aparecer `OC-0001` en la columna Orden del historial y en el panel «Órdenes generadas».
 3. Registrar una salida normal: debe aparecer `OV-0001`; la numeración OC no debe cambiar.
 4. Registrar un ajuste de entrada o salida: no debe generarse orden y su columna Orden debe mostrar `—`.
-5. Desde **Reposiciones**, aprobar y recibir una solicitud: el movimiento de entrada resultante no debe generar OC.
+5. Desde la pestaña **Reposiciones** de **Alertas**, aprobar y recibir una solicitud: el movimiento de entrada resultante no debe generar OC.
 6. Desde **Transferencias**, confirmar un traslado: no debe generarse OC ni OV; verificar el traslado solo en `STOCK_TRANSFERS`.
 7. Recargar la página: las órdenes y su numeración deben persistir bajo `logistics:orders`.
-8. Cambiar a cualquier rol con acceso a Movimientos: el panel debe seguir visible; no debe existir un módulo ni un permiso «Órdenes» en la barra lateral ni en el panel de administración.
+8. Cambiar a cualquier rol con acceso a Movimientos: el panel debe seguir visible; no debe existir un módulo ni un permiso «Órdenes» en la barra lateral ni en el panel de permisos de la barra superior.
 9. Simular un fallo de escritura en `logistics:orders`: debe mostrarse el mensaje de almacenamiento en el formulario, sin movimiento, orden ni cambio de stock parcial.
 
 ### Resultados esperados
@@ -98,18 +98,18 @@ Cobertura esperada según el estado actual del repositorio: OC-0001/OV-0001, sec
 
 Las definiciones de campos y relaciones están en `data-model.md`; el contrato de persistencia y atomicidad está en `contracts/logistics-storage.md`.
 
-## Verificación planificada de HU-10 y HU-11 (2026-11-23)
+## Verificación de HU-10 y HU-11 (planificada el 2026-11-23, ejecutada después)
 
-Esta sección describe la validación futura de HU-10 y HU-11. No implica que el código esté implementado: las tareas se generarán con `/speckit.tasks` y los comandos se ejecutarán después de la implementación.
+Esta sección conserva la planificación original de HU-10 y HU-11. La implementación quedó registrada en T111–T137 y la cobertura automatizada se ejecutó; T136 permanece pendiente de validación manual.
 
-### Comandos previstos
+### Comandos de verificación
 
 ```bash
 npx vitest run tests/unit/transfers.test.js tests/integration/transfers.test.js tests/unit/shipments.test.js tests/integration/shipments.test.js
 npm run build
 ```
 
-También debe ejecutarse la suite completa para detectar regresiones en HU-01–HU-09, en particular el recuento de botones de navegación y las pruebas de permisos.
+También debe ejecutarse la suite completa para detectar regresiones en HU-01–HU-14, en particular el recuento de seis secciones visibles y las pruebas de permisos.
 
 ### HU-10 — Búsqueda y filtros de transferencias
 
@@ -125,7 +125,7 @@ También debe ejecutarse la suite completa para detectar regresiones en HU-01–
 ### HU-11 — Seguimiento de envíos al comprador
 
 1. Registrar una salida normal desde **Movimientos** para generar una orden `OV-0001`; los datos demo no crean OV, por lo que este paso es necesario para poblar la vista.
-2. Abrir **Seguimiento de envíos** y registrar un envío asociado a `OV-0001`, indicando transportista y código de seguimiento.
+2. En **Movimientos**, cambiar a la pestaña **Seguimiento de envíos** y registrar un envío asociado a `OV-0001`, indicando transportista y código de seguimiento.
 3. Intentar registrar otro envío para la misma OV; debe rechazarse por la relación uno a uno.
 4. Confirmar que el estado inicial es **En bodega** y que el historial contiene el evento inicial con fecha y usuario.
 5. Avanzar el estado en orden: **En tránsito** → **En reparto** → **Entregado**; cada paso debe agregar un evento con fecha, hora y usuario responsable.
@@ -146,3 +146,15 @@ También debe ejecutarse la suite completa para detectar regresiones en HU-01–
 - La vista está protegida por la matriz de HU-08 sin introducir autenticación real.
 - El seguimiento de envíos no establece conexiones automáticas con transportistas y solo se actualiza manualmente desde el ERP.
 - El seguimiento no modifica stock, movimientos ni órdenes.
+
+**Confirmación manual del usuario (2026-11-25)**: probó en navegador las pestañas de Movimientos y Alertas, el buscador/filtros de Transferencias y el menú lateral de seis secciones sin Entidades, Documentos ni Búsqueda.
+
+**Seguimiento pendiente de T136**: la confirmación es parcial; faltan búsqueda parcial por texto/ID y capitalización, filtros combinados, estado vacío, 1:1 OV–envío, transiciones secuenciales y sus rechazos, denegación por permisos, persistencia tras recarga y ausencia explícita de conexiones automáticas con transportistas.
+
+## Estado actual de navegación (HU-12 a HU-14)
+
+- El menú lateral muestra exactamente Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas. Entidades, Documentos, Búsqueda, Reposiciones y Envíos no aparecen como entradas visibles, pero sus vistas, formularios, datos y permisos internos se conservan (T146, T148, T150–T152).
+- El panel de indicadores y el panel de permisos se abren desde la barra superior; el panel principal solo informa con cuatro indicadores: productos, bodegas, stock total y alertas activas (T147, T148, T150–T152).
+- Movimientos tiene las pestañas Entradas, Salidas, Historial, Órdenes y Seguimiento de envíos; Alertas tiene Alertas y Reposiciones. El cambio de pestaña cambia solo el contenido, sin crear registros ni modificar datos (T147–T152).
+- Las rutas heredadas `#/shipments` y `#/replenishments` siguen funcionando como alias de las pestañas; las rutas genéricas `#/entities`, `#/documents` y `#/search` redirigen a una vista permitida (T150).
+- T145 permanece `[ ]`: la confirmación del usuario cubre menú, pestañas y buscador/filtros, pero no la revisión visual explícita del panel principal de cuatro indicadores, del panel de permisos ni del resto de estilos de Fase 16.

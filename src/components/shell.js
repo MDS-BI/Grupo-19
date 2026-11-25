@@ -50,14 +50,27 @@ export function setActiveModule(name){
 }
 
 export function applyNavigationPermissions(role, userId){
+  const alwaysHidden = new Set(['entities', 'documents', 'search', 'shipments', 'replenishments']);
   document.querySelectorAll('.nav-module').forEach(btn => {
     const mod = btn.dataset.module;
-    if(mod === 'admin') return;
+    if(mod === 'admin' || mod === 'dashboard') return;
+    if(alwaysHidden.has(mod)){
+      btn.hidden = true;
+      btn.disabled = false;
+      btn.setAttribute('aria-hidden', 'true');
+      return;
+    }
     const allowed = canAccessModule(role, mod, userId);
     btn.hidden = !allowed;
     btn.disabled = !allowed;
     btn.setAttribute('aria-hidden', allowed ? 'false' : 'true');
   });
+  const dashboardNav = document.getElementById('nav-dashboard');
+  if(dashboardNav){
+    dashboardNav.hidden = false;
+    dashboardNav.disabled = false;
+    dashboardNav.setAttribute('aria-hidden', 'false');
+  }
   const adminNav = document.getElementById('nav-admin');
   if(adminNav){
     const allowed = getEffectivePermission(role, 'panel', ADMIN_RESOURCE, userId);
@@ -66,8 +79,5 @@ export function applyNavigationPermissions(role, userId){
     adminNav.setAttribute('aria-hidden', allowed ? 'false' : 'true');
   }
   const advanced = document.getElementById('nav-advanced-section');
-  if(advanced){
-    const showAdvanced = ['entities', 'documents', 'search'].some(m => canAccessModule(role, m, userId));
-    advanced.hidden = !showAdvanced;
-  }
+  if(advanced) advanced.hidden = true;
 }

@@ -31,13 +31,12 @@ afterEach(() => {
   dom.window.close();
 });
 
-function fillProductForm({ sku = 'SKU-100', name = 'Mouse inalámbrico', salePrice = '9990', costPrice = '', userId = '1' } = {}){
+function fillProductForm({ sku = 'SKU-100', name = 'Mouse inalámbrico', salePrice = '9990', costPrice = '' } = {}){
   qs('product-sku').value = sku;
   qs('product-name').value = name;
   qs('product-category').value = '1';
   qs('product-sale-price').value = salePrice;
   if(costPrice !== '') qs('product-cost-price').value = costPrice;
-  qs('product-user').value = userId;
 }
 
 describe('User Story 1 - register and modify products', () => {
@@ -49,6 +48,14 @@ describe('User Story 1 - register and modify products', () => {
     expect(all[0].sku).toBe('SKU-100');
     expect(all[0].status).toBe('activo');
     expect(qs('product-list-body').textContent).toContain('SKU-100');
+  });
+
+  it('uses the active ERP user for audit fields without rendering a manual selector (T017)', () => {
+    expect(qs('product-user')).toBeNull();
+    fillProductForm();
+    submit(qs('product-form'));
+    expect(loadProducts()[0].created_by).toBe(1);
+    expect(loadProducts()[0].updated_by).toBe(1);
   });
 
   it('rejects a duplicate SKU with a clear message and keeps form data (FR-042)', () => {
@@ -65,7 +72,15 @@ describe('User Story 1 - register and modify products', () => {
     submit(qs('product-form'));
     expect(loadProducts().length).toBe(0);
     expect(qs('error-product-sku').textContent).toContain('obligatorio');
-    expect(qs('error-product-userId').textContent).not.toBe('');
+    expect(qs('error-product-categoryId').textContent).not.toBe('');
+  });
+
+  it('rejects product submission when the active ERP user no longer exists (FR-044)', () => {
+    localStorage.removeItem('logistics:users');
+    fillProductForm();
+    submit(qs('product-form'));
+    expect(loadProducts().length).toBe(0);
+    expect(qs('error-product-userId').textContent).toContain('No existe un usuario activo válido');
   });
 
   it('shows a non-blocking warning when cost price exceeds sale price (FR-089)', () => {
@@ -82,7 +97,6 @@ describe('User Story 1 - register and modify products', () => {
     [...editButtons].find(b => b.textContent === 'Editar').click();
     expect(qs('product-sku').value).toBe('SKU-100');
     qs('product-sale-price').value = '15000';
-    qs('product-user').value = '1';
     submit(qs('product-form'));
     expect(loadProducts()[0].sale_price).toBe(15000);
   });
@@ -90,9 +104,9 @@ describe('User Story 1 - register and modify products', () => {
   it('toggles product status to inactivo and back (FR-045, FR-090)', () => {
     fillProductForm();
     submit(qs('product-form'));
-    qs('product-user').value = '1';
     const toggleBtn = [...qs('product-list-body').querySelectorAll('button')].find(b => b.textContent === 'Desactivar');
     toggleBtn.click();
     expect(loadProducts()[0].status).toBe('inactivo');
+    expect(loadProducts()[0].updated_by).toBe(1);
   });
 });

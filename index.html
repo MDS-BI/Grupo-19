@@ -17,6 +17,10 @@
             <span id="brand-tagline" class="brand-tagline">Grupo 19</span>
           </span>
         </div>
+        <button type="button" class="topbar-icon-button nav-module" id="nav-dashboard" data-module="dashboard" aria-label="Panel" title="Panel">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="11" y="3" width="6" height="6" rx="1"></rect><rect x="3" y="11" width="6" height="6" rx="1"></rect><rect x="11" y="11" width="6" height="6" rx="1"></rect></svg>
+          <span class="nav-label" id="nav-dashboard-label">Panel</span>
+        </button>
         <div class="active-user-panel" aria-label="Usuario activo simulado">
           <span class="user-avatar-wrap" aria-hidden="true">
             <span class="user-avatar" id="active-user-avatar">--</span>
@@ -33,35 +37,31 @@
           </div>
           <span class="user-chevron" aria-hidden="true"></span>
         </div>
+        <button type="button" class="nav-admin-module topbar-admin-button" data-module="admin" id="nav-admin" aria-label="Permisos" title="Permisos">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 3.5 6v4.2c0 4 2.7 6.8 6.5 7.8 3.8-1 6.5-3.8 6.5-7.8V6L10 2.5z"></path><path d="M7.6 10.2 9.3 12l3.3-3.6"></path></svg>
+          <span class="nav-label">Permisos</span>
+        </button>
       </header>
 
       <aside class="sidebar">
         <nav class="side-nav" aria-label="Módulos">
           <p class="nav-section-title nav-section-title--top">Operación</p>
-          <button type="button" class="nav-module active" data-module="dashboard" id="nav-dashboard" aria-current="page" aria-label="Panel" title="Panel">
-            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="11" y="3" width="6" height="6" rx="1"></rect><rect x="3" y="11" width="6" height="6" rx="1"></rect><rect x="11" y="11" width="6" height="6" rx="1"></rect></svg>
-            <span class="nav-label" id="nav-dashboard-label">Panel</span>
-          </button>
           <div id="nav-advanced-section" class="nav-advanced" hidden>
             <hr class="nav-separator" />
             <p class="nav-section-title" id="nav-advanced-title">Administración avanzada</p>
-            <button type="button" class="nav-module" data-module="entities" id="nav-entities" aria-label="Entidades" title="Entidades">
+            <button type="button" class="nav-module" data-module="entities" id="nav-entities" aria-label="Entidades" title="Entidades" hidden>
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 3.5 6v8L10 17.5 16.5 14V6L10 2.5z"></path><path d="M3.5 6 10 9.5 16.5 6"></path><path d="M10 9.5v8"></path></svg>
               <span class="nav-label" id="nav-entities-label">Entidades</span>
             </button>
-            <button type="button" class="nav-module" data-module="documents" id="nav-documents" aria-label="Documentos" title="Documentos">
+            <button type="button" class="nav-module" data-module="documents" id="nav-documents" aria-label="Documentos" title="Documentos" hidden>
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5h6l4 4v11h-10z"></path><path d="M11.5 2.5v4h4"></path><path d="M8 10h5"></path><path d="M8 13h5"></path></svg>
               <span class="nav-label" id="nav-documents-label">Documentos</span>
             </button>
-            <button type="button" class="nav-module" data-module="search" id="nav-search" aria-label="Búsqueda" title="Búsqueda">
+            <button type="button" class="nav-module" data-module="search" id="nav-search" aria-label="Búsqueda" title="Búsqueda" hidden>
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="5"></circle><path d="m12.8 12.8 4.2 4.2"></path></svg>
               <span class="nav-label" id="nav-search-label">Búsqueda</span>
             </button>
           </div>
-          <button type="button" class="nav-admin-module" data-module="admin" id="nav-admin" aria-label="Permisos" title="Permisos">
-            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 3.5 6v4.2c0 4 2.7 6.8 6.5 7.8 3.8-1 6.5-3.8 6.5-7.8V6L10 2.5z"></path><path d="M7.6 10.2 9.3 12l3.3-3.6"></path></svg>
-            <span class="nav-label">Permisos</span>
-          </button>
           <button type="button" class="nav-module" data-module="products" id="nav-products" aria-label="Productos" title="Productos">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="1.5"></rect><path d="M3 8h14"></path></svg>
             <span class="nav-label">Productos</span>
@@ -82,7 +82,7 @@
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h10"></path><path d="M10 4l3 3-3 3"></path><path d="M17 13H7"></path><path d="M10 16l-3-3 3-3"></path></svg>
             <span class="nav-label">Transferencias</span>
           </button>
-          <button type="button" class="nav-module" data-module="shipments" id="nav-shipments" aria-label="Seguimiento de envíos" title="Seguimiento de envíos">
+          <button type="button" class="nav-module" data-module="shipments" id="nav-shipments" aria-label="Seguimiento de envíos" title="Seguimiento de envíos" hidden>
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6h9v8h-9z"></path><path d="M11.5 9h3l2 2.5V14h-5z"></path><circle cx="6" cy="15" r="1.5"></circle><circle cx="14.5" cy="15" r="1.5"></circle></svg>
             <span class="nav-label">Seguimiento de envíos</span>
           </button>
@@ -90,7 +90,7 @@
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 2.5 16h15z"></path><path d="M10 8v4"></path><circle cx="10" cy="13.5" r="0.75" fill="currentColor" stroke="none"></circle></svg>
             <span class="nav-label">Alertas</span>
           </button>
-          <button type="button" class="nav-module" data-module="replenishments" id="nav-replenishments" aria-label="Reposiciones" title="Reposiciones">
+          <button type="button" class="nav-module" data-module="replenishments" id="nav-replenishments" aria-label="Reposiciones" title="Reposiciones" hidden>
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5h11"></path><path d="m11 4 3 2.5-3 2.5"></path><path d="M17 13.5H6"></path><path d="m9 11-3 2.5L9 16"></path></svg>
             <span class="nav-label">Reposiciones</span>
           </button>
@@ -132,6 +132,14 @@
             </article>
             <article class="stat-card">
               <div class="stat-top">
+                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8 10 3l7.5 5v8h-15z"></path><path d="M7.5 16v-5h5v5"></path></svg></span>
+                <span class="stat-label">Bodegas activas</span>
+              </div>
+              <span class="stat-value" id="stat-warehouses">0</span>
+              <span class="stat-foot">Ubicaciones operativas</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top">
                 <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6v9h14V6"></path><path d="M3 6 10 2l7 4"></path><path d="M3 6h14"></path></svg></span>
                 <span class="stat-label">Stock total</span>
               </div>
@@ -146,7 +154,7 @@
               <span class="stat-value" id="stat-alerts">0</span>
               <span class="stat-foot">Bajo el mínimo configurado</span>
             </article>
-            <article class="stat-card stat-card--pending">
+            <article class="stat-card stat-card--pending" hidden>
               <div class="stat-top">
                 <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h11"></path><path d="m11 4 3 2.5-3 2.5"></path><path d="M17 13.5H6"></path><path d="m9 11-3 2.5L9 16"></path></svg></span>
                 <span class="stat-label">Reposiciones pendientes</span>
@@ -156,15 +164,7 @@
             </article>
           </div>
 
-          <div class="stat-grid stat-grid--dashboard stat-grid--secondary">
-            <article class="stat-card">
-              <div class="stat-top">
-                <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8 10 3l7.5 5v8h-15z"></path><path d="M7.5 16v-5h5v5"></path></svg></span>
-                <span class="stat-label">Bodegas activas</span>
-              </div>
-              <span class="stat-value" id="stat-warehouses">0</span>
-              <span class="stat-foot">Ubicaciones operativas</span>
-            </article>
+          <div class="stat-grid stat-grid--dashboard stat-grid--secondary" hidden>
             <article class="stat-card">
               <div class="stat-top">
                 <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h8"></path><path d="M9 6l3 4-3 4"></path><path d="M16 6v8"></path></svg></span>
@@ -183,7 +183,7 @@
             </article>
           </div>
 
-          <div class="dashboard-layout">
+          <div class="dashboard-layout" hidden>
             <div class="dashboard-main">
               <section class="card" aria-labelledby="dashboard-activity-heading">
                 <div class="card-head">
@@ -212,7 +212,7 @@
             </aside>
           </div>
 
-          <section class="card card--quick-actions" aria-labelledby="quick-actions-heading">
+          <section class="card card--quick-actions" aria-labelledby="quick-actions-heading" hidden>
             <div class="card-head">
               <div>
                 <h2 id="quick-actions-heading">Acciones rápidas</h2>
@@ -223,7 +223,7 @@
             <div class="action-grid" id="dashboard-quick-actions"></div>
           </section>
 
-          <div class="dashboard-layout dashboard-layout--secondary">
+          <div class="dashboard-layout dashboard-layout--secondary" hidden>
             <div class="dashboard-main">
               <section class="card" aria-labelledby="dashboard-transfers-heading">
                 <div class="card-head">
@@ -583,8 +583,7 @@
                 <input id="product-weight" type="number" min="0" step="0.01" />
               </div>
               <div>
-                <label for="product-user">Usuario que registra *</label>
-                <select id="product-user" required></select>
+                <p class="auto-hint">El usuario activo de la cabecera se registra automáticamente.</p>
                 <div class="error" id="error-product-userId" aria-live="polite"></div>
               </div>
               <div class="form-actions">
@@ -739,6 +738,16 @@
             </div>
           </div>
 
+          <div class="tab-bar" role="tablist" aria-label="Secciones de movimientos">
+            <button type="button" class="tab-button" id="tab-movements-entries" data-parent="movements" data-tab="entries" role="tab" aria-selected="true" aria-controls="movements-panel-entries">Entradas</button>
+            <button type="button" class="tab-button" id="tab-movements-exits" data-parent="movements" data-tab="exits" role="tab" aria-selected="false" aria-controls="movements-panel-exits">Salidas</button>
+            <button type="button" class="tab-button" id="tab-movements-history" data-parent="movements" data-tab="history" role="tab" aria-selected="false" aria-controls="movements-panel-history">Historial</button>
+            <button type="button" class="tab-button" id="tab-movements-orders" data-parent="movements" data-tab="orders" role="tab" aria-selected="false" aria-controls="movements-panel-orders">Órdenes</button>
+            <button type="button" class="tab-button" id="tab-movements-shipments" data-parent="movements" data-tab="shipments" role="tab" aria-selected="false" aria-controls="movements-panel-shipments">Seguimiento de envíos</button>
+          </div>
+
+          <div id="movements-panel-entries" class="tab-panel" role="tabpanel" aria-labelledby="tab-movements-entries">
+            <div id="movements-entry-form-mount">
           <section class="card" aria-labelledby="movement-form-heading">
             <div class="card-head">
               <h2 id="movement-form-heading">Registrar Entrada / Salida / Ajuste</h2>
@@ -779,7 +788,14 @@
               </div>
             </form>
           </section>
+            </div>
+          </div>
 
+          <div id="movements-panel-exits" class="tab-panel" role="tabpanel" aria-labelledby="tab-movements-exits" hidden>
+            <div id="movements-exit-form-mount"></div>
+          </div>
+
+          <div id="movements-panel-history" class="tab-panel" role="tabpanel" aria-labelledby="tab-movements-history" hidden>
           <section class="card" aria-labelledby="movements-list-heading">
             <div class="card-head">
               <div>
@@ -807,7 +823,9 @@
               </table>
             </div>
           </section>
+          </div>
 
+          <div id="movements-panel-orders" class="tab-panel" role="tabpanel" aria-labelledby="tab-movements-orders" hidden>
           <section class="card" aria-labelledby="order-list-heading">
             <div class="card-head">
               <div>
@@ -825,6 +843,85 @@
               </table>
             </div>
           </section>
+          </div>
+
+          <div id="movements-panel-shipments" class="tab-panel" role="tabpanel" aria-labelledby="tab-movements-shipments" hidden>
+            <section id="view-shipments" aria-labelledby="shipments-view-heading">
+              <div class="page-head">
+                <div>
+                  <p class="eyebrow">Operaciones</p>
+                  <h1 id="shipments-view-heading">Seguimiento de envíos</h1>
+                  <p class="page-subtitle muted">Registra el despacho de cada orden de venta y actualiza su estado manualmente desde el ERP.</p>
+                </div>
+              </div>
+
+              <section class="card" aria-labelledby="shipment-form-heading">
+                <div class="card-head">
+                  <h2 id="shipment-form-heading">Nuevo envío</h2>
+                  <span class="pill">Operación</span>
+                </div>
+                <form id="shipment-form">
+                  <div>
+                    <label for="shipment-order">Orden de venta *</label>
+                    <select id="shipment-order" required></select>
+                    <div class="error" id="error-shipment-orderId" aria-live="polite"></div>
+                  </div>
+                  <div class="field-row">
+                    <div>
+                      <label for="shipment-carrier">Empresa transportista *</label>
+                      <input id="shipment-carrier" type="text" maxlength="80" required />
+                      <div class="error" id="error-shipment-carrier" aria-live="polite"></div>
+                    </div>
+                    <div>
+                      <label for="shipment-tracking-code">Código de seguimiento *</label>
+                      <input id="shipment-tracking-code" type="text" maxlength="60" required />
+                      <div class="error" id="error-shipment-trackingCode" aria-live="polite"></div>
+                    </div>
+                  </div>
+                  <div class="field-full">
+                    <div class="error" id="error-shipment-createdBy" aria-live="polite"></div>
+                  </div>
+                  <div class="form-actions">
+                    <button type="submit" id="shipment-submit-button" class="primary">Crear envío</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="card" aria-labelledby="shipments-list-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="shipments-list-heading">Envíos registrados</h2>
+                    <p class="card-subtitle">Historial manual de estado por orden de venta, sin conexiones automáticas con transportistas.</p>
+                  </div>
+                  <span class="count-badge" id="shipment-count">0</span>
+                </div>
+                <div class="toolbar shipment-filters-toolbar">
+                  <label class="sr-only" for="shipment-search">Buscar envíos</label>
+                  <input id="shipment-search" type="search" placeholder="Buscar por OV o código de seguimiento" aria-label="Buscar envíos por orden o código" />
+                </div>
+                <div class="filter-grid">
+                  <div>
+                    <label for="shipment-filter-status">Estado</label>
+                    <select id="shipment-filter-status">
+                      <option value="">Todos los estados</option>
+                      <option value="en_bodega">En bodega</option>
+                      <option value="en_transito">En tránsito</option>
+                      <option value="en_reparto">En reparto</option>
+                      <option value="entregado">Entregado</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="shipment-list-empty" class="empty" hidden aria-live="polite">No se encontraron envíos.</div>
+                <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+                <div class="table-wrap" role="region" aria-label="Envíos registrados" tabindex="0">
+                  <table class="data-table shipment-table">
+                    <thead><tr><th scope="col">Orden de venta</th><th scope="col">Transportista</th><th scope="col">Código de seguimiento</th><th scope="col">Estado</th><th scope="col">Historial</th><th scope="col">Usuarios</th><th scope="col">Acciones</th></tr></thead>
+                    <tbody id="shipment-list-body"></tbody>
+                  </table>
+                </div>
+              </section>
+            </section>
+          </div>
         </section>
 
         <section id="view-transfers" aria-labelledby="transfers-view-heading" hidden>
@@ -920,82 +1017,6 @@
           </section>
         </section>
 
-        <section id="view-shipments" aria-labelledby="shipments-view-heading" hidden>
-          <div class="page-head">
-            <div>
-              <p class="eyebrow">Operaciones</p>
-              <h1 id="shipments-view-heading">Seguimiento de envíos</h1>
-              <p class="page-subtitle muted">Registra el despacho de cada orden de venta y actualiza su estado manualmente desde el ERP.</p>
-            </div>
-          </div>
-
-          <section class="card" aria-labelledby="shipment-form-heading">
-            <div class="card-head">
-              <h2 id="shipment-form-heading">Nuevo envío</h2>
-              <span class="pill">Operación</span>
-            </div>
-            <form id="shipment-form">
-              <div>
-                <label for="shipment-order">Orden de venta *</label>
-                <select id="shipment-order" required></select>
-                <div class="error" id="error-shipment-orderId" aria-live="polite"></div>
-              </div>
-              <div class="field-row">
-                <div>
-                  <label for="shipment-carrier">Empresa transportista *</label>
-                  <input id="shipment-carrier" type="text" maxlength="80" required />
-                  <div class="error" id="error-shipment-carrier" aria-live="polite"></div>
-                </div>
-                <div>
-                  <label for="shipment-tracking-code">Código de seguimiento *</label>
-                  <input id="shipment-tracking-code" type="text" maxlength="60" required />
-                  <div class="error" id="error-shipment-trackingCode" aria-live="polite"></div>
-                </div>
-              </div>
-              <div class="field-full">
-                <div class="error" id="error-shipment-createdBy" aria-live="polite"></div>
-              </div>
-              <div class="form-actions">
-                <button type="submit" id="shipment-submit-button" class="primary">Crear envío</button>
-              </div>
-            </form>
-          </section>
-
-          <section class="card" aria-labelledby="shipments-list-heading">
-            <div class="card-head">
-              <div>
-                <h2 id="shipments-list-heading">Envíos registrados</h2>
-                <p class="card-subtitle">Historial manual de estado por orden de venta, sin conexiones automáticas con transportistas.</p>
-              </div>
-              <span class="count-badge" id="shipment-count">0</span>
-            </div>
-            <div class="toolbar shipment-filters-toolbar">
-              <label class="sr-only" for="shipment-search">Buscar envíos</label>
-              <input id="shipment-search" type="search" placeholder="Buscar por OV o código de seguimiento" aria-label="Buscar envíos por orden o código" />
-            </div>
-            <div class="filter-grid">
-              <div>
-                <label for="shipment-filter-status">Estado</label>
-                <select id="shipment-filter-status">
-                  <option value="">Todos los estados</option>
-                  <option value="en_bodega">En bodega</option>
-                  <option value="en_transito">En tránsito</option>
-                  <option value="en_reparto">En reparto</option>
-                  <option value="entregado">Entregado</option>
-                </select>
-              </div>
-            </div>
-            <div id="shipment-list-empty" class="empty" hidden aria-live="polite">No se encontraron envíos.</div>
-            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
-            <div class="table-wrap" role="region" aria-label="Envíos registrados" tabindex="0">
-              <table class="data-table shipment-table">
-                <thead><tr><th scope="col">Orden de venta</th><th scope="col">Transportista</th><th scope="col">Código de seguimiento</th><th scope="col">Estado</th><th scope="col">Historial</th><th scope="col">Usuarios</th><th scope="col">Acciones</th></tr></thead>
-                <tbody id="shipment-list-body"></tbody>
-              </table>
-            </div>
-          </section>
-        </section>
-
         <section id="view-alerts" aria-labelledby="alerts-view-heading" hidden>
           <div class="page-head">
             <div>
@@ -1005,6 +1026,12 @@
             </div>
           </div>
 
+          <div class="tab-bar" role="tablist" aria-label="Secciones de alertas">
+            <button type="button" class="tab-button" id="tab-alerts-alerts" data-parent="alerts" data-tab="alerts" role="tab" aria-selected="true" aria-controls="alerts-panel-alerts">Alertas</button>
+            <button type="button" class="tab-button" id="tab-alerts-replenishments" data-parent="alerts" data-tab="replenishments" role="tab" aria-selected="false" aria-controls="alerts-panel-replenishments">Reposiciones</button>
+          </div>
+
+          <div id="alerts-panel-alerts" class="tab-panel" role="tabpanel" aria-labelledby="tab-alerts-alerts">
           <section class="card" aria-labelledby="alert-filters-heading">
             <div class="card-head">
               <h2 id="alert-filters-heading">Filtrar alertas</h2>
@@ -1039,120 +1066,123 @@
               </table>
             </div>
           </section>
-        </section>
-
-        <section id="view-replenishments" aria-labelledby="replenishments-view-heading" hidden>
-          <div class="page-head">
-            <div>
-              <p class="eyebrow">Reposición</p>
-              <h1 id="replenishments-view-heading">Gestión de solicitudes de reposición</h1>
-              <p class="page-subtitle muted">Solicita reposiciones desde una alerta o manualmente, autorízalas y registra su recepción sin duplicar el stock.</p>
-            </div>
-            <span class="status-badge status-active">Datos locales · acceso simulado</span>
           </div>
 
-          <div class="stat-grid stat-grid--compact">
-            <article class="stat-card stat-card--soft">
-              <span class="stat-value" id="replenishment-count-pending">0</span>
-              <span class="stat-label">Pendientes</span>
-            </article>
-            <article class="stat-card stat-card--soft">
-              <span class="stat-value" id="replenishment-count-approved">0</span>
-              <span class="stat-label">Aprobadas</span>
-            </article>
-            <article class="stat-card stat-card--soft">
-              <span class="stat-value" id="replenishment-count-received">0</span>
-              <span class="stat-label">Recibidas</span>
-            </article>
+          <div id="alerts-panel-replenishments" class="tab-panel" role="tabpanel" aria-labelledby="tab-alerts-replenishments" hidden>
+            <section id="view-replenishments" aria-labelledby="replenishments-view-heading">
+              <div class="page-head">
+                <div>
+                  <p class="eyebrow">Reposición</p>
+                  <h1 id="replenishments-view-heading">Gestión de solicitudes de reposición</h1>
+                  <p class="page-subtitle muted">Solicita reposiciones desde una alerta o manualmente, autorízalas y registra su recepción sin duplicar el stock.</p>
+                </div>
+                <span class="status-badge status-active">Datos locales · acceso simulado</span>
+              </div>
+
+              <div class="stat-grid stat-grid--compact">
+                <article class="stat-card stat-card--soft">
+                  <span class="stat-value" id="replenishment-count-pending">0</span>
+                  <span class="stat-label">Pendientes</span>
+                </article>
+                <article class="stat-card stat-card--soft">
+                  <span class="stat-value" id="replenishment-count-approved">0</span>
+                  <span class="stat-label">Aprobadas</span>
+                </article>
+                <article class="stat-card stat-card--soft">
+                  <span class="stat-value" id="replenishment-count-received">0</span>
+                  <span class="stat-label">Recibidas</span>
+                </article>
+              </div>
+
+              <section class="card" aria-labelledby="replenishment-filters-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="replenishment-filters-heading">Filtrar solicitudes</h2>
+                    <p class="card-subtitle">Los indicadores superiores se calculan sobre todas las solicitudes almacenadas.</p>
+                  </div>
+                  <span class="pill">Solo lectura</span>
+                </div>
+                <div class="filter-grid">
+                  <div>
+                    <label for="replenishment-filter-status">Estado</label>
+                    <select id="replenishment-filter-status">
+                      <option value="">Todos los estados</option>
+                      <option value="pendiente">Pendiente</option>
+                      <option value="aprobada">Aprobada</option>
+                      <option value="recibida">Recibida</option>
+                      <option value="cancelada">Cancelada</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="replenishment-filter-warehouse">Bodega</label>
+                    <select id="replenishment-filter-warehouse"></select>
+                  </div>
+                  <div>
+                    <label for="replenishment-filter-product">Producto</label>
+                    <select id="replenishment-filter-product"></select>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card" aria-labelledby="replenishment-form-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="replenishment-form-heading">Solicitar reposición</h2>
+                    <p class="card-subtitle">El usuario y la fecha se registran automáticamente desde el perfil activo.</p>
+                  </div>
+                  <span class="pill" id="replenishment-form-origin">Origen: manual</span>
+                </div>
+                <form id="replenishment-form">
+                  <div>
+                    <label for="replenishment-product">Producto *</label>
+                    <select id="replenishment-product"></select>
+                    <div class="error" id="error-replenishment-product" aria-live="polite"></div>
+                  </div>
+                  <div>
+                    <label for="replenishment-warehouse">Bodega *</label>
+                    <select id="replenishment-warehouse"></select>
+                    <div class="error" id="error-replenishment-warehouse" aria-live="polite"></div>
+                  </div>
+                  <div>
+                    <label for="replenishment-quantity">Cantidad solicitada *</label>
+                    <input type="number" id="replenishment-quantity" min="1" step="1" placeholder="Ej. 10" />
+                    <div class="error" id="error-replenishment-quantity" aria-live="polite"></div>
+                  </div>
+                  <div>
+                    <label for="replenishment-observation">Observación (opcional)</label>
+                    <textarea id="replenishment-observation" rows="2" placeholder="Motivo o nota para la bodega"></textarea>
+                    <div class="error" id="error-replenishment-observation" aria-live="polite"></div>
+                  </div>
+                  <div class="field-full">
+                    <p class="auto-hint">Acceso simulado: se guarda el usuario activo seleccionado en la barra superior. La solicitud no modifica el stock hasta su recepción.</p>
+                    <div class="error" id="error-replenishment-createdBy" aria-live="polite"></div>
+                  </div>
+                  <input type="hidden" id="replenishment-source" value="manual" />
+                  <div class="form-actions">
+                    <button type="submit" id="replenishment-submit-button" class="primary">Crear solicitud</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="card" aria-labelledby="replenishment-list-heading">
+                <div class="card-head">
+                  <div>
+                    <h2 id="replenishment-list-heading">Solicitudes registradas</h2>
+                    <p class="card-subtitle">Pendientes, aprobadas, recibidas y canceladas con trazabilidad de usuarios y movimientos.</p>
+                  </div>
+                  <span class="count-badge" id="replenishment-row-count">0</span>
+                </div>
+                <div id="replenishment-list-empty" class="empty" hidden aria-live="polite">No se encontraron solicitudes.</div>
+                <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+                <div class="table-wrap" role="region" aria-label="Solicitudes registradas de reposición" tabindex="0">
+                  <table class="data-table">
+                    <thead><tr><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Estado</th><th scope="col">Observación</th><th scope="col">Trazabilidad</th><th scope="col">Movimiento</th><th scope="col">Acciones</th></tr></thead>
+                    <tbody id="replenishment-list-body"></tbody>
+                  </table>
+                </div>
+              </section>
+            </section>
           </div>
-
-          <section class="card" aria-labelledby="replenishment-filters-heading">
-            <div class="card-head">
-              <div>
-                <h2 id="replenishment-filters-heading">Filtrar solicitudes</h2>
-                <p class="card-subtitle">Los indicadores superiores se calculan sobre todas las solicitudes almacenadas.</p>
-              </div>
-              <span class="pill">Solo lectura</span>
-            </div>
-            <div class="filter-grid">
-              <div>
-                <label for="replenishment-filter-status">Estado</label>
-                <select id="replenishment-filter-status">
-                  <option value="">Todos los estados</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="aprobada">Aprobada</option>
-                  <option value="recibida">Recibida</option>
-                  <option value="cancelada">Cancelada</option>
-                </select>
-              </div>
-              <div>
-                <label for="replenishment-filter-warehouse">Bodega</label>
-                <select id="replenishment-filter-warehouse"></select>
-              </div>
-              <div>
-                <label for="replenishment-filter-product">Producto</label>
-                <select id="replenishment-filter-product"></select>
-              </div>
-            </div>
-          </section>
-
-          <section class="card" aria-labelledby="replenishment-form-heading">
-            <div class="card-head">
-              <div>
-                <h2 id="replenishment-form-heading">Solicitar reposición</h2>
-                <p class="card-subtitle">El usuario y la fecha se registran automáticamente desde el perfil activo.</p>
-              </div>
-              <span class="pill" id="replenishment-form-origin">Origen: manual</span>
-            </div>
-            <form id="replenishment-form">
-              <div>
-                <label for="replenishment-product">Producto *</label>
-                <select id="replenishment-product"></select>
-                <div class="error" id="error-replenishment-product" aria-live="polite"></div>
-              </div>
-              <div>
-                <label for="replenishment-warehouse">Bodega *</label>
-                <select id="replenishment-warehouse"></select>
-                <div class="error" id="error-replenishment-warehouse" aria-live="polite"></div>
-              </div>
-              <div>
-                <label for="replenishment-quantity">Cantidad solicitada *</label>
-                <input type="number" id="replenishment-quantity" min="1" step="1" placeholder="Ej. 10" />
-                <div class="error" id="error-replenishment-quantity" aria-live="polite"></div>
-              </div>
-              <div>
-                <label for="replenishment-observation">Observación (opcional)</label>
-                <textarea id="replenishment-observation" rows="2" placeholder="Motivo o nota para la bodega"></textarea>
-                <div class="error" id="error-replenishment-observation" aria-live="polite"></div>
-              </div>
-              <div class="field-full">
-                <p class="auto-hint">Acceso simulado: se guarda el usuario activo seleccionado en la barra superior. La solicitud no modifica el stock hasta su recepción.</p>
-                <div class="error" id="error-replenishment-createdBy" aria-live="polite"></div>
-              </div>
-              <input type="hidden" id="replenishment-source" value="manual" />
-              <div class="form-actions">
-                <button type="submit" id="replenishment-submit-button" class="primary">Crear solicitud</button>
-              </div>
-            </form>
-          </section>
-
-          <section class="card" aria-labelledby="replenishment-list-heading">
-            <div class="card-head">
-              <div>
-                <h2 id="replenishment-list-heading">Solicitudes registradas</h2>
-                <p class="card-subtitle">Pendientes, aprobadas, recibidas y canceladas con trazabilidad de usuarios y movimientos.</p>
-              </div>
-              <span class="count-badge" id="replenishment-row-count">0</span>
-            </div>
-            <div id="replenishment-list-empty" class="empty" hidden aria-live="polite">No se encontraron solicitudes.</div>
-            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
-            <div class="table-wrap" role="region" aria-label="Solicitudes registradas de reposición" tabindex="0">
-              <table class="data-table">
-                <thead><tr><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Estado</th><th scope="col">Observación</th><th scope="col">Trazabilidad</th><th scope="col">Movimiento</th><th scope="col">Acciones</th></tr></thead>
-                <tbody id="replenishment-list-body"></tbody>
-              </table>
-            </div>
-          </section>
         </section>
 
         <section id="view-admin-permissions" aria-labelledby="admin-permissions-heading" hidden>

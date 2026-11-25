@@ -17,7 +17,6 @@ function setupProductAndWarehouses(){
   qs('product-name').value = 'Producto 1';
   qs('product-category').value = '1';
   qs('product-sale-price').value = '1000';
-  qs('product-user').value = '1';
   submit(qs('product-form'));
 
   qs('nav-warehouses').click();
@@ -134,7 +133,6 @@ function createProductWithStock(sku, name, warehouseId, quantity){
   qs('product-name').value = name;
   qs('product-category').value = '1';
   qs('product-sale-price').value = '1000';
-  qs('product-user').value = '1';
   submit(qs('product-form'));
   const productId = loadProducts().find(p => p.sku === sku).product_id;
 

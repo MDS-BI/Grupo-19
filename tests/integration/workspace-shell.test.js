@@ -60,13 +60,17 @@ describe('User Story 13 - branded ERP workspace shell', () => {
     expect(text).toBe('SS');
   });
 
-  it('offers sidebar module buttons using configured terminology', async () => {
+  it('offers only the six logistics sections in the sidebar', async () => {
     await bootWith(brandedConfig);
-    expect(qs('nav-dashboard-label').textContent).toBe('Panel');
-    expect(qs('nav-entities-label').textContent).toBe('Entidades');
-    expect(qs('nav-documents-label').textContent).toBe('Documentos');
-    expect(qs('nav-search-label').textContent).toBe('Búsqueda');
-    expect(document.querySelectorAll('.nav-module').length).toBe(12);
+    const visibleModules = [...document.querySelectorAll('.side-nav .nav-module:not([hidden])')].map(btn => btn.dataset.module);
+    expect(visibleModules).toEqual(['products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts']);
+    expect(qs('nav-dashboard').closest('.topbar')).not.toBeNull();
+    expect(qs('nav-admin').closest('.topbar')).not.toBeNull();
+    expect(qs('nav-entities').hidden).toBe(true);
+    expect(qs('nav-documents').hidden).toBe(true);
+    expect(qs('nav-search').hidden).toBe(true);
+    expect(qs('nav-shipments').hidden).toBe(true);
+    expect(qs('nav-replenishments').hidden).toBe(true);
   });
 
   it('uses remapped terms on the sidebar for tailored modules', async () => {
@@ -134,20 +138,43 @@ describe('User Story 13 - branded ERP workspace shell', () => {
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#2563eb');
   });
 
-  it('exposes a labeled shipment module and hides it when access is denied (T123, FR-113, FR-115, FR-133)', async () => {
+  it('keeps shipments inside Movements and hides the tab when access is denied (T123, T146, FR-113, FR-115, FR-133, FR-142)', async () => {
     await bootWith(undefined);
     const nav = qs('nav-shipments');
+    const tab = qs('tab-movements-shipments');
     expect(nav).not.toBeNull();
-    expect(nav.classList.contains('nav-module')).toBe(true);
-    expect(nav.dataset.module).toBe('shipments');
-    expect(nav.querySelector('.nav-label').textContent).toBe('Seguimiento de envíos');
+    expect(nav.hidden).toBe(true);
+    expect(tab).not.toBeNull();
+    expect(tab.hidden).toBe(false);
+    expect(qs('view-shipments').closest('#view-movements')).not.toBeNull();
 
     expect(setRolePermission('administrador', 'modulo', 'module:shipments', false).success).toBe(true);
     window.location.hash = '#/shipments';
     window.dispatchEvent(new dom.window.Event('hashchange'));
     expect(nav.hidden).toBe(true);
+    expect(tab.hidden).toBe(true);
     expect(qs('access-notice').hidden).toBe(false);
     expect(qs('view-dashboard').hidden).toBe(false);
     expect(qs('view-shipments').hidden).toBe(true);
+  });
+
+  it('shows only four indicators on the dashboard and tabs on the integrated sections (T147, FR-139, FR-141)', async () => {
+    await bootWith(undefined);
+    const visibleStatIds = [...qs('view-dashboard').querySelectorAll('.stat-card')]
+      .filter(card => !card.closest('[hidden]'))
+      .map(card => card.querySelector('.stat-value')?.id);
+    expect(visibleStatIds).toEqual(['stat-products', 'stat-warehouses', 'stat-units', 'stat-alerts']);
+    expect(qs('dashboard-quick-actions').closest('[hidden]')).not.toBeNull();
+    expect([...qs('view-dashboard').querySelectorAll('[data-goto]')].some(el => !el.closest('[hidden]'))).toBe(false);
+
+    qs('nav-movements').click();
+    expect([...document.querySelectorAll('#view-movements .tab-button:not([hidden])')].map(btn => btn.dataset.tab))
+      .toEqual(['entries', 'exits', 'history', 'orders', 'shipments']);
+    expect(qs('tab-movements-entries').getAttribute('aria-selected')).toBe('true');
+
+    qs('nav-alerts').click();
+    expect([...document.querySelectorAll('#view-alerts .tab-button:not([hidden])')].map(btn => btn.dataset.tab))
+      .toEqual(['alerts', 'replenishments']);
+    expect(qs('tab-alerts-alerts').getAttribute('aria-selected')).toBe('true');
   });
 });

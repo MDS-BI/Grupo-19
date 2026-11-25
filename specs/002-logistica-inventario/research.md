@@ -37,16 +37,16 @@ Este documento completa la estructura SpecKit de la funcionalidad. No registra u
 | Persistencia | Tres claves nuevas bajo la convención `logistics:*`: `logistics:roles`, `logistics:role_permissions` y `logistics:user_permission_overrides`; semillas idempotentes. | Conserva el despliegue sin backend y la persistencia entre sesiones exigida por FR-122. |
 | Saneamiento | Los textos configurables del panel pasan por `escapeHtml` antes de renderizarse. | Extiende FR-046, FR-092 y FR-103 a los nuevos campos de configuración (FR-123). |
 
-## Decisiones pendientes de refuerzo
+## Decisiones registradas y estado posterior
 
-- Atomicidad de escrituras multi-clave en `movements.js`, `transfers.js` y `replenishments.js`: ver T081–T083.
-- Escape completo de HTML en `storage.js`: ver T084.
-- Verificación ejecutable de la suite, incluidos los casos HU-08 derivados de `plan.md`: ver T066.
-- Implementación de las decisiones HU-08 anteriores: se incorporará como tareas nuevas cuando se ejecute `/speckit.tasks`.
+- Atomicidad de escrituras multi-clave en `movements.js`, `transfers.js` y `replenishments.js`: decidida y ejecutada en T081–T083.
+- Escape completo de HTML en `storage.js`: decidida y ejecutada en T084.
+- Verificación ejecutable de la suite, incluidos los casos HU-08 derivados de `plan.md`: ejecutada en T066 y actualizada en T110 y T152.
+- Implementación de las decisiones HU-08 anteriores: incorporada como T085–T094; no queda como trabajo futuro.
 
 ## Fuente
 
-- `spec.md`: historias HU-01..HU-08, clarificaciones y criterios de éxito.
+- `spec.md`: historias HU-01..HU-14, clarificaciones y criterios de éxito.
 - `plan.md`: pila técnica, decisión de estructura y diseño de HU-08.
 - `data-model.md`, `MER.md` y `contracts/logistics-storage.md`: esquemas, relaciones y claves de persistencia.
 - `src/domain/permissions.js`, `src/components/shell.js` y `src/app.js`: matriz vigente, navegación y cambio de usuario.
@@ -81,11 +81,11 @@ El seguimiento técnico quedó cerrado para T104–T106 y T108–T110 sin rehace
 
 ## Decisiones para HU-10 y HU-11 (2026-11-23)
 
-**Alcance**: ampliación documental y de diseño exclusivamente para el buscador/filtros de transferencias (HU-10) y el seguimiento de envíos al comprador (HU-11). No se reemplaza la planificación de HU-01 a HU-09, no se modifica código y no se crean ramas, commits ni push.
+**Alcance original (2026-11-23)**: ampliación documental y de diseño exclusivamente para el buscador/filtros de transferencias (HU-10) y el seguimiento de envíos al comprador (HU-11). No se reemplaza la planificación de HU-01 a HU-09; la ejecución posterior quedó registrada en T111–T137 sin renumerar tareas ni borrar historial.
 
 | Tema | Decisión | Justificación | Alternativas consideradas |
 |---|---|---|---|
-| Enfoque general | Ampliación aditiva de `plan.md`, `research.md`, `data-model.md`, `MER.md`, `contracts/logistics-storage.md` y `quickstart.md`; `tasks.md` queda para `/speckit.tasks`. | Cumple el requisito de conservar el trabajo existente y deja la generación de tareas para su fase correspondiente. | Reescribir los artefactos completos; rechazado porque sobrescribiría HU-01–HU-09. |
+| Enfoque general | Ampliación aditiva de `plan.md`, `research.md`, `data-model.md`, `MER.md`, `contracts/logistics-storage.md` y `quickstart.md`; `tasks.md` quedó para `/speckit.tasks` y hoy contiene T111–T137. | Cumple el requisito de conservar el trabajo existente y deja la generación de tareas para su fase correspondiente. | Reescribir los artefactos completos; rechazado porque sobrescribiría HU-01–HU-09. |
 | Clarificaciones | No quedan `NEEDS CLARIFICATION` para HU-10/HU-11: las cinco decisiones funcionales están registradas en `spec.md`, sesión 2026-11-23. | Las preguntas sobre roles, cardinalidad, transiciones, ubicación de la vista y semántica de búsqueda ya fueron respondidas. | Volver a preguntar; rechazado por redundante. |
 | HU-10 — API de consulta | Extender `listTransfers()` con un argumento opcional `filters = { term, status, productId, sourceWarehouseId, targetWarehouseId }`. `term` aplica coincidencia parcial e insensible a mayúsculas sobre `product_name` y sobre la representación textual de `transfer_id`; los filtros se combinan con AND. | Mantiene compatible la API actual: sin filtros devuelve exactamente el listado actual que consume el panel y el dashboard. | Crear una función `searchTransfers()` paralela; rechazada por duplicar reglas de listado y ordenación. |
 | HU-10 — UI y permisos | Añadir los controles dentro de la tarjeta existente «Transferencias registradas» (`#view-transfers`) y una columna `#ID` para hacer verificable la búsqueda por identificador. No se crea permiso nuevo: se hereda `module:transfers`. | Reutiliza `.toolbar`, `.filter-grid`, `transfer-list-empty` y el guard existente, sin tocar navegación ni matriz. | Módulo propio o permiso `transfers.search`; rechazado porque un recurso no sembrado produjo denegación por defecto y porque HU-10 es solo lectura. |
@@ -97,8 +97,8 @@ El seguimiento técnico quedó cerrado para T104–T106 y T108–T110 sin rehace
 | HU-11 — Permisos | Añadir `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status`. La semilla permite módulo, vista y acciones a los tres roles; la matriz solo puede restringir (FR-118, FR-124). | La clarificación respondió que los tres roles pueden actualizar estados; la creación se alinea con el acceso al módulo sin introducir una regla nueva. | Permiso `action:shipments.search` o restricción exclusiva a administrador; rechazado por no estar en la clarificación y por añadir fricción innecesaria. |
 | HU-11 — Semilla existente | No reescribir `ROLE_PERMISSIONS` ya persistido; el fallback de `getEffectivePermission()` cubre las filas nuevas ausentes. | Preserva personalizaciones anteriores y evita reabrir decisiones de HU-08. | Migración automática de matriz; rechazada por sobrescribir configuración del usuario. |
 | HU-11 — Aislamiento | `src/domain/shipments.js` no llama a `registerMovement()`, no modifica `STOCK` y no altera `logistics:orders`; solo valida la orden de origen y persiste el envío. | HU-11 exige que el seguimiento no genere movimientos adicionales ni reescriba el stock. | Reutilizar el flujo de reposiciones; rechazado porque sí crea movimiento de entrada. |
-| HU-11 — UI | Nuevo módulo `shipments` con `shipment-form.js` y `shipment-list.js`, ruta `#/shipments`, botón en la barra lateral y guard mediante `showModule()`. | Es la decisión confirmada en clarificaciones y sigue el patrón extremo a extremo de reposiciones y permisos. | Panel dentro de Movimientos u Órdenes; rechazado por la clarificación 2026-11-23. |
-| Pruebas | Ampliar pruebas unitarias/de integración de transferencias; añadir `tests/unit/shipments.test.js` y `tests/integration/shipments.test.js`; ajustar el recuento esperado de botones de navegación de 11 a 12. | Cubre dominio, interfaz, permisos y no mutación sin rehacer la suite existente. | Suite nueva aislada; rechazada por duplicar configuración y helpers. |
+| HU-11 — UI | Decisión original: nuevo módulo `shipments` con `shipment-form.js` y `shipment-list.js`, ruta `#/shipments`, botón en la barra lateral y guard mediante `showModule()`. Estado actual: el módulo y la ruta alias se conservan, pero el acceso visible quedó integrado como pestaña «Seguimiento de envíos» en Movimientos según HU-13 (T146–T152). | La decisión original sigue el patrón extremo a extremo de reposiciones y permisos; la integración posterior evita duplicar secciones en el menú reducido sin borrar funcionalidad. | Panel dentro de Movimientos u Órdenes; rechazado en la clarificación 2026-11-23, pero revisitado por HU-13 sin eliminar el módulo interno. |
+| Pruebas | Ampliar pruebas unitarias/de integración de transferencias; añadir `tests/unit/shipments.test.js` y `tests/integration/shipments.test.js`; ajustar el recuento esperado de botones de navegación según la fase, con seis secciones visibles en el estado actual (T146–T152). | Cubre dominio, interfaz, permisos y no mutación sin rehacer la suite existente. | Suite nueva aislada; rechazada por duplicar configuración y helpers. |
 | Datos de demostración | No generar órdenes OV retroactivas ni envíos semilla; la vista puede estar vacía hasta registrar una salida real. | Conserva el historial HC-09 y evita backfill no solicitado. | Sembrar envíos de ejemplo; rechazado por alterar datos operativos previos. |
 
 ### Fuentes de la investigación
@@ -107,4 +107,4 @@ El seguimiento técnico quedó cerrado para T104–T106 y T108–T110 sin rehace
 - `src/storage.js`, `src/domain/orders.js`, `src/domain/replenishments.js`: contrato de persistencia, validación, rollback y transiciones.
 - `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js`, `tests/integration/workspace-shell.test.js`, `tests/unit/orders.test.js`, `tests/integration/orders.test.js`: organización y helpers de prueba.
 
-**Resultado**: todas las decisiones técnicas necesarias para pasar a la Fase 1 están resueltas; no se requiere volver a `/speckit.clarify`.
+**Resultado**: las decisiones técnicas quedaron resueltas y su ejecución se registró en T095–T152; T107 conserva su condición diferida y T136/T145 tienen confirmación manual parcial con criterios pendientes.

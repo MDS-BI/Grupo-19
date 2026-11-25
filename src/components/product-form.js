@@ -1,4 +1,4 @@
-import { loadProductCategories, loadUsers } from '../storage.js';
+import { loadProductCategories } from '../storage.js';
 
 function qs(id){ return document.getElementById(id); }
 
@@ -19,23 +19,6 @@ export function populateProductCategorySelect(){
   if(prev && [...select.options].some(o => o.value === prev)) select.value = prev;
 }
 
-export function populateProductUserSelect(){
-  const select = qs('product-user');
-  const prev = select.value;
-  select.innerHTML = '';
-  const blank = document.createElement('option');
-  blank.value = '';
-  blank.textContent = '-- Selecciona un usuario --';
-  select.appendChild(blank);
-  loadUsers().forEach(u => {
-    const opt = document.createElement('option');
-    opt.value = String(u.user_id);
-    opt.textContent = u.user_name;
-    select.appendChild(opt);
-  });
-  if(prev && [...select.options].some(o => o.value === prev)) select.value = prev;
-}
-
 const ERROR_FIELDS = ['sku', 'productName', 'categoryId', 'salePrice', 'costPrice', 'userId'];
 
 export function clearProductForm(){
@@ -49,7 +32,6 @@ export function clearProductForm(){
   qs('product-unit').value = '';
   qs('product-supplier').value = '';
   qs('product-weight').value = '';
-  qs('product-user').value = '';
   clearProductErrors();
   qs('product-cancel-edit').hidden = true;
   qs('product-submit-button').textContent = 'Guardar';
@@ -70,7 +52,6 @@ export function startProductEdit(product){
   qs('product-unit').value = product.unit_of_measure || '';
   qs('product-supplier').value = product.supplier || '';
   qs('product-weight').value = product.weight ?? '';
-  qs('product-user').value = '';
   clearProductErrors();
   qs('product-cancel-edit').hidden = false;
   qs('product-submit-button').textContent = 'Actualizar';
@@ -86,8 +67,7 @@ export function collectProductPayload(){
     costPrice: qs('product-cost-price').value,
     unitOfMeasure: qs('product-unit').value,
     supplier: qs('product-supplier').value,
-    weight: qs('product-weight').value,
-    userId: qs('product-user').value
+    weight: qs('product-weight').value
   };
 }
 

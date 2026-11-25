@@ -59,7 +59,11 @@ If the configuration is invalid (unknown types, bad keys, transitions referencin
 
 ## Logística e Inventario
 
-On top of the generic Entity/Document base, this feature adds nine dedicated screens reachable from the sidebar: **Productos**, **Bodegas**, **Stock**, **Movimientos**, **Transferencias**, **Seguimiento de envíos**, **Alertas**, **Reposiciones** and **Permisos**. See `specs/002-logistica-inventario/` (`spec.md`, `plan.md`, `data-model.md`, `MER.md`, `contracts/`) for the full specification.
+On top of the generic Entity/Document base, this feature shows six sections in the sidebar: **Productos**, **Bodegas**, **Stock**, **Movimientos**, **Transferencias** and **Alertas**. **Seguimiento de envíos** and **Órdenes** live as Movimientos tabs, **Reposiciones** lives as an Alertas tab, and the permission panel opens from the top bar. See `specs/002-logistica-inventario/` (`spec.md`, `plan.md`, `data-model.md`, `MER.md`, `contracts/`) for the full specification.
+
+**Nota T017 (2026-11-25)**: el formulario de Productos ya no pide "Usuario que registra". `created_by`, `updated_by` y el actor de los cambios de estado se toman del usuario activo de la cabecera; si no es válido, la operación se rechaza.
+
+**Nota HU-12/HU-14 (2026-11-25)**: la navegación base Entidades/Documentos/Búsqueda, los accesos rápidos, Reposiciones y Envíos conservan sus vistas y funciones para no borrar datos existentes, pero quedan ocultos y sin accesos visibles. El menú lateral muestra solo seis secciones, el panel principal solo cuatro indicadores y las secciones integradas usan pestañas; T068 quedó reconciliado y T146–T152 verificados con 34 archivos/304 pruebas y build correcto.
 
 ### Domain layer
 
@@ -77,7 +81,7 @@ On top of the generic Entity/Document base, this feature adds nine dedicated scr
 
 ### Seed catalogs
 
-`PRODUCT_CATEGORIES`, `USERS`, `ROLES` and `ROLE_PERMISSIONS` are preloaded on first boot (no admin screens for them in this iteration). There is no real authentication: the active user is selected in the topbar and its identity is recorded automatically in movements, transfers, shipments and replenishment requests.
+`PRODUCT_CATEGORIES`, `USERS`, `ROLES` and `ROLE_PERMISSIONS` are preloaded on first boot (no admin screens for them in this iteration). There is no real authentication: the active user is selected in the topbar and its identity is recorded automatically in product audit fields, movements, transfers, shipments and replenishment requests.
 
 ### Roles, landings and permissions (HU-08)
 

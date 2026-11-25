@@ -32,7 +32,7 @@ import {
   listReplenishments, replenishmentCounts
 } from './domain/replenishments.js';
 
-import { populateProductCategorySelect, populateProductUserSelect, clearProductForm, startProductEdit, collectProductPayload, showProductErrors } from './components/product-form.js';
+import { populateProductCategorySelect, clearProductForm, startProductEdit, collectProductPayload, showProductErrors } from './components/product-form.js';
 import { renderProductList } from './components/product-list.js';
 import { populateWarehouseResponsableSelect, clearWarehouseForm, startWarehouseEdit, collectWarehousePayload, showWarehouseErrors } from './components/warehouse-form.js';
 import { renderWarehouseList } from './components/warehouse-list.js';
@@ -74,6 +74,11 @@ const VIEWS = {
   replenishments: 'view-replenishments',
   admin: 'view-admin-permissions'
 };
+
+const ALIAS_TO_PARENT = { shipments: 'movements', replenishments: 'alerts' };
+const HIDDEN_LEGACY_MODULES = ['entities', 'documents', 'search'];
+const TAB_DEFAULTS = { movements: 'entries', alerts: 'alerts' };
+const TOP_LEVEL_MODULES = MODULES.filter(moduleName => !ALIAS_TO_PARENT[moduleName]);
 
 let wired = false;
 let activeUser = null;
@@ -121,14 +126,103 @@ function guardAction(action, message){
   return deny(message || 'Acción no permitida para el perfil activo (simulación).');
 }
 
+function tabButtons(parent){
+  return [...document.querySelectorAll(`.tab-button[data-parent="${parent}"]`)];
+}
+
+function tabAllowed(parent, tab){
+  if(parent === 'movements'){
+    return tab === 'shipments' ? currentCanModule('shipments') : currentCanModule('movements');
+  }
+  if(parent === 'alerts'){
+    return tab === 'replenishments' ? currentCanModule('replenishments') : currentCanModule('alerts');
+  }
+  return true;
+}
+
+function defaultTab(parent){
+  const preferred = TAB_DEFAULTS[parent];
+  if(preferred && tabAllowed(parent, preferred)) return preferred;
+  return tabButtons(parent).find(btn => tabAllowed(parent, btn.dataset.tab))?.dataset.tab || null;
+}
+
+function placeMovementForm(tab){
+  const card = document.querySelector('#view-movements .card[aria-labelledby="movement-form-heading"]');
+  const mount = qs(tab === 'exits' ? 'movements-exit-form-mount' : 'movements-entry-form-mount');
+  if(!card || !mount || card.parentElement === mount) return;
+  mount.appendChild(card);
+  const type = qs('movement-type');
+  const value = tab === 'exits' ? 'salida' : 'entrada';
+  if(type && [...type.options].some(option => option.value === value)) type.value = value;
+}
+
+function setParentTabsHidden(parent){
+  document.querySelectorAll(`.tab-panel[aria-labelledby^="tab-${parent}-"]`).forEach(panel => { panel.hidden = true; });
+  tabButtons(parent).forEach(btn => btn.setAttribute('aria-selected', 'false'));
+  if(parent === 'movements'){
+    const view = qs(VIEWS.shipments);
+    if(view) view.hidden = true;
+  }
+  if(parent === 'alerts'){
+    const view = qs(VIEWS.replenishments);
+    if(view) view.hidden = true;
+  }
+}
+
+function activateTab(parent, tab){
+  const buttons = tabButtons(parent);
+  if(!buttons.length) return;
+  if(!tab || !tabAllowed(parent, tab)) tab = defaultTab(parent);
+  if(!tab) return;
+  buttons.forEach(btn => {
+    const allowed = tabAllowed(parent, btn.dataset.tab);
+    btn.hidden = !allowed;
+    btn.disabled = !allowed;
+    btn.setAttribute('aria-hidden', allowed ? 'false' : 'true');
+    btn.setAttribute('aria-selected', String(allowed && btn.dataset.tab === tab));
+  });
+  document.querySelectorAll(`.tab-panel[aria-labelledby^="tab-${parent}-"]`).forEach(panel => {
+    panel.hidden = panel.id !== `${parent}-panel-${tab}`;
+  });
+  if(parent === 'movements'){
+    const view = qs(VIEWS.shipments);
+    if(view) view.hidden = tab !== 'shipments';
+    placeMovementForm(tab);
+  }
+  if(parent === 'alerts'){
+    const view = qs(VIEWS.replenishments);
+    if(view) view.hidden = tab !== 'replenishments';
+  }
+}
+
+function applyTabPermissions(){
+  ['movements', 'alerts'].forEach(parent => {
+    const buttons = tabButtons(parent);
+    const selected = buttons.find(btn => btn.getAttribute('aria-selected') === 'true');
+    if(selected && !tabAllowed(parent, selected.dataset.tab)) activateTab(parent, defaultTab(parent));
+    else if(!selected && buttons.length) activateTab(parent, defaultTab(parent));
+  });
+}
+
 function showModule(name, opts = {}){
   if(!MODULES.includes(name)) name = 'dashboard';
-  if(!guardModuleAccess(name)){
+  const requestedModule = name;
+  const alias = ALIAS_TO_PARENT[requestedModule] ? requestedModule : null;
+  const parent = alias ? ALIAS_TO_PARENT[alias] : requestedModule;
+  const allowed = alias
+    ? guardModuleAccess(parent, { silent: true }) && guardModuleAccess(alias, { silent: true })
+    : guardModuleAccess(parent, { silent: true });
+  if(!allowed){
+    setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).', 'warning');
     name = 'dashboard';
   } else {
     setAccessNotice('');
+    name = parent;
   }
-  MODULES.forEach(m => { const el = qs(VIEWS[m]); if(el) el.hidden = m !== name; });
+  const tab = opts.tab || alias || null;
+  TOP_LEVEL_MODULES.forEach(m => { const el = qs(VIEWS[m]); if(el) el.hidden = m !== name; });
+  if(name !== 'movements') setParentTabsHidden('movements');
+  if(name !== 'alerts') setParentTabsHidden('alerts');
   setActiveModule(name);
 
   if(name === 'dashboard') renderDashboard(getActiveRole(), getActiveUserId());
@@ -155,7 +249,6 @@ function showModule(name, opts = {}){
   }
   if(name === 'products'){
     populateProductCategorySelect();
-    populateProductUserSelect();
     if(opts.newRecord) clearProductForm();
     refreshProducts();
   }
@@ -173,6 +266,8 @@ function showModule(name, opts = {}){
     populateMovementWarehouseSelect();
     populateMovementFilterSelects();
     refreshMovements();
+    activateTab('movements', tab);
+    if(alias === 'shipments') refreshShipments();
   }
   if(name === 'transfers'){
     populateTransferProductSelect();
@@ -180,23 +275,21 @@ function showModule(name, opts = {}){
     populateTransferFilterSelects();
     refreshTransfers();
   }
-  if(name === 'shipments'){
-    refreshShipments();
-  }
   if(name === 'alerts'){
     populateAlertFilterSelects();
     refreshAlerts();
-  }
-  if(name === 'replenishments'){
-    populateReplenishmentProductSelect();
-    populateReplenishmentWarehouseSelect();
-    populateReplenishmentFilterSelects();
-    if(opts.newRecord) clearReplenishmentForm();
-    if(opts.newRecord || opts.focusForm){
-      const quantity = qs('replenishment-quantity');
-      if(quantity) quantity.focus();
+    activateTab('alerts', tab);
+    if(alias === 'replenishments'){
+      populateReplenishmentProductSelect();
+      populateReplenishmentWarehouseSelect();
+      populateReplenishmentFilterSelects();
+      if(opts.newRecord) clearReplenishmentForm();
+      if(opts.newRecord || opts.focusForm){
+        const quantity = qs('replenishment-quantity');
+        if(quantity) quantity.focus();
+      }
+      refreshReplenishments();
     }
-    refreshReplenishments();
   }
   applyPermissionUiState();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -318,10 +411,9 @@ function refreshProducts(){
     },
     onToggleStatus: (p) => {
       if(!guardAction('products.manage', 'Solo el administrador puede activar o inactivar productos.')) return;
-      const userId = qs('product-user').value;
-      if(!userId){ alert('Selecciona un usuario en el formulario para registrar el cambio de estado.'); return; }
+      if(!isValidActiveUser()){ alert('No existe un usuario activo válido para registrar el cambio de estado.'); return; }
       const next = p.status === 'activo' ? 'inactivo' : 'activo';
-      const result = setProductStatus(p.product_id, next, userId);
+      const result = setProductStatus(p.product_id, next, activeUser.user_id);
       if(!result.success) alert(result.error);
       refreshProducts();
     }
@@ -332,8 +424,12 @@ function handleProductSubmit(ev){
   ev.preventDefault();
   if(!guardAction('products.manage', 'Solo el administrador puede crear o modificar productos.')) return;
   if(!guardModuleAccess('products', { silent: true })) return;
+  if(!isValidActiveUser()){
+    showProductErrors({ userId: 'No existe un usuario activo válido para registrar el producto' });
+    return;
+  }
   const id = qs('product-id').value;
-  const payload = collectProductPayload();
+  const payload = { ...collectProductPayload(), userId: activeUser.user_id };
   const result = id ? updateProduct(id, payload) : createProduct(payload);
   showProductErrors(result.errors || {}, result.warnings || {});
   if(!result.success) return;
@@ -424,7 +520,8 @@ function handleMovementSubmit(ev){
   showMovementErrors(result.errors || {});
   if(!result.success) return;
   clearMovementForm();
-  qs('movement-type').value = 'entrada';
+  const activeMovementTab = tabButtons('movements').find(btn => btn.getAttribute('aria-selected') === 'true')?.dataset.tab;
+  qs('movement-type').value = activeMovementTab === 'exits' ? 'salida' : 'entrada';
   refreshMovements();
   refreshStock();
 }
@@ -782,20 +879,17 @@ function applyPermissionUiState(){
   const canShipmentCreate = currentCan('shipments.create');
   const canReplenishmentCreate = currentCan('replenishments.create');
 
-  // Dashboard quick actions: base advanced only for admin
-  [['action-new-entity', 'entities', 'base.manage'], ['action-new-document', 'documents', 'base.manage'], ['action-open-entities', 'entities', 'base.manage'], ['action-find', 'search', 'base.manage']]
-    .forEach(([id, mod, action]) => {
-      const el = qs(id);
-      if(!el) return;
-      const allowed = currentCanModule(mod) && currentCan(action);
-      el.hidden = !allowed;
-      el.disabled = !allowed;
-    });
+  ['action-new-entity', 'action-new-document', 'action-open-entities', 'action-find'].forEach(id => {
+    const el = qs(id);
+    if(!el) return;
+    el.hidden = true;
+    el.disabled = false;
+  });
 
   const baseCard = qs('base-module-card');
-  if(baseCard) baseCard.hidden = !canBase;
+  if(baseCard) baseCard.hidden = true;
   const demoCard = qs('demo-data-card');
-  if(demoCard) demoCard.hidden = !canBase;
+  if(demoCard) demoCard.hidden = true;
 
   // Base advanced forms
   setSectionDisabled('#view-entities .card[aria-labelledby="entity-form-heading"]', !canBase);
@@ -813,6 +907,7 @@ function applyPermissionUiState(){
 
   // Active user selector always available in topbar
   applyNavigationPermissions(role, getActiveUserId());
+  applyTabPermissions();
   refreshActiveUserBadge();
 }
 
@@ -882,15 +977,19 @@ function refreshAfterPermissionChange(changedUserId){
 }
 
 function handleHashChange(){
-  const raw = window.location.hash.replace(/^#\/?/, '').split(/[?/]/)[0];
+  const parts = window.location.hash.replace(/^#\/?/, '').split(/[?/]/);
+  const raw = parts[0];
   if(!raw){
     showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
     return;
   }
   const moduleName = MODULES.includes(raw) ? raw : 'dashboard';
-  const allowed = moduleName === 'admin' ? currentCanAdminPanel() : currentCanModule(moduleName);
+  const alias = ALIAS_TO_PARENT[moduleName] || null;
+  const allowed = !HIDDEN_LEGACY_MODULES.includes(moduleName) && (alias
+    ? guardModuleAccess(alias, { silent: true }) && guardModuleAccess(moduleName, { silent: true })
+    : guardModuleAccess(moduleName, { silent: true }));
   if(allowed){
-    showModule(moduleName);
+    showModule(moduleName, parts[1] ? { tab: parts[1] } : {});
     return;
   }
   showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
@@ -905,6 +1004,21 @@ function wireEvents(){
   });
   const adminNav = qs('nav-admin');
   if(adminNav) adminNav.addEventListener('click', () => showModule('admin'));
+
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const parent = btn.dataset.parent;
+      const tab = btn.dataset.tab;
+      if(!tabAllowed(parent, tab)) return;
+      activateTab(parent, tab);
+      if(parent === 'movements' && tab === 'shipments') refreshShipments();
+      if(parent === 'alerts' && tab === 'replenishments'){
+        populateReplenishmentProductSelect();
+        populateReplenishmentWarehouseSelect();
+        refreshReplenishments();
+      }
+    });
+  });
 
   const dashboardView = qs('view-dashboard');
   if(dashboardView){
