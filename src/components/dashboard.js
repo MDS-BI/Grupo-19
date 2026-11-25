@@ -100,7 +100,7 @@ function renderActivity(movements){
   const container = document.getElementById('dashboard-activity');
   if(!container) return;
   if(movements.length === 0){
-    container.innerHTML = '<div class="mini-empty">Aún no hay movimientos registrados. Registra una entrada o utiliza los datos de demostración.</div>';
+    container.innerHTML = '<div class="mini-empty">Aún no hay movimientos registrados.</div>';
     return;
   }
   const rows = movements.slice(0, 6).map(m => {
@@ -138,7 +138,7 @@ function renderLowStock(alerts){
   const container = document.getElementById('dashboard-low-stock');
   if(!container) return;
   if(alerts.length === 0){
-    container.innerHTML = '<div class="mini-empty mini-empty--ok">Sin alertas de stock mínimo. Todos los productos están sobre su nivel configurado.</div>';
+    container.innerHTML = '<div class="mini-empty mini-empty--ok">No hay alertas de stock mínimo en este momento.</div>';
     return;
   }
   container.innerHTML = alerts.slice(0, 5).map(a => `
@@ -168,7 +168,7 @@ function renderPendingTransfers(transfers){
         <div class="mini-meta">${escapeHtml(t.source_warehouse_name)} <span class="route-arrow">→</span> ${escapeHtml(t.target_warehouse_name)} · ${escapeHtml(t.created_by_name)}</div>
       </div>
       <div class="mini-side">
-        <span class="status-badge status-pending">Pendiente</span>
+        <span class="status-badge status-neutral">Pendiente</span>
         <div class="mini-meta">${formatNumber(t.quantity)} unidades</div>
       </div>
     </div>`).join('');
@@ -188,7 +188,7 @@ function renderPendingReplenishments(requests){
         <div class="mini-meta">${escapeHtml(r.warehouse_name)} · ${escapeHtml(r.created_by_name)}</div>
       </div>
       <div class="mini-side">
-        <span class="status-badge status-pending">Pendiente</span>
+        <span class="status-badge status-neutral">Pendiente</span>
         <div class="mini-meta">${formatNumber(r.quantity)} unidades</div>
       </div>
     </div>`).join('');

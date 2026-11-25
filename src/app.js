@@ -84,10 +84,12 @@ function currentCan(action){ return canPerform(getActiveRole(), action, getActiv
 function currentCanModule(moduleName){ return canAccessModule(getActiveRole(), moduleName, getActiveUserId()); }
 function currentCanAdminPanel(){ return getEffectivePermission(getActiveRole(), 'panel', ADMIN_RESOURCE, getActiveUserId()); }
 
-function setAccessNotice(message = ''){
+function setAccessNotice(message = '', severity = 'info'){
   const el = qs('access-notice');
   if(!el) return;
   if(message){
+    el.classList.remove('notice--info', 'notice--warning', 'notice--error');
+    el.classList.add(`notice--${severity}`);
     el.textContent = message;
     el.hidden = false;
   } else {
@@ -97,7 +99,7 @@ function setAccessNotice(message = ''){
 }
 
 function deny(message = 'No tienes permisos para realizar esta acción con el perfil activo (simulación).'){
-  setAccessNotice(message);
+  setAccessNotice(message, 'warning');
   alert(message);
   return false;
 }
@@ -109,7 +111,7 @@ function guardModuleAccess(moduleName, { silent = false } = {}){
     return true;
   }
   if(!silent){
-    setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).');
+    setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).', 'warning');
   }
   return false;
 }
@@ -735,8 +737,20 @@ function applyLabels(config){
   qs('delete-document').textContent = `Eliminar ${articulo(document_)} ${document_.toLowerCase()} ${seleccionada(document_)}`;
 }
 
+function accentRgb(value){
+  const raw = String(value || '').replace('#', '');
+  const hex = raw.length === 3 ? raw.split('').map(char => char + char).join('') : raw;
+  if(!/^[0-9a-f]{6}$/i.test(hex)) return null;
+  return `${parseInt(hex.slice(0, 2), 16)}, ${parseInt(hex.slice(2, 4), 16)}, ${parseInt(hex.slice(4, 6), 16)}`;
+}
+
 function applyTheme(config){
-  document.documentElement.style.setProperty('--accent', config.theme.accentColor);
+  const root = document.documentElement;
+  const accent = config.theme.accentColor;
+  const rgb = accentRgb(accent);
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--accent-deep', accent);
+  if(rgb) root.style.setProperty('--accent-rgb', rgb);
 }
 
 function showConfigErrors(errors){
@@ -1003,7 +1017,7 @@ export function initApp(resolved){
   clearReplenishmentForm();
   showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
   if(activeUser){
-    setAccessNotice(`Perfil activo (simulación): ${activeUser.user_name} — ${roleLabel(activeUser.role)}. Sin autenticación real ni seguridad.`);
+    setAccessNotice(`Perfil activo (simulación): ${activeUser.user_name} — ${roleLabel(activeUser.role)}. Sin autenticación real ni seguridad.`, 'info');
   }
 }
 

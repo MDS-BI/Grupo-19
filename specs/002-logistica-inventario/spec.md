@@ -2,9 +2,10 @@
 
 **Rama de la funcionalidad**: 002-logistica-inventario  
 **Creada**: 2026-10-29  
-**Estado**: HU-01 a HU-07 implementadas — pendiente de validación final; HU-08 planeada — pendiente de generación de tareas e implementación; HU-09 implementada y verificada — deuda T104–T110 cerrada, T107 diferida
+**Estado**: HU-01 a HU-07 implementadas — pendiente de validación final; HU-08 planeada — pendiente de generación de tareas e implementación; HU-09 implementada y verificada — deuda T104–T110 cerrada, T107 diferida; HU-12 a HU-14 especificadas — pendientes de generación de tareas e implementación
 **Entrada**: Descripción del usuario: "Desarrollar un módulo de Logística e Inventario para gestionar productos, bodegas y existencias, permitiendo registrar entradas y salidas de productos, realizar transferencias entre bodegas y generar alertas de stock mínimo".
 **Ampliación (2026-11-22)**: Descripción del usuario: "Agregar una nueva historia de usuario para la gestión de roles, redirección inicial y control de visibilidad por usuario: asignar y cambiar el cargo de un usuario con una página de inicio por rol; configurar qué módulos, vistas o secciones puede ver cada rol o usuario; mostrar u ocultar menús, rutas y botones según permisos y bloquear el acceso directo por URL a vistas no autorizadas".
+**Ampliación (2026-11-25)**: Descripción del usuario: "Actualiza la spec existente specs/002-logistica-inventario/spec.md (no crees una carpeta nueva) con estos cambios de interfaz: 1) se eliminan de la interfaz Entidades, Documentos y Búsqueda de la plantilla base; el sistema solo muestra Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas; 2) cada sección puede organizarse en pestañas (por ejemplo Movimientos: Entradas / Salidas / Historial); 3) cada sección tiene un único punto de acceso: el menú lateral. El panel principal solo muestra indicadores (productos, bodegas, stock total, alertas) y no repite accesos del menú. Incluye criterios de aceptación para cada uno".
 
 ## Propósito
 
@@ -86,6 +87,18 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Los estados de seguimiento pueden avanzar solo en orden o se puede retroceder a una etapa anterior? → A: Solo avance secuencial: En bodega → En tránsito → En reparto → Entregado; Entregado es final y no admite retrocesos.
 - Q: ¿Dónde deben registrarse y consultarse los envíos con su historial de estados? → A: En una vista dedicada "Seguimiento de envíos", con una entrada en la matriz de permisos de HU-08.
 - Q: ¿La búsqueda de transferencias debe exigir coincidencia exacta o aceptar coincidencias parciales sin distinguir mayúsculas? → A: Coincidencia parcial e insensible a mayúsculas para nombre de producto e identificador de transferencia.
+
+### Session 2026-11-25 — Rediseño de la interfaz de secciones
+
+- Q: ¿Qué ocurre con los requisitos y criterios heredados del módulo base que describen Entidades, Documentos y Búsqueda? → A: Se conservan como contexto de la base y como capacidades de datos, pero quedan sustituidos en la interfaz de 002 por HU-12 a HU-14; no se muestran como secciones, botones ni accesos.
+- Q: ¿Deben eliminarse los buscadores y filtros internos ya definidos en Stock, Alertas, Transferencias y Seguimiento de envíos? → A: No. Se mantienen dentro de su sección; se elimina únicamente el módulo global "Búsqueda" y su acceso rápido desde el panel.
+- Q: ¿El menú lateral incluye una entrada "Panel" además de las seis secciones? → A: No. El menú lateral muestra exclusivamente Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas. El panel principal se alcanza como página de inicio configurada de HU-08 y desde la identidad de marca de la aplicación, sin aparecer como una sección más ni duplicar accesos.
+- Q: ¿Dónde quedan las reposiciones y el seguimiento de envíos si no son secciones del menú? → A: Las reposiciones se gestionan desde Alertas y las órdenes y el seguimiento de envíos desde Movimientos, conservando sus permisos actuales, sin crear nuevas secciones de primer nivel.
+- Q: ¿Son obligatorias las pestañas en todas las secciones? → A: No. Cada sección PUEDE organizarse en pestañas; cuando las use, muestra una pestaña activa por defecto y permanece dentro de la misma sección. En Movimientos, las pestañas mínimas son Entradas, Salidas e Historial.
+- Q: ¿Qué significa el indicador de "stock total" del panel principal? → A: La suma de `quantity_available` de todos los registros vigentes de `STOCK`, incluidos los de productos o bodegas inactivos que se conservan para consulta; se recalcula cada vez que se muestra el panel.
+- Q: ¿Las pestañas pueden otorgar accesos que la matriz de permisos de HU-08 prohíbe? → A: No. Las pestañas respetan FR-124: una pestaña no autorizada se oculta o deshabilita sin bloquear el resto de la sección permitida.
+- Q: ¿Las landing pages de supervisor y encargado que abren Alertas o Movimientos contradicen el acceso único desde el menú? → A: No. Son páginas de inicio configuradas de HU-08, no controles de navegación duplicados; el menú lateral sigue siendo el único punto de acceso visible para esas secciones.
+- Q: ¿"Panel general" y "panel principal" son la misma vista? → A: Sí. "Panel general" es el nombre usado en HU-08 para la vista de indicadores del panel principal; el contenido de ambos es exclusivamente el definido en HU-14.
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
@@ -297,24 +310,77 @@ Como encargado de bodega o supervisor de inventario, quiero registrar y consulta
 
 ---
 
+### Historia de Usuario 12 - Navegación reducida a las secciones de logística (Prioridad: P1)
+
+Como usuario del ERP, quiero que la navegación muestre únicamente las secciones de logística e inventario, para encontrar las operaciones del módulo sin tener que distinguir entre secciones genéricas de la plantilla base.
+
+**Por qué es prioridad**: Define el conjunto completo de destinos de la interfaz y elimina la ambigüedad entre "Entidades/Documentos/Búsqueda" y los conceptos operativos reales del módulo. Sin este cambio, el usuario seguiría viendo accesos que no corresponden al dominio y que compiten con Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas.
+
+**Prueba Independiente**: Se puede probar abriendo la aplicación con cada uno de los tres roles, revisando el menú lateral y comprobando que solo aparecen las seis secciones esperadas; después se intenta abrir una ruta antigua de Entidades, Documentos o Búsqueda y se verifica que no se muestra la sección y que el usuario vuelve a una vista permitida.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** un usuario con permisos abre la aplicación, **cuando** consulta el menú lateral, **entonces** el sistema muestra exclusivamente Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas, sin entradas para Entidades, Documentos ni Búsqueda.
+2. **Dado que** un usuario guardó o teclea una ruta antigua de Entidades, Documentos o Búsqueda, **cuando** intenta abrirla directamente, **entonces** el sistema no muestra esa sección, aplica FR-115 y devuelve al usuario a su página de inicio o a una vista permitida con un mensaje claro.
+3. **Dado que** un usuario necesita localizar una transferencia, **cuando** usa el buscador o los filtros dentro de Transferencias, **entonces** los resultados se muestran en esa sección y no aparece ningún módulo global "Búsqueda" ni un acceso rápido al mismo.
+4. **Dado que** un usuario consulta reposiciones o seguimiento de envíos, **cuando** navega por la aplicación, **entonces** las reposiciones se gestionan desde Alertas y las órdenes y envíos desde Movimientos, sin que aparezcan como secciones adicionales del menú lateral.
+
+---
+
+### Historia de Usuario 13 - Organización opcional de secciones en pestañas (Prioridad: P2)
+
+Como usuario de una sección del módulo, quiero que la sección pueda organizarse en pestañas, para alternar entre vistas relacionadas sin salir del contexto en el que estoy trabajando.
+
+**Por qué es prioridad**: Reduce los cambios de contexto dentro de flujos que ya existen, como registrar entradas, registrar salidas y consultar el historial de movimientos, sin ampliar la navegación ni añadir nuevas secciones al menú.
+
+**Prueba Independiente**: Se puede probar entrando en una sección con pestañas definidas, verificando que una está activa por defecto, cambiando entre ellas y comprobando que el contenido cambia dentro de la misma sección, que los datos no se modifican y que las pestañas no autorizadas permanecen ocultas o deshabilitadas.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** una sección tiene pestañas definidas, **cuando** el usuario entra en ella, **entonces** el sistema muestra una pestaña activa por defecto y las demás pestañas disponibles dentro de esa misma sección.
+2. **Dado que** el usuario está en una sección con pestañas, **cuando** selecciona otra pestaña, **entonces** el sistema cambia el contenido mostrado sin abandonar la sección, sin duplicar accesos en el menú lateral y sin crear, editar ni eliminar datos.
+3. **Dado que** el usuario abre Movimientos, **cuando** consulta sus pestañas, **entonces** encuentra al menos Entradas, Salidas e Historial, y el panel de órdenes de HU-09 y el seguimiento de envíos de HU-11 siguen accesibles desde esa sección sin convertirse en secciones nuevas.
+4. **Dado que** una pestaña no está permitida para el usuario activo, **cuando** consulta la sección, **entonces** esa pestaña se oculta o deshabilita conforme a FR-113, FR-114 y FR-124, mientras el resto de la sección permitida sigue operativo.
+5. **Dado que** un usuario accede directamente por URL a una sección permitida, **cuando** la sección carga, **entonces** el sistema abre su pestaña por defecto; si la sección no está permitida, se aplica FR-115.
+
+---
+
+### Historia de Usuario 14 - Acceso único desde el menú lateral y panel de indicadores (Prioridad: P1)
+
+Como usuario del ERP, quiero que cada sección se abra solo desde el menú lateral y que el panel principal se limite a mostrar indicadores, para tener una puerta de entrada predecible y una visión rápida del estado del inventario sin accesos duplicados.
+
+**Por qué es prioridad**: Evita que el panel principal compita con la navegación y garantiza que cualquier sección tenga un único punto de acceso. Además, convierte el panel en una vista de lectura útil con productos, bodegas, stock total y alertas, en lugar de una lista de botones heredada de la plantilla base.
+
+**Prueba Independiente**: Se puede probar abriendo el panel principal y comprobando que solo muestra los cuatro indicadores y ningún botón o enlace hacia las seis secciones; después se verifica que cada sección se abre únicamente desde el menú lateral y que los indicadores coinciden con los datos vigentes tras registrar productos, bodegas, movimientos o alertas.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** el usuario ve el panel principal, **cuando** revisa su contenido, **entonces** el sistema muestra únicamente indicadores de número de productos, número de bodegas, stock total y alertas activas, sin formularios ni listados operativos.
+2. **Dado que** el usuario ve el panel principal, **cuando** busca acciones rápidas o enlaces a Productos, Bodegas, Stock, Movimientos, Transferencias o Alertas, **entonces** no encuentra ninguno, porque esas secciones no se repiten fuera del menú lateral.
+3. **Dado que** un usuario necesita abrir cualquiera de las seis secciones, **cuando** navega por la aplicación, **entonces** el menú lateral es el único punto de acceso disponible para esa sección, inclusive cuando la barra lateral está contraída conforme a FR-039.
+4. **Dado que** cambia el número de productos, bodegas, registros de stock o alertas activas, **cuando** se vuelve a mostrar el panel principal, **entonces** los cuatro indicadores coinciden con los datos vigentes y el stock total es la suma de `quantity_available` de todos los registros de `STOCK`.
+5. **Dado que** la página de inicio configurada para el cargo es el panel principal, **cuando** se carga la aplicación o cambia el usuario activo, **entonces** se abre ese panel de indicadores sin mostrar primero una pantalla genérica con accesos al menú.
+
+---
+
 ### Casos Límite
 
-- ¿Qué ocurre cuando un usuario intenta guardar una entidad sin nombre o código obligatorio?
-- ¿Cómo gestiona el sistema una búsqueda que no devuelve coincidencias?
-- ¿Qué ocurre si un usuario intenta editar o eliminar una entidad que ya no existe?
-- ¿Qué ocurre cuando un usuario introduce una fecha objetivo que no es una fecha de calendario válida?
-- ¿Qué ocurre con los documentos de una entidad cuando esta se elimina?
-- ¿Qué ocurre cuando un usuario introduce una fecha final anterior a la fecha inicial en un documento?
+- ¿Qué ocurre cuando un usuario intenta guardar un producto o una bodega sin nombre, SKU o ubicación obligatorios?
+- ¿Cómo gestiona el sistema una búsqueda o filtro dentro de una sección que no devuelve coincidencias? (Se muestra un estado vacío en esa sección, sin habilitar un módulo global "Búsqueda").
+- ¿Qué ocurre si un usuario intenta editar un producto o una bodega que ya no existe?
+- ¿Qué ocurre cuando un usuario introduce una fecha de movimiento o transferencia que no es válida? (Las fechas son automáticas; no se acepta entrada manual).
+- ¿Qué ocurre con el stock y el historial de movimientos cuando una bodega se marca como inactiva? (Se conservan para consulta y se inhabilitan operaciones nuevas).
+- ¿Qué ocurre cuando una fecha de vencimiento reservada es anterior a la fecha de movimiento? (El control de vencimientos queda fuera de esta iteración).
 - ¿Qué ocurre cuando la configuración declara un campo personalizado cuya clave choca con un nombre de campo base?
 - ¿Qué ocurre cuando la configuración referencia un tipo de campo desconocido o una definición de transición de ciclo de vida inválida?
 - ¿Qué ocurre cuando los registros almacenados contienen valores de campos personalizados que ya no están declarados en la configuración?
-- ¿Qué ocurre cuando un usuario abre la aplicación directamente en la pantalla de gestión o búsqueda (p. ej., vía enlace profundo o recarga del navegador) sin pasar por el panel de inicio?
-- ¿Qué ocurre cuando un usuario pulsa el botón atrás del navegador estando en la pantalla de gestión o búsqueda?
-- ¿Qué ocurre si un usuario navega fuera de la pantalla de gestión mientras un formulario aún tiene cambios sin guardar?
-- ¿Permanecen intactas las entidades y los documentos al navegar entre el panel, la gestión y la búsqueda?
-- ¿Qué ocurre cuando el panel se abre con cero entidades o cero documentos (valores estadísticos)?
+- ¿Qué ocurre cuando un usuario abre directamente una sección permitida (p. ej., vía enlace profundo o recarga del navegador) sin pasar por el panel principal? (Se abre la sección con su pestaña por defecto conforme a FR-145; si no está permitida, se aplica FR-115).
+- ¿Qué ocurre cuando un usuario pulsa el botón atrás del navegador estando en una sección con pestañas? (Vuelve a la vista o pestaña anterior conservando el contexto de la sección, sin modificar datos).
+- ¿Qué ocurre si un usuario navega fuera de una sección mientras un formulario aún tiene cambios sin guardar? (Se muestra una advertencia antes de salir; los cambios no confirmados no se guardan).
+- ¿Permanecen intactos los datos de productos, bodegas, stock, movimientos, transferencias y alertas al navegar entre secciones? (Sí, conforme a FR-022 y SC-007).
+- ¿Qué ocurre cuando el panel principal se abre con cero productos, cero bodegas, stock total en cero o cero alertas? (Los indicadores muestran 0 y no aparecen accesos adicionales).
 - ¿Qué ocurre cuando el color de acento configurado no es un valor de color válido?
-- ¿Cómo mantiene la barra lateral contraída las etiquetas de módulo accesibles en ventanas gráficas estrechas?
+- ¿Cómo mantiene la barra lateral contraída las etiquetas de las seis secciones accesibles en ventanas gráficas estrechas?
 - ¿Qué ocurre si un administrador intenta modificar el SKU de un producto que ya tiene historial de movimientos (entradas/salidas) asociados? (Se permite editarlo; los movimientos referencian `product_id`, no `sku`, y se revalida la unicidad del nuevo valor).
 - ¿Cómo se advierte al usuario si ingresa un "Precio de Costo" superior al "Precio de Venta"? (Se permite guardar y se muestra una advertencia no bloqueante; no se impide el registro).
 - ¿Qué sucede si un usuario intenta cambiar el estado de un producto a "Inactivo" pero este aún cuenta con stock físico en bodegas? (Se permite el cambio; el stock existente se conserva y se muestra solo para consulta).
@@ -363,53 +429,59 @@ Como encargado de bodega o supervisor de inventario, quiero registrar y consulta
 - ¿Qué ocurre si un usuario sin acceso a Movimientos intenta consultar las órdenes? (No existe una vista propia de órdenes; se aplica el bloqueo de Movimientos de HU-08 y no se muestra el panel).
 - ¿Qué ocurre si se elimina o se intenta editar un movimiento que ya generó una orden? (El movimiento sigue siendo inmutable y la orden conserva el vínculo con él).
 - ¿Qué ocurre si se intenta retroceder el estado de un envío o modificar uno ya entregado? (Se rechaza el cambio; solo se permite avanzar a la etapa secuencial siguiente y Entregado es final).
+- ¿Qué ocurre si un usuario abre una URL antigua de Entidades, Documentos o Búsqueda? (La sección no se muestra, se aplica FR-115 y se devuelve al usuario a una vista permitida).
+- ¿Qué ocurre si una sección define una sola pestaña o ninguna? (Se muestra sin pestañas o con esa única pestaña activa, sin afectar al menú lateral).
+- ¿Qué ocurre si una pestaña no tiene registros que mostrar? (Se muestra un estado vacío dentro de la sección, sin crear accesos adicionales).
+- ¿Qué ocurre si la matriz de permisos oculta todas las pestañas de una sección permitida? (La sección se abre con un estado vacío y un mensaje claro, sin bloquear otras secciones).
+- ¿Qué ocurre si cambian productos, bodegas, stock o alertas mientras el panel principal está abierto? (Los indicadores se recalculan cuando el panel vuelve a mostrarse; la consulta no modifica datos).
+- ¿Qué ocurre si el stock total del panel incluye productos o bodegas inactivos? (Se incluyen porque sus registros de `STOCK` siguen vigentes para consulta, coherente con FR-052 y FR-090).
 
 ## Requisitos *(obligatorio)*
 
 ### Requisitos Funcionales
 
-> **Nota de alcance 002**: FR-001–FR-039 se conservan como requisitos heredados del módulo base (`specs/001-erp-base-module/spec.md`) y no se reimplementan en esta funcionalidad. El alcance específico de Logística e Inventario comienza en FR-040. Los FR específicos de HU-06 y HU-07 se documentan dentro de sus respectivas historias y en `data-model.md`/`contracts/`.
+> **Nota de alcance 002**: FR-001–FR-039 se conservan como requisitos heredados del módulo base (`specs/001-erp-base-module/spec.md`) y no se reimplementan en esta funcionalidad. El alcance específico de Logística e Inventario comienza en FR-040. Los FR específicos de HU-06 y HU-07 se documentan dentro de sus respectivas historias y en `data-model.md`/`contracts/`. Los requisitos de interfaz FR-010 y FR-012–FR-035 quedan sustituidos para 002 por HU-12 a HU-14 y por FR-135–FR-147; se mantienen numerados y actualizados para reflejar la interfaz vigente, no como secciones heredadas visibles. FR-001–FR-009 y FR-022–FR-032 describen capacidades de datos del módulo base: en 002 se aplican a las entidades del dominio y NO se exponen como CRUD genérico ni como secciones Entidad, Documento o Búsqueda.
 
-- **FR-001**: El sistema DEBE permitir a los usuarios crear un registro de entidad con al menos un nombre y un código.
-- **FR-002**: El sistema DEBE permitir a los usuarios editar los detalles de un registro de entidad existente.
-- **FR-003**: El sistema DEBE permitir a los usuarios eliminar un registro de entidad existente.
-- **FR-004**: El sistema DEBE permitir a los usuarios buscar registros de entidad por nombre, código, categoría u otras palabras clave descriptivas.
-- **FR-005**: El sistema DEBE mostrar una lista clara de entidades e indicar cuándo ningún resultado coincide con una búsqueda.
+- **FR-001**: El módulo base DEBE permitir almacenar registros con al menos un nombre y un código; en 002 esta capacidad se aplica a productos, bodegas y demás entidades del dominio, sin mostrar una sección "Entidades".
+- **FR-002**: El módulo base DEBE permitir modificar registros existentes; en 002 las modificaciones visibles se realizan desde las secciones Productos, Bodegas, Movimientos, Transferencias y Alertas que correspondan.
+- **FR-003**: El módulo base DEBE permitir dar de baja registros; en 002 NO se ofrece una acción genérica de eliminación de entidades o documentos, y las bajas se gestionan con los estados definidos en cada dominio.
+- **FR-004**: El sistema DEBE permitir a los usuarios buscar registros dentro de las secciones visibles por nombre, código, categoría u otras palabras clave descriptivas propias de cada sección, sin habilitar una búsqueda global.
+- **FR-005**: El sistema DEBE mostrar listas claras y estados vacíos dentro de cada sección; NO DEBE mostrar una lista genérica de entidades.
 - **FR-006**: El sistema DEBE presentar retroalimentación clara cuando falta información obligatoria o no se puede completar una acción.
-- **FR-007**: El sistema DEBE mantener los datos de entidad consistentes tras operaciones de creación, edición y eliminación.
-- **FR-008**: El sistema DEBE permitir a los usuarios añadir, editar y eliminar detalles de documentos de una entidad.
-- **FR-009**: El sistema DEBE asociar cada documento exactamente a una entidad y eliminar los documentos asociados cuando la entidad se elimina.
-- **FR-010**: El sistema DEBE mostrar un panel de inicio como vista inicial, con botones de acción rápida claramente etiquetados para las tareas ERP clave.
+- **FR-007**: El sistema DEBE mantener consistentes los datos de productos, bodegas, stock, movimientos, transferencias y alertas tras cada operación.
+- **FR-008**: El módulo base DEBE permitir gestionar detalles de documentos como capacidad de datos; en 002 NO se expone una sección "Documentos": las operaciones se realizan en Transferencias, Alertas y Movimientos.
+- **FR-009**: El módulo base DEBE conservar la integridad entre registros relacionados; en 002 esta capacidad se manifiesta en las relaciones entre transferencias, reposiciones, órdenes, envíos y sus entidades de origen, sin una sección genérica.
+- **FR-010**: El sistema DEBE mostrar un panel principal compuesto exclusivamente por indicadores de productos, bodegas, stock total y alertas activas, sin botones de acción rápida ni enlaces a secciones; este panel se usa como página de inicio cuando la configuración de HU-08 así lo define, sin imponerse como única vista inicial para todos los roles.
 - **FR-011**: El sistema DEBE envolver cada pantalla en un marco de espacio de trabajo persistente compuesto por una barra superior con marca y una barra lateral de navegación de módulos.
-- **FR-012**: La barra lateral DEBE proporcionar botones de módulo para Panel, Entidades, Documentos y Buscar, etiquetados desde la configuración del módulo.
-- **FR-013**: El botón de módulo Entidades DEBE mostrar el contenido de gestión de entidades.
-- **FR-014**: El botón de módulo Documentos DEBE mostrar el contenido de gestión de documentos en la pantalla de gestión.
-- **FR-015**: El botón de módulo Panel DEBE devolver al usuario al panel de inicio.
-- **FR-016**: La pantalla de gestión NO DEBE mostrar la lista de entidades.
-- **FR-017**: La pantalla de gestión DEBE proporcionar la funcionalidad de crear, editar y eliminar entidades.
-- **FR-018**: La pantalla de gestión DEBE proporcionar la funcionalidad de crear, editar y eliminar documentos.
-- **FR-019**: El sistema DEBE navegar a una pantalla de búsqueda dedicada cuando se selecciona el botón Buscar en la barra lateral.
-- **FR-020**: La pantalla de búsqueda DEBE permitir buscar entidades por nombre, código, categoría, descripción o fecha objetivo.
-- **FR-021**: La pantalla de búsqueda DEBE ser accesible tanto desde la barra lateral como desde la acción rápida de buscar registros del panel.
-- **FR-022**: El sistema DEBE mantener los datos de entidades y documentos intactos y consistentes durante la navegación entre pantallas.
+- **FR-012**: La barra lateral DEBE mostrar exclusivamente las secciones Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas, y NO DEBE mostrar Entidades, Documentos ni Búsqueda.
+- **FR-013**: La interfaz NO DEBE mostrar una sección "Entidades" ni acciones para crear, editar o eliminar entidades genéricas; esas capacidades de la base quedan fuera de la navegación de 002.
+- **FR-014**: La interfaz NO DEBE mostrar una sección "Documentos" ni acciones para gestionar documentos genéricos; las operaciones operativas permanecen en sus secciones de logística.
+- **FR-015**: El acceso al panel principal NO DEBE realizarse mediante un botón de la barra lateral; el panel se alcanza como página de inicio configurada de HU-08 y desde la identidad de marca de la aplicación.
+- **FR-016**: La interfaz NO DEBE incluir una pantalla de gestión genérica de entidades.
+- **FR-017**: El alta, la edición y el cambio de estado de productos y bodegas DEBEN realizarse desde las secciones Productos y Bodegas del menú lateral, conforme a HU-01 y HU-04.
+- **FR-018**: Las operaciones antes agrupadas como documentos DEBEN consultarse y gestionarse desde Transferencias, Alertas y Movimientos, sin una sección "Documentos".
+- **FR-019**: El sistema NO DEBE incluir una pantalla de búsqueda dedicada ni un botón "Buscar" en el menú lateral.
+- **FR-020**: La búsqueda y los filtros DEBEN permanecer integrados en las secciones que los definen —Stock, Alertas, Transferencias, Movimientos y Seguimiento de envíos— sin constituir una sección propia.
+- **FR-021**: El acceso a cualquier búsqueda o filtro DEBE realizarse desde la sección a la que pertenece, sin accesos rápidos desde el panel principal.
+- **FR-022**: El sistema DEBE mantener los datos de productos, bodegas, stock, movimientos, transferencias y alertas intactos y consistentes durante la navegación entre secciones.
 - **FR-023**: El sistema DEBE cargar la configuración del módulo al arrancar y aplicarla en todas las pantallas.
-- **FR-024**: El sistema DEBE retroceder a los valores predeterminados integrados (terminología Entidad/Documento, sin campos personalizados, sin ciclo de vida) cuando no se proporciona configuración.
+- **FR-024**: El sistema DEBE retroceder a los valores predeterminados integrados cuando no se proporciona configuración, sin reintroducir las secciones Entidad, Documento ni Búsqueda en la navegación de 002.
 - **FR-025**: El sistema DEBE informar claramente de una configuración inválida o conflictiva en lugar de fallar silenciosamente.
 - **FR-026**: El sistema DEBE mostrar los campos personalizados declarados en los formularios de creación/edición con tipos de entrada que coincidan con sus tipos declarados.
 - **FR-027**: El sistema DEBE validar los valores de campos personalizados, incluidos los obligatorios, antes de guardar, usando la misma experiencia de retroalimentación que la validación base.
-- **FR-028**: El sistema DEBE incluir los valores de campos personalizados en los resultados de búsqueda y mostrarlos en listas y vistas de detalle.
+- **FR-028**: El sistema DEBE incluir los valores de campos personalizados en los resultados de búsqueda de cada sección y mostrarlos en listas y vistas de detalle, sin habilitar una búsqueda global.
 - **FR-029**: El sistema DEBE derivar todas las etiquetas visibles para el usuario de la configuración del módulo en lugar de texto fijo en el código.
 - **FR-030**: El sistema DEBE aplicar las transiciones de estado configuradas en los documentos independientemente de cómo se envíe un cambio.
 - **FR-031**: El sistema DEBE mantener el estado del documento como texto libre cuando no hay ciclo de vida configurado.
-- **FR-032**: El sistema DEBE mantener el renderizado de listas y la búsqueda ágiles y correctos para conjuntos de datos de al menos 500 registros de entidad.
-- **FR-033**: El panel DEBE ofrecer al menos cuatro botones de acción rápida: nueva entidad, nuevo documento, abrir gestión de entidades y buscar registros.
-- **FR-034**: Activar la acción rápida de nueva entidad o nuevo documento DEBE abrir el área de gestión correspondiente con un formulario vacío listo para introducir datos.
-- **FR-035**: El panel DEBE mostrar tarjetas de estadísticas con el número de entidades y documentos almacenados, actualizadas cada vez que se muestra el panel.
+- **FR-032**: El sistema DEBE mantener el renderizado de listas y la búsqueda ágiles y correctos para conjuntos de datos de al menos 500 registros por sección.
+- **FR-033**: El panel principal NO DEBE ofrecer botones de acción rápida ni abrir formularios de ninguna de las seis secciones del menú lateral.
+- **FR-034**: El panel principal NO DEBE enlazar con formularios vacíos ni con áreas de gestión de las secciones; su contenido se limita a la lectura de indicadores.
+- **FR-035**: El panel principal DEBE mostrar indicadores de número de productos, número de bodegas, stock total y alertas activas, actualizados cada vez que se muestra el panel.
 - **FR-036**: La barra superior DEBE mostrar un logotipo derivado del nombre del módulo junto con el nombre del módulo configurado en cada pantalla.
 - **FR-037**: La barra lateral DEBE resaltar visualmente el módulo activo en cada pantalla.
 - **FR-038**: La configuración PUEDE definir un color de acento; el sistema DEBE aplicarlo consistentemente en todo el marco y retroceder de forma segura a los valores integrados cuando esté ausente o sea inválido.
 - **FR-039**: En ventanas gráficas estrechas, la barra lateral DEBE contraerse a una columna de iconos manteniéndose operable.
-- **FR-040**: El sistema DEBE permitir el registro de productos requiriendo como mínimo: Nombre, SKU (Código de Referencia Único), Precio de Venta, Categoría y Estado.
+- **FR-040**: El sistema DEBE permitir el registro de productos requiriendo como mínimo: Nombre, SKU (Código de Referencia Único), Precio de Venta y Categoría; el Estado se asigna automáticamente conforme a FR-091 y NO se solicita en el formulario de creación.
 - **FR-041**: El sistema DEBE permitir añadir campos opcionales como: Descripción, Precio de Costo, Proveedor y Unidad de Medida.
 - **FR-042**: El sistema DEBE garantizar que el campo SKU sea único en todo el catálogo de productos.
 - **FR-043**: El sistema DEBE validar que los valores numéricos ingresados en "Precio de Venta" y "Precio de Costo" sean mayores o iguales a 0.
@@ -504,6 +576,19 @@ Como encargado de bodega o supervisor de inventario, quiero registrar y consulta
 - **FR-132**: El sistema DEBE permitir actualizar el estado de un envío solo a la etapa secuencial siguiente (En bodega → En tránsito → En reparto → Entregado) y DEBE rechazar retrocesos o cambios posteriores al estado Entregado.
 - **FR-133**: El sistema DEBE ofrecer una vista "Seguimiento de envíos" para registrar, consultar y actualizar envíos y su historial, con una entrada en la matriz de permisos de HU-08 sujeta a FR-113, FR-114, FR-115 y FR-124.
 - **FR-134**: El sistema DEBE buscar transferencias por nombre de producto o identificador de transferencia usando coincidencia parcial e insensible a mayúsculas.
+- **FR-135**: El menú lateral DEBE mostrar exclusivamente las secciones Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas como conjunto completo de destinos de navegación del menú lateral; el panel principal y el panel de administración de permisos quedan fuera de ese conjunto. El panel de administración de permisos DEBE abrirse desde un ícono en la barra superior, visible solo para el rol `administrador`.
+- **FR-136**: El sistema NO DEBE exponer Entidades, Documentos ni Búsqueda como sección, botón, acción rápida ni ruta utilizable en la interfaz de 002; las capacidades de datos de la plantilla base permanecen fuera de la navegación.
+- **FR-137**: Los buscadores y filtros definidos en Stock, Alertas, Transferencias, Movimientos y Seguimiento de envíos DEBEN operar dentro de su sección y NO DEBEN constituir un módulo global "Búsqueda".
+- **FR-138**: Cada una de las seis secciones DEBE tener un único punto de acceso: el menú lateral; ningún otro elemento de la interfaz DEBE abrir esas secciones por duplicado.
+- **FR-139**: El panel principal DEBE contener solo indicadores de número de productos, número de bodegas, stock total y alertas activas; NO DEBE incluir botones, enlaces ni tarjetas que dirijan a las secciones del menú.
+- **FR-140**: El indicador de stock total del panel DEBE corresponder a la suma de `quantity_available` de todos los registros vigentes de `STOCK` y DEBE recalcularse cada vez que se muestra el panel, sin modificar los datos consultados.
+- **FR-141**: El sistema DEBE permitir organizar cada sección en pestañas; cuando una sección las utilice, DEBE mostrar una pestaña activa por defecto y permitir cambiar de pestaña sin salir de la sección ni alterar datos.
+- **FR-142**: La sección Movimientos DEBE ofrecer al menos las pestañas Entradas, Salidas, Historial, Órdenes y Seguimiento de envíos; el panel de órdenes de HU-09 y el seguimiento de envíos de HU-11 DEBEN mostrarse como pestañas dentro de Movimientos, sin crear secciones nuevas en el menú lateral.
+- **FR-143**: Las pestañas NO DEBEN crear puntos de acceso adicionales a otras secciones ni repetir las entradas del menú lateral.
+- **FR-144**: La visibilidad de las pestañas DEBE respetar la matriz de permisos de HU-08 y FR-124; una pestaña no autorizada se oculta o deshabilita sin bloquear el resto de la sección permitida.
+- **FR-145**: El acceso directo por URL a una sección permitida DEBE abrir su pestaña por defecto sin constituir un acceso visible en la interfaz ni sustituir al menú lateral; el acceso a una sección no autorizada se rige por FR-115.
+- **FR-146**: Cuando la barra lateral se contraiga conforme a FR-039, las seis secciones DEBEN seguir accesibles desde ella y el panel principal NO DEBE compensar con accesos adicionales.
+- **FR-147**: Las solicitudes de reposición de HU-07 DEBEN gestionarse desde Alertas y el seguimiento de envíos de HU-11 desde Movimientos, conservando sus permisos vigentes y sin aparecer como secciones de primer nivel.
 
 **Correspondencia de campos HU-09**: `movement_id` en esta especificación equivale a `transaction_id` en la persistencia; los valores `OC`/`OV` se expresan en `order_id` y `order_type` adopta `adquisicion`/`venta` en la implementación, sin renombrar campos persistidos.
 
@@ -518,6 +603,8 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **XR-005**: Remarcar el espacio de trabajo —nombre del módulo, logotipo derivado y color de acento— únicamente mediante configuración.
 
 ### Entidades Clave *(incluir si la funcionalidad implica datos)*
+
+> Nota 2026-11-25: "Entidad" y "Documento" NO SON secciones ni conceptos visibles en la interfaz de 002 (HU-12). Permanecen como términos del módulo base en XR-001–XR-005 y en `ModuleConfig`; las entidades listadas a continuación sustentan las seis secciones visibles del menú lateral.
 
 - **Producto (`PRODUCTS`)**: Artículo físico o bien gestionado en el inventario. Atributos clave: `product_id`, `sku` (único), `product_name`, `description`, `category_id` (FK a `PRODUCT_CATEGORIES`), `sale_price`, `cost_price`, `unit_of_measure`, `status` (activo/inactivo), `supplier`, dimensiones, `weight`, `created_at`, `updated_at`, `created_by` y `updated_by` para auditoría. `unit_price` se conserva solo como campo de compatibilidad con la plantilla base, sin reglas de negocio.
 - **Categoría de Producto (`PRODUCT_CATEGORIES`)**: Catálogo semilla que clasifica los productos. Atributos clave: `category_id` y `category_name` (obligatorio, no vacío).
@@ -538,16 +625,16 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 
 ### Resultados Medibles
 
-- **SC-001**: Los usuarios pueden crear una nueva entidad y verla en la lista en menos de 2 minutos.
-- **SC-002**: Los usuarios pueden encontrar una entidad existente mediante la búsqueda en menos de 10 segundos tras introducir un término relevante.
-- **SC-003**: Al menos el 90% de los usuarios de prueba pueden completar tareas de crear, editar, eliminar y buscar sin ayuda.
-- **SC-004**: El sistema sigue siendo utilizable para un conjunto de datos de al menos 500 registros de entidad sin pérdida de funcionalidad central.
-- **SC-005**: Un usuario puede alcanzar las pantallas de gestión y búsqueda desde el panel o la barra lateral en menos de 10 segundos en el primer uso.
-- **SC-006**: Toda la funcionalidad existente de gestión de entidades y documentos sigue operativa tras el rediseño del marco ERP y el panel (sin regresiones).
-- **SC-007**: Los usuarios pueden navegar entre las pantallas de panel, gestión y búsqueda sin perder ninguna entidad ni documento almacenado.
+- **SC-001**: Los usuarios pueden identificar y abrir cada una de las seis secciones desde el menú lateral en menos de 5 segundos en el primer uso.
+- **SC-002**: El 100% de las revisiones de la interfaz confirma que no aparecen Entidades, Documentos ni Búsqueda como sección, botón ni acceso rápido.
+- **SC-003**: Al menos el 90% de los usuarios de prueba encuentra la sección correcta usando solo el menú lateral, sin ayuda.
+- **SC-004**: El sistema sigue siendo utilizable para un conjunto de datos de al menos 500 registros por sección sin pérdida de funcionalidad central.
+- **SC-005**: Un usuario puede alcanzar cualquier sección desde el menú lateral en menos de 10 segundos en el primer uso.
+- **SC-006**: Toda la funcionalidad operativa existente de productos, bodegas, stock, movimientos, transferencias, alertas, reposiciones, órdenes y envíos sigue operativa tras el rediseño de la interfaz (sin regresiones).
+- **SC-007**: Los usuarios pueden navegar entre las seis secciones sin perder ningún dato de productos, bodegas, stock, movimientos, transferencias ni alertas.
 - **SC-008**: Un desarrollador puede producir un módulo adaptado usando solo el archivo de configuración, con cero modificaciones en archivos fuente centrales.
 - **SC-009**: Cada pantalla presenta el mismo marco con marca, y los usuarios pueden identificar en qué módulo están de un vistazo.
-- **SC-010**: Las estadísticas de registros mostradas en el panel siempre coinciden con el número de entidades y documentos almacenados.
+- **SC-010**: Los indicadores del panel siempre coinciden con los registros vigentes de productos, bodegas, stock total y alertas activas cada vez que se muestra el panel.
 - **SC-011**: Los usuarios administradores pueden registrar un nuevo producto sin errores de navegación en menos de 1 minuto.
 - **SC-012**: El sistema detecta y bloquea los intentos de duplicación de SKU en menos de 1 segundo tras la solicitud de guardado, manteniendo la sesión operativa.
 - **SC-013**: Las modificaciones realizadas a un producto se reflejan en el listado general inmediatamente, sin acciones adicionales del usuario.
@@ -592,13 +679,22 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **SC-052**: El 100% de las búsquedas HU-10 por nombre de producto o identificador de transferencia devuelve solo coincidencias parciales e insensibles a mayúsculas, conservando la ordenación por `transfer_id` descendente y los nombres enriquecidos; se verifica con `tests/unit/transfers.test.js`.
 - **SC-053**: El 100% de los filtros HU-10 por estado, producto, bodega de origen y bodega de destino, aplicados por separado y en combinación con el buscador, devuelve la intersección correcta y actualiza el contador; se verifica con `tests/unit/transfers.test.js` y `tests/integration/transfers.test.js`.
 - **SC-054**: El 100% de las combinaciones de búsqueda y filtros HU-10 sin coincidencias muestra `transfer-list-empty`, y el 100% de las limpiezas restaura el listado completo por defecto; se verifica con `tests/integration/transfers.test.js`.
-- **SC-055**: El 0% de las consultas HU-10 modifica transferencias, stock, movimientos o catálogos, y el panel general conserva el listado sin filtros; se verifica con `tests/unit/transfers.test.js` y `tests/integration/transfers.test.js`.
+- **SC-055**: El 0% de las consultas HU-10 modifica transferencias, stock, movimientos o catálogos, y la sección Transferencias conserva el listado sin filtros al limpiarlos; se verifica con `tests/unit/transfers.test.js` y `tests/integration/transfers.test.js`.
 - **SC-056**: El 100% de las órdenes `OV` existentes puede registrar como máximo un envío HU-11, el 100% de los intentos con `OC` o con una `OV` ya vinculada se rechaza y el 0% de estos registros crea movimientos de inventario; se verifica con `tests/unit/shipments.test.js`.
 - **SC-057**: El 100% de los envíos HU-11 rechaza transportista, código de seguimiento, usuario creador o actor vacíos o inválidos y estados fuera de `en_bodega`, `en_transito`, `en_reparto` o `entregado`, sin persistir registros parciales; se verifica con `tests/unit/storage.test.js` y `tests/unit/shipments.test.js`.
 - **SC-058**: El 100% de los avances HU-11 permitidos agrega un evento `history` con `changed_at` ISO y `changed_by` válido, y el 100% de retrocesos, saltos, repeticiones y cambios desde `entregado` se rechaza; se verifica con `tests/unit/shipments.test.js` y `tests/integration/shipments.test.js`.
 - **SC-059**: El 100% de las búsquedas HU-11 por identificador de OV, código de seguimiento o estado devuelve los envíos correctos, con etiquetas visibles para los cuatro estados y su historial; se verifica con `tests/unit/shipments.test.js` y `tests/integration/shipments.test.js`.
 - **SC-060**: El 100% de la navegación, acceso directo `#/shipments` y acciones de registro o avance HU-11 respeta `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status` bajo FR-113, FR-114, FR-115 y FR-124; se verifica con `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` y `tests/integration/workspace-shell.test.js`.
 - **SC-061**: El 100% de las operaciones HU-11 persiste envíos e historial bajo `logistics:shipments` tras recarga, sin modificar stock, movimientos ni órdenes, y sin conexiones automáticas con servicios de transportistas; se verifica con `tests/integration/shipments.test.js` y la validación manual de `quickstart.md`.
+- **SC-062**: El 100% de las sesiones de los tres roles muestra exactamente las seis secciones Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas en el menú lateral, con 0% de apariciones de Entidades, Documentos o Búsqueda.
+- **SC-063**: El 100% de las aperturas de sección se realiza desde el menú lateral y el panel principal contiene 0 enlaces o botones hacia esas secciones.
+- **SC-064**: Al menos el 95% de los usuarios de prueba localiza la sección requerida sin ayuda y en menos de 5 segundos usando únicamente el menú lateral.
+- **SC-065**: El 100% de las veces que se muestra el panel principal, sus cuatro indicadores coinciden con los datos vigentes y el stock total es exactamente la suma de `quantity_available` de todos los registros de `STOCK`.
+- **SC-066**: El 100% de los cambios de pestaña dentro de una sección modifica solo el contenido mostrado, sin salir de la sección, sin duplicar accesos y sin alterar datos; el 0% de los cambios genera registros nuevos.
+- **SC-067**: El 100% de las visitas a Movimientos muestra las pestañas Entradas, Salidas, Historial, Órdenes y Seguimiento de envíos, con las órdenes y el seguimiento de envíos dentro de Movimientos y sin que aparezcan secciones nuevas en el menú lateral.
+- **SC-068**: El 100% de las pestañas no autorizadas permanece oculto o deshabilitado mientras el resto de la sección permitida sigue operativo.
+- **SC-069**: El 0% de los accesos directos por URL a secciones no autorizadas se abre; el 100% se bloquea con mensaje claro conforme a FR-115.
+- **SC-070**: Con la barra lateral contraída, el 100% de las seis secciones sigue siendo accesible y el panel principal mantiene 0 accesos adicionales.
 
 ## Trazabilidad de Implementación
 
@@ -613,8 +709,11 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 | HU-07 Solicitudes de Reposición | Implementada con atomicidad pendiente (T083) | `src/domain/replenishments.js`, `src/domain/permissions.js` | `tests/unit/replenishments.test.js`, `tests/integration/replenishments.test.js` | T069–T080 |
 | HU-08 Gestión de Roles, Redirección Inicial y Control de Visibilidad | Planeada — pendiente de implementación | `src/domain/permissions.js`, `src/components/permissions-panel.js` | `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` (por generar en `/speckit.tasks`) | Por definir en `/speckit.tasks` |
 | HU-09 Gestión de órdenes de adquisición y venta | Implementada y verificada; T104–T110 completados, T107 diferida | `src/domain/orders.js`, `src/domain/movements.js`, `src/storage.js`, `src/components/order-list.js`, `src/components/movement-form.js`, `src/app.js`, `index.html` | `tests/unit/orders.test.js`, `tests/unit/storage.test.js`, `tests/integration/orders.test.js` | T095–T110 (T107 diferida) |
-| HU-10 Buscador y filtros para transferencias entre bodegas | Planeada — pendiente de implementación | `src/domain/transfers.js`, `src/components/transfer-list.js`, `src/app.js` | `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js` | T111–T118 |
-| HU-11 Seguimiento de envíos al comprador | Planeada — pendiente de implementación | `src/storage.js`, `src/domain/shipments.js`, `src/domain/seed.js`, `src/domain/permissions.js`, `src/components/shipment-form.js`, `src/components/shipment-list.js`, `src/app.js` | `tests/unit/storage.test.js`, `tests/unit/shipments.test.js`, `tests/unit/permissions.test.js`, `tests/integration/shipments.test.js`, `tests/integration/permissions.test.js`, `tests/integration/workspace-shell.test.js` | T119–T137 |
+| HU-10 Buscador y filtros para transferencias entre bodegas | Implementada | `src/domain/transfers.js`, `src/components/transfer-list.js`, `src/app.js` | `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js` | T111–T118 |
+| HU-11 Seguimiento de envíos al comprador | Implementada | `src/storage.js`, `src/domain/shipments.js`, `src/domain/seed.js`, `src/domain/permissions.js`, `src/components/shipment-form.js`, `src/components/shipment-list.js`, `src/app.js` | `tests/unit/storage.test.js`, `tests/unit/shipments.test.js`, `tests/unit/permissions.test.js`, `tests/integration/shipments.test.js`, `tests/integration/permissions.test.js`, `tests/integration/workspace-shell.test.js` | T119–T137 |
+| HU-12 Navegación reducida a las secciones de logística | Especificada — pendiente de generación de tareas e implementación | Por definir en `/speckit.plan` | Por definir en `/speckit.plan` | Por definir en `/speckit.tasks` |
+| HU-13 Organización opcional de secciones en pestañas | Especificada — pendiente de generación de tareas e implementación | Por definir en `/speckit.plan` | Por definir en `/speckit.plan` | Por definir en `/speckit.tasks` |
+| HU-14 Acceso único desde el menú lateral y panel de indicadores | Especificada — pendiente de generación de tareas e implementación | Por definir en `/speckit.plan` | Por definir en `/speckit.plan` | Por definir en `/speckit.tasks` |
 
 La ejecución completa de la suite en esta edición quedó registrada como T110; T066 conserva su evidencia histórica de 2026-11-22.
 
@@ -624,9 +723,9 @@ La ejecución completa de la suite en esta edición quedó registrada como T110;
 - La adaptación a un módulo específico se realiza mediante un archivo de configuración del módulo en lugar de editando archivos fuente centrales.
 - Cada entidad incluye información básica suficiente para identificación y seguimiento; los módulos personalizados aportan los campos específicos del dominio.
 - La versión inicial se centra en la gestión central de datos maestros y documentos en lugar de capacidades ERP avanzadas como flujos de aprobación, períodos de contabilización o informes.
-- La búsqueda se realiza sobre los registros de entidad almacenados.
-- La pantalla de gestión consolida los formularios de añadir/editar entidad y añadir/editar documento en una sola pantalla de gestión.
-- La navegación entre áreas ocurre mediante una barra lateral persistente; la pantalla de gestión aloja ambos paneles de gestión y no muestra la lista de entidades.
+- La búsqueda se realiza sobre los registros de la sección en la que se aplica, no sobre un índice global de entidades.
+- Los formularios de alta y edición se integran en las secciones Productos, Bodegas, Movimientos, Transferencias y Alertas según corresponda; no existe una pantalla de gestión genérica.
+- La navegación entre áreas ocurre mediante una barra lateral persistente con las seis secciones de logística; el panel principal solo muestra indicadores y no aloja formularios ni listados operativos.
 - El logotipo se genera como un monograma SVG en línea derivado del nombre del módulo; no se requieren recursos de imagen externos.
 - Se puede configurar un color de acento opcional para la marca; el resto de la paleta base permanece fija.
 - Solo se muestra una pantalla a la vez; no hay diseño lado a lado del contenido de gestión y búsqueda.
@@ -662,6 +761,15 @@ La ejecución completa de la suite en esta edición quedó registrada como T110;
 - Cada rol tiene una página de inicio por defecto (administrador → Panel general, supervisor_inventario → Alertas/Control de Stock, encargado_bodega → Movimientos/Control de Stock) que el administrador puede redefinir.
 - La visibilidad por módulo, vista o sección se configura con una matriz por rol y se ajusta con excepciones individuales por usuario, que prevalecen sobre el rol.
 - El control de visibilidad, el ocultamiento de navegación y el bloqueo de acceso directo por URL son mecanismos de interfaz dentro del modelo de roles simulados; no constituyen seguridad real y la autenticación/autorización reales quedan fuera de alcance (FR-073).
-- El panel de administración de permisos es accesible solo para el rol administrador, que conserva siempre ese acceso para evitar una configuración irreversible.
+- El panel de administración de permisos es accesible solo para el rol administrador, se abre desde un ícono en la barra superior y conserva siempre ese acceso para evitar una configuración irreversible.
 - Cambiar el cargo de un usuario no altera su bodega asignada ni el usuario activo que registran movimientos, transferencias y reposiciones (FR-058, FR-073).
 - Solo los movimientos normales de entrada y salida generan órdenes; las transferencias confirmadas ya quedan trazadas en `STOCK_TRANSFERS` y no producen órdenes adicionales (FR-127).
+- La restricción a seis secciones se refiere únicamente al menú lateral; el panel general sigue siendo la página de inicio configurable de HU-08 y el panel de administración de permisos permanece fuera del menú de secciones.
+- Las búsquedas y filtros internos de Stock, Alertas, Transferencias, Movimientos y Seguimiento de envíos no son el módulo "Búsqueda" eliminado; continúan dentro de su sección.
+- Las reposiciones se gestionan desde Alertas y las órdenes y el seguimiento de envíos desde Movimientos, sin crear secciones adicionales de primer nivel (FR-147).
+- El menú lateral no incluye una entrada "Panel"; el panel principal se alcanza como página de inicio configurada y desde la identidad de marca de la aplicación, sin convertirse en una sección más ni duplicar accesos.
+- El stock total del panel es la suma de `quantity_available` de todos los registros vigentes de `STOCK`, incluidos los de productos o bodegas inactivos que se conservan para consulta, y se recalcula cada vez que se muestra el panel.
+- El panel principal es de solo lectura: no contiene formularios, acciones rápidas ni enlaces a las seis secciones.
+- Las landing pages configuradas para supervisor y encargado pueden abrir Alertas o Movimientos como página de inicio sin añadir controles de navegación duplicados; el menú lateral conserva el único punto de acceso visible a esas secciones.
+- "Panel general" (HU-08), "panel principal" (HU-14) y "panel de inicio" del módulo base designan la misma vista de solo indicadores cuando el rol del usuario la tiene configurada como página de inicio.
+- Las pestañas son opcionales por sección; cuando se usen, conservan el contexto de la sección, respetan HU-08/FR-124 y no alteran los permisos ni los datos.

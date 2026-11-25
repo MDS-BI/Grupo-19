@@ -113,4 +113,41 @@
 - Las decisiones de diseño se registraron en la sesión de Clarificaciones 2026-11-22 y en la sección Suposiciones.
 - El bloqueo de acceso por URL se mantuvo como control de interfaz sobre roles simulados, en coherencia con FR-073; no se introduce autenticación real.
 - La fila de HU-08 en Trazabilidad de Implementación quedó completada en dominio y pruebas durante `/speckit.plan`; las tareas se definen en `/speckit.tasks`.
-- La especificación pasó por `/speckit.clarify` y `/speckit.plan`; está lista para `/speckit.tasks`.
+
+---
+
+## Validación de cambios de interfaz — 2026-11-25
+
+**Propósito**: Verificar que la actualización de `spec.md` cubre la eliminación de Entidades, Documentos y Búsqueda, las pestañas por sección y el acceso único desde el menú lateral con indicadores en el panel principal.
+**Funcionalidad**: [Enlace a spec.md](../spec.md)
+
+### Calidad del Contenido
+
+- [x] SIN-001 Sin detalles de implementación nuevos en HU-12 a HU-14, FR-135–FR-147 ni SC-062–SC-070.
+- [x] SIN-002 Los cambios se enfocan en el valor para el usuario: menos secciones genéricas, contexto de pestañas y panel informativo.
+- [x] SIN-003 Las historias, criterios de aceptación y suposiciones están escritos para partes interesadas no técnicas.
+- [x] SIN-004 Todas las secciones obligatorias de la plantilla se conservan y completan.
+
+### Completitud de los Requisitos
+
+- [x] SIN-005 No quedan marcadores `[NEEDS CLARIFICATION]` en la especificación.
+- [x] SIN-006 Cada uno de los tres cambios tiene una historia independiente con criterios de aceptación: HU-12, HU-13 y HU-14.
+- [x] SIN-007 Los requisitos son comprobables: FR-012–FR-021, FR-033–FR-035 y FR-135–FR-147 definen elementos visibles, ocultos y permitidos.
+- [x] SIN-008 Los criterios de éxito SC-001–SC-010 y SC-062–SC-070 son medibles y agnósticos a la tecnología en los nuevos elementos.
+- [x] SIN-009 Los casos límite incluyen rutas antiguas, secciones sin pestañas, pestañas sin contenido y cambios de indicadores.
+- [x] SIN-010 El alcance queda delimitado: las seis secciones son el menú lateral; reposiciones, órdenes y envíos permanecen en Alertas o Movimientos.
+- [x] SIN-011 Las dependencias y suposiciones se registran en la sesión de clarificaciones 2026-11-25 y en `## Suposiciones`.
+- [x] SIN-012 FR-010 y FR-012–FR-035 se actualizan para no contradecir la interfaz vigente.
+
+### Preparación de la Funcionalidad
+
+- [x] SIN-013 Los catorce escenarios de aceptación nuevos (4 de HU-12, 5 de HU-13 y 5 de HU-14) tienen formato Dado/Cuando/Entonces.
+- [x] SIN-014 Cada cambio solicitado por el usuario coincide con una historia y con criterios de aceptación explícitos.
+- [x] SIN-015 La sección `## Trazabilidad de Implementación` incluye HU-12, HU-13 y HU-14 como pendientes de tareas.
+- [x] SIN-016 La especificación actualizada tiene requisitos y criterios suficientes para planificar HU-12 a HU-14 con `/speckit.plan`.
+
+### Notas
+
+- Se conservaron intactas las validaciones históricas de 2026-11-03, 2026-11-17 y 2026-11-22, incluidos los elementos CHK017 y CHK018 que quedaron como seguimiento de ejecución; no se presume que HU-12 a HU-14 hayan pasado por `/speckit.clarify` o `/speckit.plan`.
+- El checklist evalúa la calidad documental; la implementación y sus pruebas se definen en fases posteriores.
+- La HU-08 pasó por `/speckit.clarify` y `/speckit.plan`; esa validación histórica no cubre HU-12 a HU-14.

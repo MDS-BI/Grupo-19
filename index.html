@@ -6,7 +6,7 @@
     <title>Logística e Inventario · ERP</title>
   </head>
   <body>
-    <div id="config-errors" class="config-error" role="alert" hidden></div>
+    <div id="config-errors" class="notice notice--error" role="alert" hidden></div>
 
     <div class="workspace">
       <header class="topbar">
@@ -38,59 +38,59 @@
       <aside class="sidebar">
         <nav class="side-nav" aria-label="Módulos">
           <p class="nav-section-title nav-section-title--top">Operación</p>
-          <button type="button" class="nav-module active" data-module="dashboard" id="nav-dashboard" aria-current="page">
+          <button type="button" class="nav-module active" data-module="dashboard" id="nav-dashboard" aria-current="page" aria-label="Panel" title="Panel">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="11" y="3" width="6" height="6" rx="1"></rect><rect x="3" y="11" width="6" height="6" rx="1"></rect><rect x="11" y="11" width="6" height="6" rx="1"></rect></svg>
             <span class="nav-label" id="nav-dashboard-label">Panel</span>
           </button>
           <div id="nav-advanced-section" class="nav-advanced" hidden>
             <hr class="nav-separator" />
             <p class="nav-section-title" id="nav-advanced-title">Administración avanzada</p>
-            <button type="button" class="nav-module" data-module="entities" id="nav-entities">
+            <button type="button" class="nav-module" data-module="entities" id="nav-entities" aria-label="Entidades" title="Entidades">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 3.5 6v8L10 17.5 16.5 14V6L10 2.5z"></path><path d="M3.5 6 10 9.5 16.5 6"></path><path d="M10 9.5v8"></path></svg>
               <span class="nav-label" id="nav-entities-label">Entidades</span>
             </button>
-            <button type="button" class="nav-module" data-module="documents" id="nav-documents">
+            <button type="button" class="nav-module" data-module="documents" id="nav-documents" aria-label="Documentos" title="Documentos">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5h6l4 4v11h-10z"></path><path d="M11.5 2.5v4h4"></path><path d="M8 10h5"></path><path d="M8 13h5"></path></svg>
               <span class="nav-label" id="nav-documents-label">Documentos</span>
             </button>
-            <button type="button" class="nav-module" data-module="search" id="nav-search">
+            <button type="button" class="nav-module" data-module="search" id="nav-search" aria-label="Búsqueda" title="Búsqueda">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="5"></circle><path d="m12.8 12.8 4.2 4.2"></path></svg>
               <span class="nav-label" id="nav-search-label">Búsqueda</span>
             </button>
           </div>
-          <button type="button" class="nav-admin-module" data-module="admin" id="nav-admin">
+          <button type="button" class="nav-admin-module" data-module="admin" id="nav-admin" aria-label="Permisos" title="Permisos">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 3.5 6v4.2c0 4 2.7 6.8 6.5 7.8 3.8-1 6.5-3.8 6.5-7.8V6L10 2.5z"></path><path d="M7.6 10.2 9.3 12l3.3-3.6"></path></svg>
             <span class="nav-label">Permisos</span>
           </button>
-          <button type="button" class="nav-module" data-module="products" id="nav-products">
+          <button type="button" class="nav-module" data-module="products" id="nav-products" aria-label="Productos" title="Productos">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="1.5"></rect><path d="M3 8h14"></path></svg>
             <span class="nav-label">Productos</span>
           </button>
-          <button type="button" class="nav-module" data-module="warehouses" id="nav-warehouses">
+          <button type="button" class="nav-module" data-module="warehouses" id="nav-warehouses" aria-label="Bodegas" title="Bodegas">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8 10 3l7.5 5v8h-15z"></path><path d="M7.5 16v-5h5v5"></path></svg>
             <span class="nav-label">Bodegas</span>
           </button>
-          <button type="button" class="nav-module" data-module="stock" id="nav-stock">
+          <button type="button" class="nav-module" data-module="stock" id="nav-stock" aria-label="Stock" title="Stock">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6v9h14V6"></path><path d="M3 6 10 2l7 4"></path><path d="M3 6h14"></path></svg>
             <span class="nav-label">Stock</span>
           </button>
-          <button type="button" class="nav-module" data-module="movements" id="nav-movements">
+          <button type="button" class="nav-module" data-module="movements" id="nav-movements" aria-label="Movimientos" title="Movimientos">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h8"></path><path d="M9 6l3 4-3 4"></path><path d="M16 6v8"></path></svg>
             <span class="nav-label">Movimientos</span>
           </button>
-          <button type="button" class="nav-module" data-module="transfers" id="nav-transfers">
+          <button type="button" class="nav-module" data-module="transfers" id="nav-transfers" aria-label="Transferencias" title="Transferencias">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h10"></path><path d="M10 4l3 3-3 3"></path><path d="M17 13H7"></path><path d="M10 16l-3-3 3-3"></path></svg>
             <span class="nav-label">Transferencias</span>
           </button>
-          <button type="button" class="nav-module" data-module="shipments" id="nav-shipments">
+          <button type="button" class="nav-module" data-module="shipments" id="nav-shipments" aria-label="Seguimiento de envíos" title="Seguimiento de envíos">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6h9v8h-9z"></path><path d="M11.5 9h3l2 2.5V14h-5z"></path><circle cx="6" cy="15" r="1.5"></circle><circle cx="14.5" cy="15" r="1.5"></circle></svg>
             <span class="nav-label">Seguimiento de envíos</span>
           </button>
-          <button type="button" class="nav-module" data-module="alerts" id="nav-alerts">
+          <button type="button" class="nav-module" data-module="alerts" id="nav-alerts" aria-label="Alertas" title="Alertas">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 2.5 16h15z"></path><path d="M10 8v4"></path><circle cx="10" cy="13.5" r="0.75" fill="currentColor" stroke="none"></circle></svg>
             <span class="nav-label">Alertas</span>
           </button>
-          <button type="button" class="nav-module" data-module="replenishments" id="nav-replenishments">
+          <button type="button" class="nav-module" data-module="replenishments" id="nav-replenishments" aria-label="Reposiciones" title="Reposiciones">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5h11"></path><path d="m11 4 3 2.5-3 2.5"></path><path d="M17 13.5H6"></path><path d="m9 11-3 2.5L9 16"></path></svg>
             <span class="nav-label">Reposiciones</span>
           </button>
@@ -102,7 +102,7 @@
       </aside>
 
       <main class="content" id="app">
-        <div id="access-notice" class="config-error" role="status" aria-live="polite" hidden></div>
+        <div id="access-notice" class="notice notice--info" role="status" aria-live="polite" hidden></div>
 
         <section id="view-dashboard" aria-labelledby="dashboard-heading">
           <div class="page-head">
@@ -144,15 +144,15 @@
                 <span class="stat-label">Alertas activas</span>
               </div>
               <span class="stat-value" id="stat-alerts">0</span>
-              <span class="stat-foot">Requieren reposición</span>
+              <span class="stat-foot">Bajo el mínimo configurado</span>
             </article>
-            <article class="stat-card stat-card--violet">
+            <article class="stat-card stat-card--pending">
               <div class="stat-top">
                 <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h11"></path><path d="m11 4 3 2.5-3 2.5"></path><path d="M17 13.5H6"></path><path d="m9 11-3 2.5L9 16"></path></svg></span>
                 <span class="stat-label">Reposiciones pendientes</span>
               </div>
               <span class="stat-value" id="stat-replenishment-pending">0</span>
-              <span class="stat-foot">Solicitudes por aprobar</span>
+              <span class="stat-foot">En espera de autorización</span>
             </article>
           </div>
 
@@ -173,13 +173,13 @@
               <span class="stat-value" id="stat-movements">0</span>
               <span class="stat-foot">Historial registrado</span>
             </article>
-            <article class="stat-card stat-card--warning">
+            <article class="stat-card stat-card--pending">
               <div class="stat-top">
                 <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h10"></path><path d="M10 4l3 3-3 3"></path><path d="M17 13H7"></path><path d="M10 16l-3-3 3-3"></path></svg></span>
                 <span class="stat-label">Transferencias pendientes</span>
               </div>
               <span class="stat-value" id="stat-transfers">0</span>
-              <span class="stat-foot">Por revisar</span>
+              <span class="stat-foot">En espera de revisión</span>
             </article>
           </div>
 
@@ -193,7 +193,8 @@
                   </div>
                   <button type="button" class="secondary subtle" data-goto="movements">Ver todo</button>
                 </div>
-                <div id="dashboard-activity" class="activity-table-wrap"></div>
+                <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+                <div id="dashboard-activity" class="activity-table-wrap" role="region" aria-label="Movimientos recientes" tabindex="0"></div>
               </section>
             </div>
 
@@ -256,7 +257,7 @@
                   </div>
                   <span class="pill">Opcional</span>
                 </div>
-                <p class="demo-copy">Carga categorías, productos, bodegas, existencias, movimientos y transferencias coherentes para recorrer las seis historias de usuario. No reemplaza ni borra datos existentes y evita duplicados si se ejecuta nuevamente.</p>
+                <p class="demo-copy">Carga productos, bodegas, existencias, movimientos y transferencias de ejemplo. No reemplaza ni borra datos existentes y evita duplicados si se ejecuta nuevamente.</p>
                 <button type="button" id="load-demo-data" class="primary">Cargar datos de demostración</button>
                 <p id="demo-data-status" class="demo-status muted" aria-live="polite"></p>
               </section>
@@ -605,7 +606,8 @@
               <input id="product-search" placeholder="Buscar por nombre, SKU o categoría..." aria-label="Buscar productos" />
             </div>
             <div id="product-list-empty" class="empty" hidden aria-live="polite">No se encontraron productos.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Catálogo de productos" tabindex="0">
               <table class="data-table">
                 <thead><tr><th scope="col">SKU</th><th scope="col">Producto</th><th scope="col">Categoría</th><th scope="col">Precio venta</th><th scope="col">Unidad</th><th scope="col">Proveedor</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="product-list-body"></tbody>
@@ -673,7 +675,8 @@
               <input id="warehouse-search" placeholder="Buscar por nombre o ubicación..." aria-label="Buscar bodegas" />
             </div>
             <div id="warehouse-list-empty" class="empty" hidden aria-live="polite">No se encontraron bodegas.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Listado de bodegas" tabindex="0">
               <table class="data-table">
                 <thead><tr><th scope="col">Bodega</th><th scope="col">Ubicación</th><th scope="col">Capacidad</th><th scope="col">Responsable</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="warehouse-list-body"></tbody>
@@ -717,7 +720,8 @@
               <span class="count-badge" id="stock-count">0</span>
             </div>
             <div id="stock-list-empty" class="empty" hidden aria-live="polite">No se encontraron registros de stock.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Existencias por producto y bodega" tabindex="0">
               <table class="data-table">
                 <thead><tr><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Disponible</th><th scope="col">Estado producto</th><th scope="col">Estado bodega</th><th scope="col">Nivel mínimo</th></tr></thead>
                 <tbody id="stock-list-body"></tbody>
@@ -795,7 +799,8 @@
               </div>
             </div>
             <div id="movement-list-empty" class="empty" hidden aria-live="polite">No se encontraron movimientos.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Historial de movimientos" tabindex="0">
               <table class="data-table">
                 <thead><tr><th scope="col">Fecha</th><th scope="col">Orden</th><th scope="col">Tipo</th><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Usuario</th><th scope="col">Ajustar</th></tr></thead>
                 <tbody id="movement-list-body"></tbody>
@@ -812,7 +817,8 @@
               <span class="count-badge" id="order-count">0</span>
             </div>
             <div id="order-list-empty" class="empty" hidden aria-live="polite">Todavía no se generaron órdenes.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Órdenes generadas" tabindex="0">
               <table class="data-table">
                 <thead><tr><th scope="col">Orden</th><th scope="col">Tipo</th><th scope="col">Movimiento</th><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Fecha</th></tr></thead>
                 <tbody id="order-list-body"></tbody>
@@ -904,7 +910,8 @@
               </div>
             </div>
             <div id="transfer-list-empty" class="empty" hidden aria-live="polite">No se encontraron transferencias.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Transferencias registradas" tabindex="0">
               <table class="data-table">
                 <thead><tr><th scope="col">#ID</th><th scope="col">Producto</th><th scope="col">Ruta</th><th scope="col">Cantidad</th><th scope="col">Estado</th><th scope="col">Usuarios</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="transfer-list-body"></tbody>
@@ -979,7 +986,8 @@
               </div>
             </div>
             <div id="shipment-list-empty" class="empty" hidden aria-live="polite">No se encontraron envíos.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Envíos registrados" tabindex="0">
               <table class="data-table shipment-table">
                 <thead><tr><th scope="col">Orden de venta</th><th scope="col">Transportista</th><th scope="col">Código de seguimiento</th><th scope="col">Estado</th><th scope="col">Historial</th><th scope="col">Usuarios</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="shipment-list-body"></tbody>
@@ -1023,7 +1031,8 @@
               <span class="count-badge count-badge--alert" id="alert-row-count">0</span>
             </div>
             <div id="alert-list-empty" class="empty" hidden aria-live="polite">No se encontraron alertas.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Productos en nivel mínimo o inferior" tabindex="0">
               <table class="data-table">
                 <thead><tr><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Disponible</th><th scope="col">Mínimo</th><th scope="col">Déficit</th><th scope="col">Acción</th></tr></thead>
                 <tbody id="alert-list-body"></tbody>
@@ -1136,7 +1145,8 @@
               <span class="count-badge" id="replenishment-row-count">0</span>
             </div>
             <div id="replenishment-list-empty" class="empty" hidden aria-live="polite">No se encontraron solicitudes.</div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Solicitudes registradas de reposición" tabindex="0">
               <table class="data-table">
                 <thead><tr><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Estado</th><th scope="col">Observación</th><th scope="col">Trazabilidad</th><th scope="col">Movimiento</th><th scope="col">Acciones</th></tr></thead>
                 <tbody id="replenishment-list-body"></tbody>
@@ -1175,7 +1185,7 @@
                 <button type="button" id="permission-apply-role" class="primary">Aplicar cargo</button>
               </div>
             </div>
-            <p id="permission-feedback" class="muted permission-feedback" aria-live="polite"></p>
+            <p id="permission-feedback" class="permission-feedback" role="status" aria-live="polite"></p>
           </section>
 
           <section class="card" aria-labelledby="permission-matrix-heading">
@@ -1186,9 +1196,10 @@
               </div>
               <span class="pill">Cambios inmediatos</span>
             </div>
-            <div class="table-wrap">
+            <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
+            <div class="table-wrap" role="region" aria-label="Matriz de permisos por cargo" tabindex="0">
               <table class="data-table permission-matrix">
-                <thead><tr><th scope="col">Recurso</th><th scope="col">Administrador</th><th scope="col">Supervisor</th><th scope="col">Encargado</th></tr></thead>
+                <thead><tr id="permission-matrix-head-row"><th scope="col">Recurso</th><th scope="col">Administrador</th><th scope="col">Supervisor</th><th scope="col">Encargado</th></tr></thead>
                 <tbody id="permission-matrix-body"></tbody>
               </table>
             </div>

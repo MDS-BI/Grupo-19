@@ -669,3 +669,19 @@ Task: "T130 crear src/components/shipment-list.js"
 | Sin cambios | T001–T110 | Se conservan tal cual, incluida T107 como diferida y T066 con su evidencia histórica. |
 
 Los comandos `npx vitest run` y `npm run build` de T134–T135 deben ejecutarse después de la implementación; esta generación de tareas no ejecuta código ni modifica ramas, commits o push.
+
+---
+
+## Fase 16: Ajustes visuales/UI-UX (Sin cambios funcionales)
+
+**Objetivo**: Aplicar únicamente los ajustes visuales aprobados, sin modificar funcionalidades, permisos, lógica de negocio, backend ni base de datos.
+
+**Prueba Independiente**: Verificar en navegador que los cambios visuales no alteran flujos, permisos, datos ni mensajes funcionales existentes.
+
+- [X] T138 [P] Consolidar tokens visuales y acento en `src/styles.css` y `src/module-config.js`, aplicando `--accent` de forma consistente en botones, navegación activa, anillos de foco, gradientes y logo SVG en `src/components/shell.js`, sin modificar lógica.
+- [X] T139 [P] Diferenciar avisos informativos, de advertencia y de error en `index.html` y `src/styles.css`, manteniendo `role="status"` y `aria-live="polite"` para mensajes no bloqueantes, sin cambiar mensajes ni flujos.
+- [X] T141 [P] Añadir `aria-label`/`title` y tooltips a botones colapsados de `index.html` y `src/components/shell.js`, ajustando `src/styles.css` para que las etiquetas queden accesibles sin cambiar diseño ni comportamiento.
+- [X] T142 [P] Ajustar textos y semántica visual del panel en `src/components/dashboard.js`, `index.html` y `src/styles.css`, conservando datos y lógica existentes: pista de datos demo solo cuando corresponda, copy de alertas sin exageración y colores/captions neutros para pendientes.
+- [X] T143 Presentar la matriz de permisos de forma más clara en `src/components/permissions-panel.js`, `index.html` y `src/styles.css`: etiquetas legibles, cabeceras desde `getRoles()`, feedback por severidad y badge/tooltip de bloqueo en celdas `admin:permissions`, sin alterar el funcionamiento de los permisos.
+- [X] T144 [P] Añadir indicador de scroll horizontal y `aria-label` a contenedores de tablas anchas en `index.html` y `src/styles.css`, sin modificar columnas, datos ni comportamiento.
+- [X] T145 Verificar en navegador los cambios visuales de `index.html`, `src/styles.css`, `src/components/shell.js`, `src/components/dashboard.js` y `src/components/permissions-panel.js`, sin marcar tareas como completadas.
