@@ -93,7 +93,7 @@ function advanceButton(){
     .find(button => /Avanzar/i.test(button.textContent));
 }
 
-function advanceAsCarlos(){
+function advanceAsWarehouseManager(){
   const select = qs('active-user-select');
   select.value = '2';
   select.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
@@ -160,7 +160,7 @@ describe('User Story 11 - buyer shipment tracking', () => {
     expect(listText).toContain('<Courier>');
     expect(listText).toContain('TRK-001');
     expect(listText).toContain('En bodega');
-    expect(listText).toContain('Ana Torres');
+    expect(listText).toContain('Millaray Antileo');
     expect(qs('shipment-list-body').querySelector('img')).toBeNull();
   });
 
@@ -194,14 +194,14 @@ describe('User Story 11 - buyer shipment tracking', () => {
     expect(advanceButton()).not.toBeNull();
     expect(qs('shipment-list-body').textContent).toContain('En bodega');
 
-    advanceAsCarlos();
+    advanceAsWarehouseManager();
     expect(qs('shipment-list-body').textContent).toContain('En tránsito');
-    advanceAsCarlos();
+    advanceAsWarehouseManager();
     expect(qs('shipment-list-body').textContent).toContain('En reparto');
-    advanceAsCarlos();
+    advanceAsWarehouseManager();
     expect(qs('shipment-list-body').textContent).toContain('Entregado');
     expect(advanceButton()).toBeUndefined();
-    expect(qs('shipment-list-body').textContent).toContain('Carlos Pérez');
+    expect(qs('shipment-list-body').textContent).toContain('Tomás Wiegand');
 
     setControl('shipment-search', 'trk-001', 'input');
     expect(qs('shipment-count').textContent).toBe('1');
@@ -242,7 +242,7 @@ describe('User Story 11 - buyer shipment tracking', () => {
 
   it('persists shipments and history after reload without changing operational data (T121, FR-133)', async () => {
     registerShipment();
-    advanceAsCarlos();
+    advanceAsWarehouseManager();
     const before = operationalSnapshot();
 
     await rebootPreservingStorage();
@@ -250,8 +250,8 @@ describe('User Story 11 - buyer shipment tracking', () => {
     expect(qs('shipment-count').textContent).toBe('1');
     expect(qs('shipment-list-body').textContent).toContain('OV-0001');
     expect(qs('shipment-list-body').textContent).toContain('En tránsito');
-    expect(qs('shipment-list-body').textContent).toContain('Ana Torres');
-    expect(qs('shipment-list-body').textContent).toContain('Carlos Pérez');
+    expect(qs('shipment-list-body').textContent).toContain('Millaray Antileo');
+    expect(qs('shipment-list-body').textContent).toContain('Tomás Wiegand');
     expect(operationalSnapshot()).toBe(before);
   });
 });

@@ -725,3 +725,37 @@ Los comandos `npx vitest run` y `npm run build` de T134–T135 deben ejecutarse 
 | HU-14 | Panel principal reducido a cuatro indicadores y sin accesos rápidos; navegación única desde la barra lateral. | `index.html`, `src/components/dashboard.js`, `src/app.js` | T147, T148, T150–T152; `tests/integration/dashboard.test.js`, `tests/integration/workspace-shell.test.js`. |
 
 Los ajustes visuales de Fase 16 se conservan como trabajo intermedio: T138–T144 completos; T145 mantiene `[ ]` con confirmación manual parcial del usuario y revisión visual pendiente de dashboard, panel de permisos y estilos globales.
+
+---
+
+## Fase 18: HU-15 — Datos de ejemplo con nombres ficticios variados
+
+**Nota de IDs**: T153–T158 se añaden al final; no reordenan, renumeran, desmarcan ni modifican T001–T152 ni las tareas de HU-12 a HU-14. T140 sigue sin existir por decisión histórica documentada.
+
+**Objetivo**: Renombrar la semilla, migrar solo coincidencias exactas, derivar bodegas de rol + orden del catálogo y conservar historial, permisos y usuario activo (FR-148–FR-153, SC-071–SC-075). La interpretación operativa de “posición” y el comportamiento ante fallo de escritura siguen pendientes de reflejo en `spec.md` (A1 y U1); esta fase no modifica ese archivo.
+
+**Criterio de aceptación independiente**: con un navegador vacío aparecen los cuatro usuarios nuevos en orden; con la semilla anterior se migran solo las coincidencias exactas; cargas repetidas no producen cambios; las bodegas de demostración no se reasignan por el renombrado; y la suite completa pasa sin regresiones (SC-071–SC-075).
+
+**Paralelismo**: T153 ∥ T154; T157 puede ejecutarse en paralelo con T155/T156 una vez escritas las pruebas. T158 depende de T155–T157.
+
+### Pruebas para HU-15
+
+> Escribir estas pruebas primero y verificar que fallan antes de tocar la implementación.
+
+- [X] T153 [P] [US15] Actualizar `tests/unit/storage.test.js` para comprobar migración exacta por `user_id`, nombre y correo, usuarios modificados intactos, idempotencia, sin duplicados y conservación de `logistics:active_user_id` (FR-152, FR-153, SC-072, SC-073).
+- [X] T154 [P] [US15] Actualizar `tests/unit/demo-data.test.js` y `tests/integration/shipments.test.js` para los cuatro nombres y correos nuevos (`Millaray Antileo`/`millaray.antileo@empresa.cl`, `Tomás Wiegand`/`tomas.wiegand@empresa.cl`, `Yasmina Haddad`/`yasmina.haddad@empresa.cl` y `Sebastián Quispe`/`sebastian.quispe@empresa.cl`) y la asignación de bodegas por rol + orden del catálogo (`user_id` 1–4, `encargado_bodega` en ids 2 y 4), sin depender del texto del nombre (FR-148, FR-149, FR-151, SC-071, SC-074, SC-075).
+
+### Implementación de HU-15
+
+- [X] T155 [US15] Actualizar `USER_SEED` en `src/domain/seed.js` con `user_id` 1 Millaray Antileo/`administrador`/`millaray.antileo@empresa.cl`, `user_id` 2 Tomás Wiegand/`encargado_bodega`/`tomas.wiegand@empresa.cl`, `user_id` 3 Yasmina Haddad/`supervisor_inventario`/`yasmina.haddad@empresa.cl` y `user_id` 4 Sebastián Quispe/`encargado_bodega`/`sebastian.quispe@empresa.cl`, conservando ids, roles y orden (FR-148).
+- [X] T156 [US15] Añadir en `src/storage.js` la migración exacta de (`1`/`Ana Torres`/`ana.torres@empresa.cl`, `2`/`Carlos Pérez`/`carlos.perez@empresa.cl`, `3`/`María López`/`maria.lopez@empresa.cl`, `4`/`Jorge Soto`/`jorge.soto@empresa.cl`) a los valores de T155, con una sola escritura del catálogo de usuarios, sin alterar usuarios modificados, sin duplicados y sin tocar `logistics:active_user_id`; mantener la siembra solo cuando el catálogo esté vacío (FR-152, FR-153).
+- [X] T157 [P] [US15] Sustituir en `src/domain/demo-data.js` las comparaciones por nombre con una regla por rol + orden del catálogo, preservando la bodega histórica de los usuarios de ids 2 y 4 (FR-151).
+- [X] T158 [US15] Ejecutar `npx vitest run` y `npm run build` en la raíz; actualizar el checklist `HU15-009` en `specs/002-logistica-inventario/checklists/requirements.md` y el registro incremental de esta fase en `specs/002-logistica-inventario/tasks.md`; verificar que no se pierden datos, permisos ni operaciones de HU-01 a HU-14, sin crear ramas ni commits.
+
+### REGISTRO INCREMENTAL (HU-15)
+
+| HU | Funcionalidad incorporada | Archivos principales | Evidencia |
+|---|---|---|---|
+| HU-15 | Catálogo semilla con nombres y correos ficticios, migración exacta e idempotente y bodegas por rol + orden. | `src/domain/seed.js`, `src/domain/demo-data.js`, `src/storage.js` | T153–T158; `tests/unit/storage.test.js`, `tests/unit/demo-data.test.js`, `tests/integration/shipments.test.js`; 34 archivos/308 pruebas OK y build correcto. |
+
+**Punto de control**: las tareas previas permanecen intactas; los cuatro usuarios nuevos aparecen en orden, la migración es idempotente, las bodegas no cambian por el renombrado y la suite completa y el build pasan sin regresiones. Verificado el 2026-11-26 con 34 archivos/308 pruebas y build correcto; sin crear ramas, commits ni push adicionales, conservando el historial previo del repositorio.

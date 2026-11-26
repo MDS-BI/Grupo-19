@@ -375,6 +375,52 @@ describe('logistics storage: schemas, repository helpers and seed loading', () =
     expect(before).toBeGreaterThan(0);
   });
 
+  it('migrates exact legacy seed users on load (FR-152, SC-072)', () => {
+    saveUsersForTest(legacyUsersForTest());
+    localStorage.setItem(LOGISTICS_KEYS.stock, JSON.stringify([{ stock_id: 9, product_id: 1, warehouse_id: 1, quantity_available: 5 }]));
+    localStorage.setItem('logistics:active_user_id', '2');
+
+    seedLogisticsCatalogs();
+
+    expect(loadUsers().map(user => [user.user_id, user.user_name, user.role, user.email])).toEqual([
+      [1, 'Millaray Antileo', 'administrador', 'millaray.antileo@empresa.cl'],
+      [2, 'Tomás Wiegand', 'encargado_bodega', 'tomas.wiegand@empresa.cl'],
+      [3, 'Yasmina Haddad', 'supervisor_inventario', 'yasmina.haddad@empresa.cl'],
+      [4, 'Sebastián Quispe', 'encargado_bodega', 'sebastian.quispe@empresa.cl']
+    ]);
+    expect(loadUsers()[0].assigned_warehouse_id).toBe(3);
+    expect(loadStock()).toEqual([{ stock_id: 9, product_id: 1, warehouse_id: 1, quantity_available: 5 }]);
+    expect(localStorage.getItem('logistics:active_user_id')).toBe('2');
+  });
+
+  it('leaves modified or unrelated users unchanged (FR-152)', () => {
+    const users = legacyUsersForTest();
+    users[0].email = 'otro@empresa.cl';
+    users.push({ user_id: 5, user_name: 'Usuario Externo', role: 'administrador', email: 'externo@empresa.cl' });
+    saveUsersForTest(users);
+
+    seedLogisticsCatalogs();
+
+    expect(loadUsers()).toEqual([
+      { user_id: 1, user_name: 'Ana Torres', role: 'administrador', email: 'otro@empresa.cl', assigned_warehouse_id: 3 },
+      { user_id: 2, user_name: 'Tomás Wiegand', role: 'encargado_bodega', email: 'tomas.wiegand@empresa.cl', assigned_warehouse_id: 1 },
+      { user_id: 3, user_name: 'Yasmina Haddad', role: 'supervisor_inventario', email: 'yasmina.haddad@empresa.cl', assigned_warehouse_id: 2 },
+      { user_id: 4, user_name: 'Sebastián Quispe', role: 'encargado_bodega', email: 'sebastian.quispe@empresa.cl', assigned_warehouse_id: 4 },
+      { user_id: 5, user_name: 'Usuario Externo', role: 'administrador', email: 'externo@empresa.cl' }
+    ]);
+  });
+
+  it('keeps migrated users stable across repeated loads (FR-153, SC-072)', () => {
+    saveUsersForTest(legacyUsersForTest());
+
+    seedLogisticsCatalogs();
+    const first = loadUsers();
+    seedLogisticsCatalogs();
+
+    expect(loadUsers()).toEqual(first);
+    expect(loadUsers()).toHaveLength(4);
+  });
+
   it('generates sequential integer ids per entity', () => {
     expect(nextProductId()).toBe(1);
     expect(nextWarehouseId()).toBe(1);
@@ -448,4 +494,17 @@ describe('logistics storage: schemas, repository helpers and seed loading', () =
 
 function saveProductCategoriesForTest(list){
   localStorage.setItem('logistics:product_categories', JSON.stringify(list));
+}
+
+function saveUsersForTest(list){
+  localStorage.setItem(LOGISTICS_KEYS.users, JSON.stringify(list));
+}
+
+function legacyUsersForTest(){
+  return [
+    { user_id: 1, user_name: 'Ana Torres', role: 'administrador', email: 'ana.torres@empresa.cl', assigned_warehouse_id: 3 },
+    { user_id: 2, user_name: 'Carlos Pérez', role: 'encargado_bodega', email: 'carlos.perez@empresa.cl', assigned_warehouse_id: 1 },
+    { user_id: 3, user_name: 'María López', role: 'supervisor_inventario', email: 'maria.lopez@empresa.cl', assigned_warehouse_id: 2 },
+    { user_id: 4, user_name: 'Jorge Soto', role: 'encargado_bodega', email: 'jorge.soto@empresa.cl', assigned_warehouse_id: 4 }
+  ];
 }

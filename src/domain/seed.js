@@ -7,10 +7,17 @@ export const PRODUCT_CATEGORY_SEED = [
 ];
 
 export const USER_SEED = [
-  { user_name: 'Ana Torres', role: 'administrador', email: 'ana.torres@empresa.cl' },
-  { user_name: 'Carlos Pérez', role: 'encargado_bodega', email: 'carlos.perez@empresa.cl' },
-  { user_name: 'María López', role: 'supervisor_inventario', email: 'maria.lopez@empresa.cl' },
-  { user_name: 'Jorge Soto', role: 'encargado_bodega', email: 'jorge.soto@empresa.cl' }
+  { user_name: 'Millaray Antileo', role: 'administrador', email: 'millaray.antileo@empresa.cl' },
+  { user_name: 'Tomás Wiegand', role: 'encargado_bodega', email: 'tomas.wiegand@empresa.cl' },
+  { user_name: 'Yasmina Haddad', role: 'supervisor_inventario', email: 'yasmina.haddad@empresa.cl' },
+  { user_name: 'Sebastián Quispe', role: 'encargado_bodega', email: 'sebastian.quispe@empresa.cl' }
+];
+
+export const LEGACY_USER_SEED = [
+  { user_id: 1, user_name: 'Ana Torres', role: 'administrador', email: 'ana.torres@empresa.cl' },
+  { user_id: 2, user_name: 'Carlos Pérez', role: 'encargado_bodega', email: 'carlos.perez@empresa.cl' },
+  { user_id: 3, user_name: 'María López', role: 'supervisor_inventario', email: 'maria.lopez@empresa.cl' },
+  { user_id: 4, user_name: 'Jorge Soto', role: 'encargado_bodega', email: 'jorge.soto@empresa.cl' }
 ];
 
 export const ROLE_SEED = [

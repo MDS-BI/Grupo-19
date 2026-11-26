@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   seedLogisticsCatalogs, loadProducts, loadWarehouses, loadStock, loadMovements,
-  loadTransfers, saveProducts, loadProductCategories, loadUsers
+  loadTransfers, saveProducts, loadProductCategories, loadUsers, LOGISTICS_KEYS
 } from '../../src/storage.js';
 import { loadDemoData, getDemoDataSummary } from '../../src/domain/demo-data.js';
 import { listAlerts } from '../../src/domain/alerts.js';
@@ -24,8 +24,22 @@ describe('demo data loader', () => {
     expect(loadProductCategories().map(category => category.category_name)).toEqual([
       'Electrónica', 'Alimentos y Bebidas', 'Ferretería', 'Insumos de Oficina', 'Limpieza y Aseo'
     ]);
-    expect(loadUsers().map(user => user.user_name)).toContain('Carlos Pérez');
-    expect(loadUsers().map(user => user.user_name)).toContain('Jorge Soto');
+    expect(loadUsers().map(user => user.user_name)).toContain('Tomás Wiegand');
+    expect(loadUsers().map(user => user.user_name)).toContain('Sebastián Quispe');
+  });
+
+  it('assigns demo warehouses by role and catalogue order, not by name (FR-151)', () => {
+    localStorage.setItem(LOGISTICS_KEYS.users, JSON.stringify([
+      { user_id: 1, user_name: 'Millaray Antileo', role: 'administrador', email: 'millaray.antileo@empresa.cl' },
+      { user_id: 2, user_name: 'Tomás Wiegand', role: 'encargado_bodega', email: 'tomas.wiegand@empresa.cl' },
+      { user_id: 3, user_name: 'Yasmina Haddad', role: 'supervisor_inventario', email: 'yasmina.haddad@empresa.cl' },
+      { user_id: 4, user_name: 'Sebastián Quispe', role: 'encargado_bodega', email: 'sebastian.quispe@empresa.cl' }
+    ]));
+
+    expect(loadDemoData().success).toBe(true);
+    const warehouses = loadWarehouses();
+    expect(warehouses.find(warehouse => warehouse.name === 'Bodega Central Santiago').responsable_id).toBe(2);
+    expect(warehouses.find(warehouse => warehouse.name === 'Bodega Valparaíso').responsable_id).toBe(4);
   });
 
   it('seeds coherent products, warehouses, stock, movements and transfers', () => {

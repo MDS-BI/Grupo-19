@@ -7,6 +7,8 @@
 **Ampliación (2026-11-22)**: Descripción del usuario: "Agregar una nueva historia de usuario para la gestión de roles, redirección inicial y control de visibilidad por usuario: asignar y cambiar el cargo de un usuario con una página de inicio por rol; configurar qué módulos, vistas o secciones puede ver cada rol o usuario; mostrar u ocultar menús, rutas y botones según permisos y bloquear el acceso directo por URL a vistas no autorizadas".
 **Ampliación (2026-11-25)**: Descripción del usuario: "Actualiza la spec existente specs/002-logistica-inventario/spec.md (no crees una carpeta nueva) con estos cambios de interfaz: 1) se eliminan de la interfaz Entidades, Documentos y Búsqueda de la plantilla base; el sistema solo muestra Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas; 2) cada sección puede organizarse en pestañas (por ejemplo Movimientos: Entradas / Salidas / Historial); 3) cada sección tiene un único punto de acceso: el menú lateral. El panel principal solo muestra indicadores (productos, bodegas, stock total, alertas) y no repite accesos del menú. Incluye criterios de aceptación para cada uno".
 
+**Ampliación (2026-11-26)**: Descripción del usuario: "Actualiza la spec existente specs/002-logistica-inventario/spec.md (NO crees carpeta ni rama nueva). Agrega una nueva historia de usuario con el siguiente número disponible, de prioridad P3, titulada 'Datos de ejemplo con nombres ficticios variados', con escenarios de aceptación, casos límite, y los FR y SC con la numeración siguiente a la existente. No modifiques ni borres las demás historias. Los cuatro usuarios del catálogo semilla pasan a tener nombres y correos ficticios en este orden: Millaray Antileo (administrador), Tomás Wiegand (encargado_bodega), Yasmina Haddad (supervisor_inventario) y Sebastián Quispe (encargado_bodega), con correos nombre.apellido@empresa.cl sin tildes. Los nombres no corresponden a personas reales o públicas y no se repiten. Se conservan el orden, los user_id, los roles, la bodega asignada y los vínculos con movimientos, transferencias, reposiciones y envíos; solo cambian nombre y correo. La asignación de bodegas de los datos de demostración no depende del nombre sino del rol y la posición. El cambio no altera stock, movimientos ni permisos. Quien ya tiene datos guardados conservaría los nombres anteriores porque el catálogo solo se siembra cuando está vacío: el sistema debe actualizar automáticamente solo los usuarios que coincidan exactamente con la semilla anterior (mismo user_id, nombre y correo: Ana Torres, Carlos Pérez, María López, Jorge Soto), de forma idempotente, sin tocar usuarios modificados ni distintos, sin perder movimientos ni otros registros y conservando el usuario activo guardado. Agrega también una aclaración en Clarifications y una fila en la tabla de trazabilidad que indique cobertura de seed.js, demo-data.js, storage.js, shipments.test.js, demo-data.test.js y storage.test.js".
+
 ## Propósito
 
 El módulo de Logística e Inventario tiene como objetivo facilitar la gestión de productos, bodegas y existencias de una empresa. Permitirá registrar entradas y salidas de productos, consultar el stock disponible, realizar transferencias entre bodegas y generar alertas cuando las existencias sean bajas.
@@ -99,6 +101,15 @@ El módulo de Logística e Inventario tiene como objetivo facilitar la gestión 
 - Q: ¿Las pestañas pueden otorgar accesos que la matriz de permisos de HU-08 prohíbe? → A: No. Las pestañas respetan FR-124: una pestaña no autorizada se oculta o deshabilita sin bloquear el resto de la sección permitida.
 - Q: ¿Las landing pages de supervisor y encargado que abren Alertas o Movimientos contradicen el acceso único desde el menú? → A: No. Son páginas de inicio configuradas de HU-08, no controles de navegación duplicados; el menú lateral sigue siendo el único punto de acceso visible para esas secciones.
 - Q: ¿"Panel general" y "panel principal" son la misma vista? → A: Sí. "Panel general" es el nombre usado en HU-08 para la vista de indicadores del panel principal; el contenido de ambos es exclusivamente el definido en HU-14.
+
+### Session 2026-11-26 — HU-15
+
+- Q: ¿Qué identidades deben usar los cuatro usuarios del catálogo semilla y en qué orden? → A: `user_id` 1: Millaray Antileo, `administrador`, `millaray.antileo@empresa.cl`; `user_id` 2: Tomás Wiegand, `encargado_bodega`, `tomas.wiegand@empresa.cl`; `user_id` 3: Yasmina Haddad, `supervisor_inventario`, `yasmina.haddad@empresa.cl`; `user_id` 4: Sebastián Quispe, `encargado_bodega`, `sebastian.quispe@empresa.cl`. El orden, los identificadores y los roles son los mismos de la semilla anterior; solo cambian nombre y correo.
+- Q: ¿Qué restricción deben cumplir los nombres y correos ficticios? → A: Ningún nombre debe corresponder a una persona real o pública, no se repiten entre sí y los correos usan el patrón `nombre.apellido@empresa.cl` sin tildes en la parte local.
+- Q: ¿Qué ocurre con los registros ya guardados en el navegador? → A: El catálogo sigue sembrándose solo cuando está vacío, pero al cargar se migran automáticamente únicamente los usuarios que coinciden exactamente con la semilla anterior en `user_id`, nombre y correo (`Ana Torres`, `Carlos Pérez`, `María López` y `Jorge Soto`). Un usuario modificado o distinto se conserva sin cambios; la operación es idempotente y no elimina ni altera otros registros.
+- Q: ¿La migración cambia el usuario activo, la bodega asignada o los vínculos operativos? → A: No. Se conserva el usuario activo guardado, la bodega asignada y las referencias desde movimientos, transferencias, reposiciones y envíos; tampoco cambian `STOCK`, los permisos ni la matriz de HU-08.
+- Q: ¿Cómo se asignan las bodegas en los datos de demostración después del cambio de nombres? → A: Por el rol y la posición del usuario en el catálogo, nunca por comparar su nombre; por eso el renombrado no reasigna responsabilidades de bodega.
+- Q: ¿Se crea una nueva historia, carpeta o rama para este cambio? → A: No. Se documenta como HU-15 dentro del mismo artefacto `specs/002-logistica-inventario/spec.md`, sin crear una carpeta ni una rama nueva.
 
 ## Escenarios de Usuario y Pruebas *(obligatorio)*
 
@@ -365,6 +376,29 @@ Como usuario del ERP, quiero que cada sección se abra solo desde el menú later
 
 ---
 
+### Historia de Usuario 15 - Datos de ejemplo con nombres ficticios variados (Prioridad: P3)
+
+Como usuario del ERP, quiero que los datos de ejemplo usen nombres ficticios variados y no personales, para que las demostraciones sean representativas sin asociar el sistema con personas reales y sin perder el historial operativo ya registrado.
+
+**Por qué es prioridad**: No bloquea las operaciones de HU-01 a HU-14, pero evita que las demostraciones y las pruebas muestren identidades personales y garantiza que un cambio de datos de ejemplo no rompa la continuidad de los usuarios que ya guardaron información en el navegador.
+
+**Prueba Independiente**: Abrir la aplicación con almacenamiento vacío y comprobar los cuatro usuarios con sus nuevos nombres, correos, identificadores y roles; después preparar un navegador con la semilla anterior, cargar la aplicación y verificar que esos cuatro registros se actualizan una sola vez, que un usuario editado no se toca, que el usuario activo sigue seleccionado y que movimientos, transferencias, reposiciones, envíos, stock y permisos conservan sus valores.
+
+**Escenarios de Aceptación**:
+
+1. **Dado que** un navegador no tiene usuarios guardados, **cuando** carga la aplicación, **entonces** el catálogo semilla contiene, en este orden, `user_id` 1: Millaray Antileo (`administrador`, `millaray.antileo@empresa.cl`); `user_id` 2: Tomás Wiegand (`encargado_bodega`, `tomas.wiegand@empresa.cl`); `user_id` 3: Yasmina Haddad (`supervisor_inventario`, `yasmina.haddad@empresa.cl`); `user_id` 4: Sebastián Quispe (`encargado_bodega`, `sebastian.quispe@empresa.cl`).
+2. **Dado que** se revisan los cuatro nombres semilla, **cuando** se comparan entre sí y con personas reales o públicas, **entonces** son distintos entre sí y no corresponden a personas reales ni públicas.
+3. **Dado que** se revisan los cuatro correos semilla, **cuando** se valida su formato, **entonces** todos siguen `nombre.apellido@empresa.cl` y ninguno contiene tildes en la parte local.
+4. **Dado que** un navegador ya guardó la semilla anterior, **cuando** carga la aplicación, **entonces** cada usuario se actualiza solo si coincide exactamente en `user_id`, nombre y correo con `Ana Torres`, `Carlos Pérez`, `María López` o `Jorge Soto`, conservando su identificador y su rol.
+5. **Dado que** un usuario guardado tiene el mismo `user_id` de la semilla anterior pero otro nombre, otro correo o ambos, **cuando** carga la aplicación, **entonces** el sistema no lo modifica.
+6. **Dado que** la aplicación se carga una y otra vez con la semilla ya migrada, **cuando** se repite la carga, **entonces** los nombres y correos permanecen iguales y no se generan usuarios duplicados.
+7. **Dado que** los usuarios semilla tienen movimientos, transferencias, reposiciones o envíos asociados, **cuando** se actualizan sus nombres y correos, **entonces** se conservan la bodega asignada, el orden del catálogo y todas esas referencias por `user_id`.
+8. **Dado que** se cargan los datos de demostración, **cuando** se asigna la bodega de cada usuario, **entonces** la asignación depende del rol y la posición del usuario en el catálogo y no del texto de su nombre.
+9. **Dado que** se compara el estado antes y después del cambio, **cuando** se migran los usuarios, **entonces** no cambian existencias, movimientos, transferencias, reposiciones, envíos, roles, cargos, landing pages ni permisos.
+10. **Dado que** hay un usuario activo guardado en el navegador, **cuando** se migran los usuarios semilla, **entonces** el mismo usuario sigue activo y sigue siendo quien registran las operaciones.
+
+---
+
 ### Casos Límite
 
 - ¿Qué ocurre cuando un usuario intenta guardar un producto o una bodega sin nombre, SKU o ubicación obligatorios?
@@ -438,6 +472,14 @@ Como usuario del ERP, quiero que cada sección se abra solo desde el menú later
 - ¿Qué ocurre si la matriz de permisos oculta todas las pestañas de una sección permitida? (La sección se abre con un estado vacío y un mensaje claro, sin bloquear otras secciones).
 - ¿Qué ocurre si cambian productos, bodegas, stock o alertas mientras el panel principal está abierto? (Los indicadores se recalculan cuando el panel vuelve a mostrarse; la consulta no modifica datos).
 - ¿Qué ocurre si el stock total del panel incluye productos o bodegas inactivos? (Se incluyen porque sus registros de `STOCK` siguen vigentes para consulta, coherente con FR-052 y FR-090).
+
+- ¿Qué ocurre si un usuario guardado conserva el `user_id` de la semilla anterior pero cambió solo el nombre o solo el correo? (No se migra; se considera un dato modificado por el usuario y se conserva tal cual).
+- ¿Qué ocurre si otro usuario del catálogo ya tiene el nombre o el correo nuevo antes de la migración? (La migración no duplica registros ni sobrescribe al usuario ajeno a la semilla anterior; se requiere que los cuatro nombres semilla sean únicos).
+- ¿Qué ocurre si se recarga la aplicación varias veces después de la migración? (La actualización es idempotente: no hay cambios adicionales ni correos repetidos).
+- ¿Qué ocurre si el usuario activo guardado corresponde a uno de los cuatro usuarios migrados? (Conserva su identidad por `user_id`, sigue activo y no cambian sus permisos ni su bodega asignada).
+- ¿Qué ocurre si los datos de demostración ya fueron cargados con los nombres anteriores? (No se recalcula ni se reasigna nada; las bodegas de demostración se derivan de rol y posición, no del nombre).
+- ¿Qué ocurre si el catálogo de usuarios está vacío pero existen movimientos u otros registros? (Se siembran los cuatro usuarios nuevos sin borrar ni alterar los registros existentes).
+- ¿Qué ocurre si un correo semilla contiene una tilde en la parte local? (No cumple la regla; el correo debe expresarse sin tildes aunque el nombre completo las lleve).
 
 ## Requisitos *(obligatorio)*
 
@@ -593,6 +635,13 @@ Como usuario del ERP, quiero que cada sección se abra solo desde el menú later
 - **FR-146**: Cuando la barra lateral se contraiga conforme a FR-039, las seis secciones DEBEN seguir accesibles desde ella y el panel principal NO DEBE compensar con accesos adicionales.
 - **FR-147**: Las solicitudes de reposición de HU-07 DEBEN gestionarse desde Alertas y el seguimiento de envíos de HU-11 desde Movimientos, conservando sus permisos vigentes y sin aparecer como secciones de primer nivel.
 
+- **FR-148**: El catálogo semilla DEBE contener cuatro usuarios, en este orden y con estos valores: `user_id` 1, Millaray Antileo, `administrador`, `millaray.antileo@empresa.cl`; `user_id` 2, Tomás Wiegand, `encargado_bodega`, `tomas.wiegand@empresa.cl`; `user_id` 3, Yasmina Haddad, `supervisor_inventario`, `yasmina.haddad@empresa.cl`; `user_id` 4, Sebastián Quispe, `encargado_bodega`, `sebastian.quispe@empresa.cl`.
+- **FR-149**: Los cuatro nombres semilla DEBEN ser ficticios, distintos entre sí y NO DEBEN corresponder a personas reales o públicas; los correos DEBEN seguir el patrón `nombre.apellido@empresa.cl` con la parte local sin tildes.
+- **FR-150**: El cambio de datos de ejemplo DEBE conservar el orden de los usuarios, sus `user_id`, sus roles, la bodega asignada y los vínculos con movimientos, transferencias, reposiciones y envíos; SOLO DEBE modificar nombre y correo.
+- **FR-151**: La asignación de bodegas en los datos de demostración DEBE determinarse por el rol y la posición del usuario en el catálogo y NO DEBE depender de la coincidencia con un nombre concreto.
+- **FR-152**: El sistema DEBE actualizar automáticamente, al cargar, un usuario guardado SOLO si coincide exactamente con la semilla anterior en `user_id`, nombre y correo (`1`/`Ana Torres`/`ana.torres@empresa.cl`, `2`/`Carlos Pérez`/`carlos.perez@empresa.cl`, `3`/`María López`/`maria.lopez@empresa.cl` y `4`/`Jorge Soto`/`jorge.soto@empresa.cl`), pasándolo al nombre y correo definidos en FR-148; cualquier usuario modificado o distinto NO DEBE alterarse.
+- **FR-153**: La migración DEBE ser idempotente, NO DEBE crear usuarios duplicados ni eliminar o modificar movimientos, stock, transferencias, reposiciones, envíos, roles, permisos ni bodegas asignadas, y DEBE conservar el usuario activo guardado. El catálogo semilla DEBE seguir aplicándose únicamente cuando el catálogo de usuarios esté vacío.
+
 **Correspondencia de campos HU-09**: `movement_id` en esta especificación equivale a `transaction_id` en la persistencia; los valores `OC`/`OV` se expresan en `order_id` y `order_type` adopta `adquisicion`/`venta` en la implementación, sin renombrar campos persistidos.
 
 ### Requisitos de Extensibilidad *(obligaciones del módulo base)*
@@ -699,6 +748,12 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 - **SC-069**: El 0% de los accesos directos por URL a secciones no autorizadas se abre; el 100% se bloquea con mensaje claro conforme a FR-115.
 - **SC-070**: Con la barra lateral contraída, el 100% de las seis secciones sigue siendo accesible y el panel principal mantiene 0 accesos adicionales.
 
+- **SC-071**: El 100% de las instalaciones con catálogo vacío muestra los cuatro usuarios semilla con los nombres, correos, identificadores, roles y orden definidos, y el 100% de los correos no contiene tildes en la parte local.
+- **SC-072**: El 100% de los usuarios guardados que coincide exactamente con la semilla anterior se actualiza en la primera carga, mientras el 0% de los usuarios modificados o distintos se altera; cargas posteriores producen 0 cambios adicionales.
+- **SC-073**: El 0% de los registros de stock, movimientos, transferencias, reposiciones, envíos, bodegas asignadas, roles y permisos cambia como consecuencia del renombrado, y el 100% de las sesiones conserva el usuario activo guardado.
+- **SC-074**: El 100% de las cargas de datos de demostración asigna las bodegas según el rol y la posición del usuario, sin que el cambio de nombre modifique esa asignación.
+- **SC-075**: El 100% de los cuatro nombres semilla es único y no corresponde a personas reales o públicas según revisión manual, y no aparece ningún usuario duplicado tras la migración.
+
 ## Trazabilidad de Implementación
 
 | Historia | Estado documentado | Dominio | Pruebas | Tareas |
@@ -717,6 +772,7 @@ Los módulos personalizados construidos sobre esta base DEBEN poder:
 | HU-12 Navegación reducida a las secciones de logística | Implementada y verificada; accesos base/alias ocultos sin borrar funciones | `index.html`, `src/app.js`, `src/components/shell.js`, `src/styles.css` | `tests/integration/workspace-shell.test.js`, `tests/integration/permissions.test.js` | T146, T148, T150–T152 |
 | HU-13 Organización opcional de secciones en pestañas | Implementada y verificada; Movimientos y Alertas con pestañas y guard por permiso | `index.html`, `src/app.js`, `src/styles.css` | `tests/integration/workspace-shell.test.js`, `tests/integration/dashboard.test.js` | T147–T152 |
 | HU-14 Acceso único desde el menú lateral y panel de indicadores | Implementada; panel con cuatro indicadores y sin accesos rápidos visibles, verificado por pruebas automatizadas; T145 con confirmación manual parcial de menú/pestañas y revisión visual pendiente de dashboard/panel de permisos | `index.html`, `src/components/dashboard.js`, `src/app.js` | `tests/integration/dashboard.test.js`, `tests/integration/workspace-shell.test.js` | T147, T148, T150–T152 |
+| HU-15 Datos de ejemplo con nombres ficticios variados | Especificada; pendiente de implementación | `src/domain/seed.js`, `src/domain/demo-data.js`, `src/storage.js` | `tests/integration/shipments.test.js`, `tests/unit/demo-data.test.js`, `tests/unit/storage.test.js` | Pendiente de planificación |
 
 La ejecución completa de la suite quedó registrada como T110; T066 conserva su evidencia histórica de 2026-11-22 y la verificación de 2026-11-25: `npx vitest run` con 34 archivos/302 pruebas y `npm run build` correcto. La verificación final de HU-12 a HU-14 se registró en T152: 34 archivos/304 pruebas OK y build correcto el mismo día.
 
@@ -791,3 +847,5 @@ Los ajustes visuales intermedios de Fase 16 se conservan: T138–T144 completos;
 - Las landing pages configuradas para supervisor y encargado pueden abrir Alertas o Movimientos como página de inicio sin añadir controles de navegación duplicados; el menú lateral conserva el único punto de acceso visible a esas secciones.
 - "Panel general" (HU-08), "panel principal" (HU-14) y "panel de inicio" del módulo base designan la misma vista de solo indicadores cuando el rol del usuario la tiene configurada como página de inicio.
 - Las pestañas son opcionales por sección; cuando se usen, conservan el contexto de la sección, respetan HU-08/FR-124 y no alteran los permisos ni los datos.
+- Los cuatro usuarios semilla son identidades ficticias de demostración; el cambio de sus nombres y correos no cambia su identidad persistente representada por `user_id`.
+- La migración de la semilla anterior se limita a los registros que coinciden exactamente con ella; cualquier edición previa del usuario se considera intencional y se conserva.

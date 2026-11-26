@@ -165,3 +165,24 @@
 - [x] REV-005 T002–T068 fueron auditados contra archivos reales; las tareas parciales conservan `[ ]` y describen la brecha.
 - [x] REV-006 T017 ya no depende de un selector manual de usuario; hay prueba de integración para auditoría con usuario activo y rechazo cuando no es válido.
 - [x] REV-007 HU-12/HU-14 quedan implementadas y verificadas por pruebas automatizadas: la UI base se oculta sin borrar sus vistas ni datos, el menú lateral tiene seis secciones, el panel principal solo cuatro indicadores y las secciones integradas usan pestañas; T068 quedó reconciliado y T146–T152 pasan con 34 archivos/304 pruebas y build correcto (2026-11-25). T145 tiene confirmación manual parcial de menú/pestañas; falta la revisión visual de dashboard, panel de permisos y estilos globales.
+
+---
+
+## Validación HU-15 — 2026-11-26
+
+**Propósito**: Verificar la incorporación de los datos de ejemplo con nombres ficticios variados sin renumerar historias, requisitos ni criterios existentes.
+
+- [x] HU15-001 HU-01 a HU-14 permanecen sin modificaciones; se añade HU-15 con prioridad P3.
+- [x] HU15-002 Los cuatro nombres, correos, `user_id` y roles nuevos están especificados en orden en HU-15, FR-148 y la sesión de clarificaciones 2026-11-26.
+- [x] HU15-003 FR-148–FR-153 y SC-071–SC-075 continúan la numeración existente (FR-147 y SC-070) sin huecos ni duplicados.
+- [x] HU15-004 Los diez escenarios de aceptación cubren semilla vacía, nombres únicos y ficticios, correos sin tildes, migración exacta, usuarios modificados, idempotencia, vínculos por `user_id`, asignación de bodegas por rol y posición, integridad de datos y conservación del usuario activo.
+- [x] HU15-005 Los siete casos límite nuevos cubren coincidencias parciales, colisión de nombres, recargas repetidas, usuario activo migrado, datos de demostración previos, catálogo vacío con otros registros y correos con tildes.
+- [x] HU15-006 La fila de trazabilidad de HU-15 declara cobertura de `src/domain/seed.js`, `src/domain/demo-data.js`, `src/storage.js`, `tests/integration/shipments.test.js`, `tests/unit/demo-data.test.js` y `tests/unit/storage.test.js`.
+- [x] HU15-007 No quedan marcadores `[NEEDS CLARIFICATION]`; los criterios de éxito son medibles y describen resultados sin detalles de implementación.
+- [x] HU15-008 Las suposiciones registran que `user_id` es la identidad persistente y que las ediciones previas se conservan.
+- [X] HU15-009 La implementación y la ejecución de pruebas de HU-15 quedan registradas en T153–T158; evidencia: 34 archivos/308 pruebas OK y build correcto (2026-11-26).
+
+### Notas
+
+- Se conservaron intactas las validaciones históricas y el estado pendiente de T031, T036, T048, T065, T067, T107, T136 y T145.
+- No se crearon carpetas ni ramas nuevas, conforme a la instrucción explícita del usuario.

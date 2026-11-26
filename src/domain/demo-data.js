@@ -225,15 +225,11 @@ function userByRole(users, role){
   return users.find(user => user.role === role) || users[0];
 }
 
-function userByName(users, name){
-  return users.find(user => user.user_name === name);
-}
-
 function warehouseUser(users, warehouseName){
-  if(warehouseName === WAREHOUSE.central){
-    return userByName(users, 'Carlos Pérez') || userByRole(users, 'encargado_bodega');
-  }
-  return userByName(users, 'Jorge Soto') || userByRole(users, 'encargado_bodega') || users[0];
+  const managers = users.filter(user => user.role === 'encargado_bodega');
+  const primary = managers[0] || users[0];
+  if(warehouseName === WAREHOUSE.central) return primary;
+  return managers[1] || primary;
 }
 
 function categoryIdFor(categories, categoryName){

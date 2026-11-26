@@ -371,3 +371,14 @@ Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2
 - `src/styles.css` reutiliza tokens existentes para pestañas, botones superiores y panel de indicadores; no se introduce un tema nuevo.
 - Verificación: `npx vitest run` con 34 archivos/304 pruebas OK y `npm run build` correcto; sin crear ramas, commits ni push adicionales durante esta corrección documental, conservando el historial previo del repositorio.
 
+## Fase 18: HU-15 — Datos de ejemplo con nombres ficticios variados (2026-11-26)
+
+- Límites: esta fase se añade al final del plan sin reescribir las fases anteriores ni modificar `spec.md`.
+- Alcance: renombrar los cuatro usuarios semilla conservando `user_id`, orden, roles, bodega asignada y referencias por `user_id` (FR-148–FR-150, SC-071 y SC-073).
+- Persistencia: `src/domain/seed.js` define los nuevos valores; `src/storage.js` aplica una migración exacta por (`user_id`, nombre, correo), sin duplicados, sin alterar usuarios modificados y sin tocar `logistics:active_user_id`; la siembra sigue ocurriendo solo si el catálogo está vacío (FR-152 y FR-153).
+- Datos de demostración: `src/domain/demo-data.js` deriva la bodega desde rol + orden del catálogo (`user_id` 1–4; los `encargado_bodega` en los ids 2 y 4), sin comparar nombres; la interpretación de “posición” queda pendiente de reflejo en la spec (A1).
+- Verificación de nombres: la condición de nombres ficticios se mantiene como revisión manual documentada con evidencia en `checklists/requirements.md`; el criterio objetivo (A2) queda pendiente de reflejo en la spec.
+- Fallos: la spec aún no define el comportamiento ante una escritura fallida durante la migración (U1); esta fase no introduce una regla de rollback sin actualizar `spec.md`.
+- Verificación: ampliar `tests/unit/storage.test.js`, `tests/unit/demo-data.test.js` y `tests/integration/shipments.test.js`; ejecutar `npx vitest run` y `npm run build`; actualizar el checklist `HU15-009` y el registro incremental de `tasks.md` con T153–T158 cuando se generen; sin crear ramas ni commits.
+- Constitución: la comprobación general no se reabre; N1 permanece documentado como no verificable por ausencia de `.specify/memory/constitution.md`.
+

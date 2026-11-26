@@ -1,5 +1,5 @@
 import { getConfig } from './module-config.js';
-import { PRODUCT_CATEGORY_SEED, ROLE_PERMISSION_SEED, ROLE_SEED, USER_SEED } from './domain/seed.js';
+import { LEGACY_USER_SEED, PRODUCT_CATEGORY_SEED, ROLE_PERMISSION_SEED, ROLE_SEED, USER_SEED } from './domain/seed.js';
 
 const ENTITIES_KEY = 'erp_base_module:entities';
 const DOCUMENTS_KEY = 'erp_base_module:documents';
@@ -185,6 +185,23 @@ export function nextShipmentId(){ return nextId(loadShipments(), 'shipment_id');
 export function nextTransferId(){ return nextId(loadTransfers(), 'transfer_id'); }
 export function nextReplenishmentId(){ return nextId(loadReplenishments(), 'request_id'); }
 
+/** Migra solo los usuarios que coinciden exactamente con la semilla anterior (FR-152). */
+export function migrateLegacySeedUsers(){
+  const users = loadUsers();
+  if(users.length === 0) return 0;
+  let changed = 0;
+  const migrated = users.map(user => {
+    const legacyIndex = LEGACY_USER_SEED.findIndex(legacy =>
+      legacy.user_id === user.user_id && legacy.user_name === user.user_name && legacy.email === user.email
+    );
+    if(legacyIndex === -1) return user;
+    changed += 1;
+    return { ...user, user_name: USER_SEED[legacyIndex].user_name, email: USER_SEED[legacyIndex].email };
+  });
+  if(changed > 0) saveUsers(migrated);
+  return changed;
+}
+
 /** Carga idempotente de los catálogos semilla (FR-071): no duplica si ya existen datos. */
 export function seedLogisticsCatalogs(){
   if(loadProductCategories().length === 0){
@@ -193,6 +210,7 @@ export function seedLogisticsCatalogs(){
   if(loadUsers().length === 0){
     saveUsers(USER_SEED.map((u, i) => ({ user_id: i + 1, assigned_warehouse_id: undefined, ...u })));
   }
+  migrateLegacySeedUsers();
   if(loadRoles().length === 0){
     saveRoles(ROLE_SEED.map(role => ({ ...role })));
   }
