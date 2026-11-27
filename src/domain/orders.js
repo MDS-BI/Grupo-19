@@ -39,7 +39,8 @@ export function createOrderForMovement(movement){
     warehouse_id: movement.warehouse_id,
     quantity: movement.quantity,
     user_id: movement.user_id,
-    order_date: movement.transaction_date
+    order_date: movement.transaction_date,
+    status: 'aprobada'
   };
   const validation = validateRecord('orders', order, { list: orders });
   if(!validation.valid) throw new Error(`Orden inválida: ${Object.values(validation.errors).join(', ')}`);

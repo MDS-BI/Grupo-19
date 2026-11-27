@@ -16,6 +16,14 @@ function hasFilter(value){
   return value !== undefined && value !== null && String(value).trim() !== '';
 }
 
+function isReceivedStatus(status){
+  return String(status) === 'recibida' || String(status) === 'confirmada';
+}
+
+function isPendingStatus(status){
+  return String(status) === 'pendiente';
+}
+
 function matchesTerm(transfer, term){
   if(!hasFilter(term)) return true;
   const query = String(term).trim().toLowerCase();
@@ -25,7 +33,11 @@ function matchesTerm(transfer, term){
 
 function matchesTransferFilters(transfer, filters = {}){
   if(!matchesTerm(transfer, filters.term)) return false;
-  if(hasFilter(filters.status) && String(transfer.status) !== String(filters.status)) return false;
+  if(hasFilter(filters.status)){
+    const status = String(filters.status);
+    const matches = isReceivedStatus(status) ? isReceivedStatus(transfer.status) : String(transfer.status) === status;
+    if(!matches) return false;
+  }
   if(hasFilter(filters.productId) && Number(transfer.product_id) !== Number(filters.productId)) return false;
   if(hasFilter(filters.sourceWarehouseId) && Number(transfer.source_warehouse_id) !== Number(filters.sourceWarehouseId)) return false;
   if(hasFilter(filters.targetWarehouseId) && Number(transfer.target_warehouse_id) !== Number(filters.targetWarehouseId)) return false;
@@ -76,7 +88,7 @@ export function confirmTransfer(transferId, confirmedBy){
   const idx = list.findIndex(t => t.transfer_id === Number(transferId));
   if(idx === -1) return { success: false, error: 'Transferencia no encontrada' };
   const transfer = list[idx];
-  if(transfer.status !== 'pendiente') return { success: false, error: 'Solo las transferencias pendientes pueden confirmarse' };
+  if(!isPendingStatus(transfer.status)) return { success: false, error: 'Solo las transferencias pendientes pueden confirmarse' };
   if(!confirmedBy || !userExists(confirmedBy)) return { success: false, error: INVALID_ACTIVE_USER_MSG };
   if(!isActiveWarehouse(transfer.source_warehouse_id) || !isActiveWarehouse(transfer.target_warehouse_id)){
     return { success: false, error: 'No es posible confirmar: la bodega de origen o destino está inactiva' };
@@ -107,7 +119,7 @@ export function cancelTransfer(transferId, cancelledBy){
   const idx = list.findIndex(t => t.transfer_id === Number(transferId));
   if(idx === -1) return { success: false, error: 'Transferencia no encontrada' };
   const transfer = list[idx];
-  if(transfer.status !== 'pendiente') return { success: false, error: 'Solo las transferencias pendientes pueden cancelarse' };
+  if(!isPendingStatus(transfer.status)) return { success: false, error: 'Solo las transferencias pendientes pueden cancelarse' };
   if(!cancelledBy || !userExists(cancelledBy)) return { success: false, error: INVALID_ACTIVE_USER_MSG };
 
   list[idx] = { ...transfer, status: 'cancelada', cancelled_by: Number(cancelledBy) };

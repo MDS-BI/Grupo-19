@@ -1094,7 +1094,7 @@ function wireEvents(){
         const status = qs('demo-data-status');
         const summary = result.summary;
         if(status && summary){
-          status.textContent = `${result.message} Productos: ${summary.products} · Bodegas: ${summary.warehouses} · Movimientos: ${summary.movements} · Transferencias: ${summary.transfers}.`;
+          status.textContent = `${result.message} Productos: ${summary.products} · Bodegas: ${summary.warehouses} · Stock: ${summary.stock} · Movimientos: ${summary.movements} · Transferencias: ${summary.transfers} · Órdenes: ${summary.orders} · Envíos: ${summary.shipments}.`;
         } else if(status){
           status.textContent = result.message;
         }

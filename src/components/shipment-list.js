@@ -1,16 +1,22 @@
 import { escapeHtml, loadUsers } from '../storage.js';
 
 const STATUS_LABELS = {
-  en_bodega: 'En bodega',
+  preparando: 'Preparando',
+  despachado: 'Despachado',
   en_transito: 'En tránsito',
-  en_reparto: 'En reparto',
-  entregado: 'Entregado'
+  entregado: 'Entregado',
+  con_incidencia: 'Con incidencia',
+  en_bodega: 'En bodega',
+  en_reparto: 'En reparto'
 };
 const STATUS_CLASSES = {
-  en_bodega: 'status-shipment-warehouse',
+  preparando: 'status-shipment-warehouse',
+  despachado: 'status-shipment-delivery',
   en_transito: 'status-shipment-transit',
-  en_reparto: 'status-shipment-delivery',
-  entregado: 'status-shipment-delivered'
+  entregado: 'status-shipment-delivered',
+  con_incidencia: 'status-cancelled',
+  en_bodega: 'status-shipment-warehouse',
+  en_reparto: 'status-shipment-delivery'
 };
 
 function setCount(id, value){
@@ -65,7 +71,7 @@ export function renderShipmentList(tbody, emptyEl, shipments, { onAdvance, canUp
     `;
     const actionsTd = document.createElement('td');
     actionsTd.className = 'actions-cell';
-    if(canUpdateStatus && shipment.status !== 'entregado'){
+    if(canUpdateStatus && shipment.status !== 'entregado' && shipment.status !== 'con_incidencia'){
       const advanceBtn = document.createElement('button');
       advanceBtn.type = 'button';
       advanceBtn.className = 'secondary';
@@ -73,7 +79,7 @@ export function renderShipmentList(tbody, emptyEl, shipments, { onAdvance, canUp
       advanceBtn.addEventListener('click', () => onAdvance(shipment));
       actionsTd.appendChild(advanceBtn);
     } else {
-      actionsTd.textContent = shipment.status === 'entregado' ? 'Entregado' : 'Solo lectura';
+      actionsTd.textContent = ['entregado', 'con_incidencia'].includes(shipment.status) ? statusLabel(shipment.status) : 'Solo lectura';
       actionsTd.classList.add('muted');
     }
     tr.appendChild(actionsTd);

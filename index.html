@@ -778,11 +778,24 @@
               </div>
               <span class="count-badge" id="order-count">0</span>
             </div>
+            <div class="filter-grid">
+              <div>
+                <label for="order-filter-status">Estado</label>
+                <select id="order-filter-status">
+                  <option value="">Todos los estados</option>
+                  <option value="borrador">Borrador</option>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="en_proceso">En proceso</option>
+                  <option value="completada">Completada</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
+            </div>
             <div id="order-list-empty" class="empty" hidden aria-live="polite">Todavía no se generaron órdenes.</div>
             <p class="table-scroll-hint">Desplaza horizontalmente para ver más columnas.</p>
             <div class="table-wrap" role="region" aria-label="Órdenes generadas" tabindex="0">
               <table class="data-table">
-                <thead><tr><th scope="col">Orden</th><th scope="col">Tipo</th><th scope="col">Movimiento</th><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Fecha</th></tr></thead>
+                <thead><tr><th scope="col">Orden</th><th scope="col">Tipo</th><th scope="col">Movimiento</th><th scope="col">Producto</th><th scope="col">Bodega</th><th scope="col">Cantidad</th><th scope="col">Fecha</th><th scope="col">Estado</th></tr></thead>
                 <tbody id="order-list-body"></tbody>
               </table>
             </div>
@@ -848,10 +861,13 @@
                     <label for="shipment-filter-status">Estado</label>
                     <select id="shipment-filter-status">
                       <option value="">Todos los estados</option>
-                      <option value="en_bodega">En bodega</option>
+                      <option value="preparando">Preparando</option>
+                      <option value="despachado">Despachado</option>
                       <option value="en_transito">En tránsito</option>
-                      <option value="en_reparto">En reparto</option>
                       <option value="entregado">Entregado</option>
+                      <option value="con_incidencia">Con incidencia</option>
+                      <option value="en_bodega">En bodega</option>
+                      <option value="en_reparto">En reparto</option>
                     </select>
                   </div>
                 </div>
@@ -933,6 +949,8 @@
                 <select id="transfer-filter-status">
                   <option value="">Todos los estados</option>
                   <option value="pendiente">Pendiente</option>
+                  <option value="en_transito">En tránsito</option>
+                  <option value="recibida">Recibida</option>
                   <option value="confirmada">Confirmada</option>
                   <option value="cancelada">Cancelada</option>
                 </select>

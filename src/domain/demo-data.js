@@ -1,204 +1,21 @@
 import {
   loadProductCategories, loadProducts, saveProducts, loadWarehouses, saveWarehouses,
   loadUsers, loadStock, saveStock, loadMovements, saveMovements,
-  loadTransfers, saveTransfers, seedLogisticsCatalogs
+  loadTransfers, saveTransfers, loadOrders, saveOrders, loadShipments, saveShipments,
+  seedLogisticsCatalogs, validateRecord
 } from '../storage.js';
-
-/**
- * Carga de datos de demostración para Logística e Inventario.
- *
- * Reglas de seguridad:
- * - Es opcional y se ejecuta solo desde el botón del dashboard.
- * - No borra, reemplaza ni sobrescribe registros existentes.
- * - Usa una marca de lote y claves de demostración para no duplicar registros.
- * - Genera stock, movimientos y transferencias coherentes entre sí.
- * - Conserva las reglas de negocio: cantidades no negativas, bodegas activas,
- *   estados de transferencia válidos y usuarios existentes.
- */
+import { DEMO_SEED } from './demo-data.fixture.js';
 
 const DEMO_BATCH = 'logistics-demo-v1';
 const DEMO_FLAG_KEY = 'logistics:demo_data_loaded_v1';
 
-const CATEGORY = {
-  electronica: 'Electrónica',
-  alimentos: 'Alimentos y Bebidas',
-  ferretería: 'Ferretería',
-  oficina: 'Insumos de Oficina',
-  limpieza: 'Limpieza y Aseo'
-};
-
-const WAREHOUSE = {
-  central: 'Bodega Central Santiago',
-  valparaiso: 'Bodega Valparaíso',
-  concepcion: 'Bodega Concepción',
-  maipu: 'Bodega Maipú (inactiva)'
-};
-
-const PRODUCT_SPECS = [
-  {
-    sku: 'DEMO-LAP-001', name: 'Notebook Lenovo ThinkPad E14', category: CATEGORY.electronica,
-    description: 'Notebook empresarial 14", 16 GB RAM, 512 GB SSD.', salePrice: 749990, costPrice: 620000,
-    unit: 'unidad', supplier: 'TecnoAndes SpA', weight: 1.6, status: 'activo'
-  },
-  {
-    sku: 'DEMO-MOU-002', name: 'Mouse inalámbrico Logitech M240', category: CATEGORY.electronica,
-    description: 'Mouse inalámbrico compacto con receptor USB.', salePrice: 15990, costPrice: 10500,
-    unit: 'unidad', supplier: 'TecnoAndes SpA', weight: 0.12, status: 'activo'
-  },
-  {
-    sku: 'DEMO-CAF-003', name: 'Café molido 1 kg', category: CATEGORY.alimentos,
-    description: 'Café tostado molido, bolsa de 1 kg para consumo masivo.', salePrice: 12990, costPrice: 8500,
-    unit: 'kg', supplier: 'Distribuidora Sur Ltda.', weight: 1, status: 'activo'
-  },
-  {
-    sku: 'DEMO-ARR-004', name: 'Arroz grado 1 saco 5 kg', category: CATEGORY.alimentos,
-    description: 'Arroz largo ancho grado 1, saco de 5 kg.', salePrice: 6990, costPrice: 4200,
-    unit: 'saco', supplier: 'Distribuidora Sur Ltda.', weight: 5, status: 'activo'
-  },
-  {
-    sku: 'DEMO-TAL-005', name: 'Taladro percutor 650W', category: CATEGORY.ferretería,
-    description: 'Taladro percutor eléctrico con maletín y set de brocas.', salePrice: 89990, costPrice: 62000,
-    unit: 'unidad', supplier: 'Ferretería Central SpA', weight: 2.4, status: 'activo'
-  },
-  {
-    sku: 'DEMO-GUA-006', name: 'Guantes de seguridad anticorte', category: CATEGORY.ferretería,
-    description: 'Guantes de protección anticorte nivel 5, talla única.', salePrice: 4990, costPrice: 2500,
-    unit: 'par', supplier: 'Ferretería Central SpA', weight: 0.15, status: 'activo'
-  },
-  {
-    sku: 'DEMO-PAP-007', name: 'Resma papel A4 500 hojas', category: CATEGORY.oficina,
-    description: 'Papel blanco A4 de 75 g/m², resma de 500 hojas.', salePrice: 4990, costPrice: 3200,
-    unit: 'resma', supplier: 'Papelería Andina Ltda.', weight: 2.3, status: 'activo'
-  },
-  {
-    sku: 'DEMO-LIM-008', name: 'Detergente industrial 5 L', category: CATEGORY.limpieza,
-    description: 'Detergente líquido concentrado para limpieza industrial.', salePrice: 14990, costPrice: 9800,
-    unit: 'bidón', supplier: 'Química Limpia SpA', weight: 5.2, status: 'activo'
-  },
-  {
-    sku: 'DEMO-CAB-009', name: 'Cable HDMI 2.1 de 2 metros', category: CATEGORY.electronica,
-    description: 'Cable HDMI 2.1 8K, conectores reforzados, 2 metros.', salePrice: 12990, costPrice: 7500,
-    unit: 'unidad', supplier: 'TecnoAndes SpA', weight: 0.18, status: 'inactivo'
-  },
-  {
-    sku: 'DEMO-TON-010', name: 'Cartucho de tóner compatible', category: CATEGORY.oficina,
-    description: 'Cartucho de tóner compatible para impresoras láser de oficina.', salePrice: 32990, costPrice: 22000,
-    unit: 'unidad', supplier: 'Papelería Andina Ltda.', weight: 0.7, status: 'activo'
-  }
-];
-
-const WAREHOUSE_SPECS = [
-  {
-    name: WAREHOUSE.central, location: 'Av. Américo Vespucio 1234, Quilicura, Santiago',
-    description: 'Centro de distribución principal para la Región Metropolitana.',
-    capacity: 5000, status: 'activo'
-  },
-  {
-    name: WAREHOUSE.valparaiso, location: 'Camino La Pólvora 880, Valparaíso',
-    description: 'Bodega regional para despachos de la zona costera.',
-    capacity: 2500, status: 'activo'
-  },
-  {
-    name: WAREHOUSE.concepcion, location: 'Ruta 150 Km 12, Concepción',
-    description: 'Bodega de apoyo para la zona sur del país.',
-    capacity: 1800, status: 'activo'
-  },
-  {
-    name: WAREHOUSE.maipu, location: 'Av. Pajaritos 4500, Maipú, Santiago',
-    description: 'Bodega antigua en proceso de cierre operativo.',
-    capacity: 800, status: 'inactivo'
-  }
-];
-
-const MOVEMENT_SPECS = [
-  { key: 'p1-c-ent', product: 'DEMO-LAP-001', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 15, daysAgo: 21 },
-  { key: 'p1-c-sal', product: 'DEMO-LAP-001', warehouse: WAREHOUSE.central, type: 'salida', quantity: 3, daysAgo: 13 },
-  { key: 'p1-v-ent', product: 'DEMO-LAP-001', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 4, daysAgo: 19 },
-  { key: 'p1-v-sal', product: 'DEMO-LAP-001', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 2, daysAgo: 9 },
-  { key: 'p1-cc-ent', product: 'DEMO-LAP-001', warehouse: WAREHOUSE.concepcion, type: 'entrada', quantity: 2, daysAgo: 11 },
-
-  { key: 'p2-c-ent', product: 'DEMO-MOU-002', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 60, daysAgo: 22 },
-  { key: 'p2-c-sal', product: 'DEMO-MOU-002', warehouse: WAREHOUSE.central, type: 'salida', quantity: 15, daysAgo: 10 },
-  { key: 'p2-v-ent', product: 'DEMO-MOU-002', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 20, daysAgo: 20 },
-  { key: 'p2-v-sal', product: 'DEMO-MOU-002', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 12, daysAgo: 8 },
-
-  { key: 'p3-c-ent', product: 'DEMO-CAF-003', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 100, daysAgo: 25 },
-  { key: 'p3-c-sal', product: 'DEMO-CAF-003', warehouse: WAREHOUSE.central, type: 'salida', quantity: 20, daysAgo: 12 },
-  { key: 'p3-v-ent', product: 'DEMO-CAF-003', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 30, daysAgo: 21 },
-  { key: 'p3-v-sal', product: 'DEMO-CAF-003', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 15, daysAgo: 7 },
-  { key: 'p3-cc-ent', product: 'DEMO-CAF-003', warehouse: WAREHOUSE.concepcion, type: 'entrada', quantity: 40, daysAgo: 15 },
-
-  { key: 'p4-c-ent', product: 'DEMO-ARR-004', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 150, daysAgo: 26 },
-  { key: 'p4-c-sal', product: 'DEMO-ARR-004', warehouse: WAREHOUSE.central, type: 'salida', quantity: 30, daysAgo: 14 },
-  { key: 'p4-v-ent', product: 'DEMO-ARR-004', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 40, daysAgo: 22 },
-  { key: 'p4-v-sal', product: 'DEMO-ARR-004', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 15, daysAgo: 6 },
-  { key: 'p4-cc-ent', product: 'DEMO-ARR-004', warehouse: WAREHOUSE.concepcion, type: 'entrada', quantity: 60, daysAgo: 16 },
-
-  { key: 'p5-c-ent', product: 'DEMO-TAL-005', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 10, daysAgo: 24 },
-  { key: 'p5-c-sal', product: 'DEMO-TAL-005', warehouse: WAREHOUSE.central, type: 'salida', quantity: 4, daysAgo: 11 },
-  { key: 'p5-v-ent', product: 'DEMO-TAL-005', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 3, daysAgo: 18 },
-  { key: 'p5-v-sal', product: 'DEMO-TAL-005', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 2, daysAgo: 5 },
-  { key: 'p5-cc-ent', product: 'DEMO-TAL-005', warehouse: WAREHOUSE.concepcion, type: 'entrada', quantity: 2, daysAgo: 9 },
-  { key: 'p5-cc-sal', product: 'DEMO-TAL-005', warehouse: WAREHOUSE.concepcion, type: 'salida', quantity: 2, daysAgo: 3 },
-
-  { key: 'p6-c-ent', product: 'DEMO-GUA-006', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 250, daysAgo: 23 },
-  { key: 'p6-c-sal', product: 'DEMO-GUA-006', warehouse: WAREHOUSE.central, type: 'salida', quantity: 50, daysAgo: 11 },
-  { key: 'p6-v-ent', product: 'DEMO-GUA-006', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 50, daysAgo: 17 },
-  { key: 'p6-v-sal', product: 'DEMO-GUA-006', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 15, daysAgo: 4 },
-  { key: 'p6-cc-ent', product: 'DEMO-GUA-006', warehouse: WAREHOUSE.concepcion, type: 'entrada', quantity: 100, daysAgo: 13 },
-  { key: 'p6-cc-sal', product: 'DEMO-GUA-006', warehouse: WAREHOUSE.concepcion, type: 'salida', quantity: 10, daysAgo: 2 },
-
-  { key: 'p7-c-ent', product: 'DEMO-PAP-007', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 40, daysAgo: 27 },
-  { key: 'p7-c-sal', product: 'DEMO-PAP-007', warehouse: WAREHOUSE.central, type: 'salida', quantity: 16, daysAgo: 8 },
-  { key: 'p7-v-ent', product: 'DEMO-PAP-007', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 60, daysAgo: 19 },
-  { key: 'p7-v-sal', product: 'DEMO-PAP-007', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 10, daysAgo: 3 },
-  { key: 'p7-cc-ent', product: 'DEMO-PAP-007', warehouse: WAREHOUSE.concepcion, type: 'entrada', quantity: 30, daysAgo: 10 },
-  { key: 'p7-cc-sal', product: 'DEMO-PAP-007', warehouse: WAREHOUSE.concepcion, type: 'salida', quantity: 12, daysAgo: 2 },
-
-  { key: 'p8-c-ent', product: 'DEMO-LIM-008', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 20, daysAgo: 22 },
-  { key: 'p8-c-sal', product: 'DEMO-LIM-008', warehouse: WAREHOUSE.central, type: 'salida', quantity: 6, daysAgo: 7 },
-  { key: 'p8-v-ent', product: 'DEMO-LIM-008', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 10, daysAgo: 14 },
-  { key: 'p8-v-sal', product: 'DEMO-LIM-008', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 7, daysAgo: 3 },
-  { key: 'p8-cc-ent', product: 'DEMO-LIM-008', warehouse: WAREHOUSE.concepcion, type: 'entrada', quantity: 10, daysAgo: 6 },
-  { key: 'p8-cc-sal', product: 'DEMO-LIM-008', warehouse: WAREHOUSE.concepcion, type: 'salida', quantity: 4, daysAgo: 1 },
-
-  { key: 'p9-c-ent', product: 'DEMO-CAB-009', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 5, daysAgo: 20 },
-  { key: 'p9-c-sal', product: 'DEMO-CAB-009', warehouse: WAREHOUSE.central, type: 'salida', quantity: 5, daysAgo: 15 },
-  { key: 'p9-v-ent', product: 'DEMO-CAB-009', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 10, daysAgo: 19 },
-
-  { key: 'p10-c-ent', product: 'DEMO-TON-010', warehouse: WAREHOUSE.central, type: 'entrada', quantity: 12, daysAgo: 20 },
-  { key: 'p10-c-sal', product: 'DEMO-TON-010', warehouse: WAREHOUSE.central, type: 'salida', quantity: 7, daysAgo: 9 },
-  { key: 'p10-v-ent', product: 'DEMO-TON-010', warehouse: WAREHOUSE.valparaiso, type: 'entrada', quantity: 8, daysAgo: 15 },
-  { key: 'p10-v-sal', product: 'DEMO-TON-010', warehouse: WAREHOUSE.valparaiso, type: 'salida', quantity: 6, daysAgo: 4 },
-  { key: 'p10-cc-ent', product: 'DEMO-TON-010', warehouse: WAREHOUSE.concepcion, type: 'entrada', quantity: 7, daysAgo: 7 }
-];
-
-const TRANSFER_SPECS = [
-  { key: 't-cafe-conf', product: 'DEMO-CAF-003', source: WAREHOUSE.central, target: WAREHOUSE.valparaiso, quantity: 10, status: 'confirmada', daysAgo: 5 },
-  { key: 't-notebook-pend', product: 'DEMO-LAP-001', source: WAREHOUSE.central, target: WAREHOUSE.valparaiso, quantity: 3, status: 'pendiente', daysAgo: 1 },
-  { key: 't-guantes-conf', product: 'DEMO-GUA-006', source: WAREHOUSE.valparaiso, target: WAREHOUSE.concepcion, quantity: 5, status: 'confirmada', daysAgo: 4 },
-  { key: 't-arroz-pend', product: 'DEMO-ARR-004', source: WAREHOUSE.central, target: WAREHOUSE.concepcion, quantity: 20, status: 'pendiente', daysAgo: 2 },
-  { key: 't-detergente-conf', product: 'DEMO-LIM-008', source: WAREHOUSE.central, target: WAREHOUSE.concepcion, quantity: 3, status: 'confirmada', daysAgo: 3 },
-  { key: 't-mouse-cancel', product: 'DEMO-MOU-002', source: WAREHOUSE.central, target: WAREHOUSE.valparaiso, quantity: 5, status: 'cancelada', daysAgo: 6 },
-  { key: 't-guantes-pend', product: 'DEMO-GUA-006', source: WAREHOUSE.central, target: WAREHOUSE.valparaiso, quantity: 40, status: 'pendiente', daysAgo: 1 },
-  { key: 't-cable-cancel', product: 'DEMO-CAB-009', source: WAREHOUSE.valparaiso, target: WAREHOUSE.central, quantity: 2, status: 'cancelada', daysAgo: 4 }
-];
-
-const MIN_LEVELS = {
-  'DEMO-LAP-001': { [WAREHOUSE.central]: 5, [WAREHOUSE.valparaiso]: 4, [WAREHOUSE.concepcion]: 2 },
-  'DEMO-MOU-002': { [WAREHOUSE.central]: 10, [WAREHOUSE.valparaiso]: 10 },
-  'DEMO-CAF-003': { [WAREHOUSE.central]: 20, [WAREHOUSE.valparaiso]: 20, [WAREHOUSE.concepcion]: 10 },
-  'DEMO-ARR-004': { [WAREHOUSE.central]: 30, [WAREHOUSE.valparaiso]: 10, [WAREHOUSE.concepcion]: 20 },
-  'DEMO-TAL-005': { [WAREHOUSE.central]: 3, [WAREHOUSE.valparaiso]: 2, [WAREHOUSE.concepcion]: 1 },
-  'DEMO-GUA-006': { [WAREHOUSE.central]: 50, [WAREHOUSE.valparaiso]: 20, [WAREHOUSE.concepcion]: 40 },
-  'DEMO-PAP-007': { [WAREHOUSE.central]: 30, [WAREHOUSE.valparaiso]: 15, [WAREHOUSE.concepcion]: 20 },
-  'DEMO-LIM-008': { [WAREHOUSE.central]: 10, [WAREHOUSE.valparaiso]: 5, [WAREHOUSE.concepcion]: 4 },
-  'DEMO-CAB-009': { [WAREHOUSE.central]: 0, [WAREHOUSE.valparaiso]: 0 },
-  'DEMO-TON-010': { [WAREHOUSE.central]: 8, [WAREHOUSE.valparaiso]: 5, [WAREHOUSE.concepcion]: 3 }
-};
-
-const ENTRY_TYPES = new Set(['entrada', 'ajuste_entrada']);
 const STOCK_SEPARATOR = '::';
+const ENTRY_TYPES = new Set(['entrada', 'ajuste_entrada']);
+const EFFECTIVE_TRANSFER_STATUSES = new Set(['recibida', 'confirmada']);
+const MOVEMENT_TYPES = new Set(['entrada', 'salida', 'ajuste_entrada', 'ajuste_salida']);
+const ORDER_STATUSES = new Set(['borrador', 'aprobada', 'en_proceso', 'completada', 'cancelada']);
+const SHIPMENT_STATUSES = new Set(['preparando', 'despachado', 'en_transito', 'entregado', 'con_incidencia']);
+const TRANSFER_STATUSES = new Set(['pendiente', 'en_transito', 'recibida', 'confirmada', 'cancelada']);
 
 function idFor(list, field){
   return list.reduce((max, record) => Math.max(max, Number(record[field]) || 0), 0) + 1;
@@ -209,7 +26,7 @@ function readFlag(){
 }
 
 function writeFlag(){
-  try { localStorage.setItem(DEMO_FLAG_KEY, 'true'); } catch (error) { /* almacenamiento no disponible */ }
+  try { localStorage.setItem(DEMO_FLAG_KEY, 'true'); } catch (error) { return false; }
 }
 
 function isoDaysAgo(daysAgo){
@@ -228,7 +45,7 @@ function userByRole(users, role){
 function warehouseUser(users, warehouseName){
   const managers = users.filter(user => user.role === 'encargado_bodega');
   const primary = managers[0] || users[0];
-  if(warehouseName === WAREHOUSE.central) return primary;
+  if(warehouseName === DEMO_SEED.warehouses[0].name) return primary;
   return managers[1] || primary;
 }
 
@@ -240,30 +57,59 @@ function stockKey(productId, warehouseId){
   return `${productId}${STOCK_SEPARATOR}${warehouseId}`;
 }
 
+function assertValid(schemaName, record, context = {}){
+  const check = validateRecord(schemaName, record, context);
+  if(!check.valid){
+    throw new Error(`${schemaName} inválido: ${Object.values(check.errors).join(', ')}`);
+  }
+}
+
+function nextOrderId(prefix, orders){
+  const pattern = new RegExp(`^${prefix}-(\\d+)$`);
+  let max = orders.reduce((current, order) => {
+    const match = pattern.exec(order?.order_id || '');
+    return match ? Math.max(current, Number(match[1])) : current;
+  }, 0);
+  let id;
+  do {
+    max += 1;
+    id = `${prefix}-${String(max).padStart(4, '0')}`;
+  } while(orders.some(order => order.order_id === id));
+  return id;
+}
+
+function isDemoRecord(record){
+  return record?.demo_batch === DEMO_BATCH;
+}
+
+function uniqueKeys(list, getKey){
+  const seen = new Set();
+  const duplicates = new Set();
+  for(const item of list){
+    const key = getKey(item);
+    if(seen.has(key)) duplicates.add(key);
+    seen.add(key);
+  }
+  return duplicates;
+}
+
 export function isDemoDataLoaded(){
   return readFlag();
 }
 
 export function getDemoDataSummary(){
-  const demoProducts = loadProducts().filter(product => product.demo_batch === DEMO_BATCH);
-  const demoWarehouses = loadWarehouses().filter(warehouse => warehouse.demo_batch === DEMO_BATCH);
-  const demoStock = loadStock().filter(record => record.demo_batch === DEMO_BATCH);
-  const demoMovements = loadMovements().filter(movement => movement.demo_batch === DEMO_BATCH);
-  const demoTransfers = loadTransfers().filter(transfer => transfer.demo_batch === DEMO_BATCH);
   return {
     loaded: isDemoDataLoaded(),
-    products: demoProducts.length,
-    warehouses: demoWarehouses.length,
-    stock: demoStock.length,
-    movements: demoMovements.length,
-    transfers: demoTransfers.length
+    products: loadProducts().filter(isDemoRecord).length,
+    warehouses: loadWarehouses().filter(isDemoRecord).length,
+    stock: loadStock().filter(isDemoRecord).length,
+    movements: loadMovements().filter(isDemoRecord).length,
+    transfers: loadTransfers().filter(isDemoRecord).length,
+    orders: loadOrders().filter(isDemoRecord).length,
+    shipments: loadShipments().filter(isDemoRecord).length
   };
 }
 
-/**
- * Carga el set de demostración una sola vez. Si ya fue cargado, no escribe nada.
- * Devuelve un resumen con los registros agregados para informar al usuario.
- */
 export function loadDemoData(){
   seedLogisticsCatalogs();
   const users = loadUsers();
@@ -291,33 +137,41 @@ export function loadDemoData(){
   const stock = loadStock();
   const movements = loadMovements();
   const transfers = loadTransfers();
+  const orders = loadOrders();
+  const shipments = loadShipments();
 
   const managedProducts = new Map();
   const managedWarehouses = new Map();
+  const productBySku = new Map(products.map(product => [String(product.sku).toLowerCase(), product]));
+  const warehouseByName = new Map(warehouses.map(warehouse => [String(warehouse.name).trim().toLowerCase(), warehouse]));
   let nextProductId = idFor(products, 'product_id');
   let nextWarehouseId = idFor(warehouses, 'warehouse_id');
   let nextStockId = idFor(stock, 'stock_id');
   let nextMovementId = idFor(movements, 'transaction_id');
   let nextTransferId = idFor(transfers, 'transfer_id');
+  let nextShipmentId = idFor(shipments, 'shipment_id');
   let addedProducts = 0;
   let addedWarehouses = 0;
   let addedStock = 0;
   let addedMovements = 0;
   let addedTransfers = 0;
+  let addedOrders = 0;
+  let addedShipments = 0;
+  let assignedOrders = 0;
 
-  for(const spec of PRODUCT_SPECS){
-    const existing = products.find(product => String(product.sku).toLowerCase() === spec.sku.toLowerCase());
+  for(const spec of DEMO_SEED.products){
+    const key = spec.sku.toLowerCase();
+    const existing = productBySku.get(key);
     if(existing){
-      if(existing.demo_batch === DEMO_BATCH) managedProducts.set(spec.sku, existing);
+      if(isDemoRecord(existing)) managedProducts.set(spec.sku, existing);
       continue;
     }
-    const categoryId = categoryIdFor(categories, spec.category);
     const product = {
       product_id: nextProductId++,
       sku: spec.sku,
       product_name: spec.name,
       description: spec.description,
-      category_id: categoryId,
+      category_id: categoryIdFor(categories, spec.category),
       sale_price: spec.salePrice,
       cost_price: spec.costPrice,
       unit_of_measure: spec.unit,
@@ -332,14 +186,16 @@ export function loadDemoData(){
       demo_batch: DEMO_BATCH
     };
     products.push(product);
+    productBySku.set(key, product);
     managedProducts.set(spec.sku, product);
     addedProducts++;
   }
 
-  for(const spec of WAREHOUSE_SPECS){
-    const existing = warehouses.find(warehouse => warehouse.name.trim().toLowerCase() === spec.name.toLowerCase());
+  for(const spec of DEMO_SEED.warehouses){
+    const key = spec.name.trim().toLowerCase();
+    const existing = warehouseByName.get(key);
     if(existing){
-      if(existing.demo_batch === DEMO_BATCH) managedWarehouses.set(spec.name, existing);
+      if(isDemoRecord(existing)) managedWarehouses.set(spec.name, existing);
       continue;
     }
     const warehouse = {
@@ -353,12 +209,15 @@ export function loadDemoData(){
       demo_batch: DEMO_BATCH
     };
     warehouses.push(warehouse);
+    warehouseByName.set(key, warehouse);
     managedWarehouses.set(spec.name, warehouse);
     addedWarehouses++;
   }
 
-  const movementPlans = MOVEMENT_SPECS.filter(plan => managedProducts.has(plan.product) && managedWarehouses.has(plan.warehouse));
-  const transferPlans = TRANSFER_SPECS.filter(plan =>
+  const movementPlans = DEMO_SEED.movements.filter(plan =>
+    managedProducts.has(plan.product) && managedWarehouses.has(plan.warehouse)
+  );
+  const transferPlans = DEMO_SEED.transfers.filter(plan =>
     managedProducts.has(plan.product) && managedWarehouses.has(plan.source) && managedWarehouses.has(plan.target)
   );
 
@@ -372,7 +231,7 @@ export function loadDemoData(){
     addBalance(plan.product, plan.warehouse, ENTRY_TYPES.has(plan.type) ? plan.quantity : -plan.quantity);
   }
   for(const plan of transferPlans){
-    if(plan.status !== 'confirmada') continue;
+    if(!EFFECTIVE_TRANSFER_STATUSES.has(plan.status)) continue;
     addBalance(plan.product, plan.source, -plan.quantity);
     addBalance(plan.product, plan.target, plan.quantity);
   }
@@ -383,20 +242,21 @@ export function loadDemoData(){
     const product = managedProducts.get(productSku);
     const warehouse = managedWarehouses.get(warehouseName);
     if(!product || !warehouse) continue;
-    if(existingStockByKey.has(stockKey(product.product_id, warehouse.warehouse_id))) continue;
-    const minLevel = (MIN_LEVELS[productSku] && MIN_LEVELS[productSku][warehouseName]) || 0;
+    const compositeKey = stockKey(product.product_id, warehouse.warehouse_id);
+    if(existingStockByKey.has(compositeKey)) continue;
+    const minLevel = (DEMO_SEED.minLevels[productSku] && DEMO_SEED.minLevels[productSku][warehouseName]) || 0;
     const record = {
       stock_id: nextStockId++,
       product_id: product.product_id,
       warehouse_id: warehouse.warehouse_id,
       quantity_available: Math.max(0, quantity),
       min_stock_level: minLevel,
-      expiration_date: undefined,
       update_date: dateDaysAgo(1),
-      demo_batch: DEMO_BATCH
+      demo_batch: DEMO_BATCH,
+      demo_key: `stock::${productSku}::${STOCK_SEPARATOR}${warehouseName}`
     };
     stock.push(record);
-    existingStockByKey.set(stockKey(product.product_id, warehouse.warehouse_id), record);
+    existingStockByKey.set(compositeKey, record);
     addedStock++;
   }
 
@@ -408,7 +268,7 @@ export function loadDemoData(){
     const warehouse = managedWarehouses.get(plan.warehouse);
     if(!product || !warehouse) continue;
     const user = warehouseUser(users, plan.warehouse);
-    movements.push({
+    const movement = {
       transaction_id: nextMovementId++,
       product_id: product.product_id,
       warehouse_id: warehouse.warehouse_id,
@@ -418,7 +278,9 @@ export function loadDemoData(){
       transaction_date: isoDaysAgo(plan.daysAgo),
       demo_key: plan.key,
       demo_batch: DEMO_BATCH
-    });
+    };
+    assertValid('movements', movement);
+    movements.push(movement);
     existingMovementKeys.add(plan.key);
     addedMovements++;
   }
@@ -431,8 +293,7 @@ export function loadDemoData(){
     const source = managedWarehouses.get(plan.source);
     const target = managedWarehouses.get(plan.target);
     if(!product || !source || !target) continue;
-    const createdBy = warehouseUser(users, plan.source);
-    transfers.push({
+    const transfer = {
       transfer_id: nextTransferId++,
       product_id: product.product_id,
       source_warehouse_id: source.warehouse_id,
@@ -440,23 +301,93 @@ export function loadDemoData(){
       quantity: plan.quantity,
       status: plan.status,
       transfer_date: isoDaysAgo(plan.daysAgo),
-      created_by: createdBy.user_id,
-      confirmed_by: plan.status === 'confirmada' ? admin.user_id : undefined,
+      created_by: warehouseUser(users, plan.source).user_id,
+      confirmed_by: EFFECTIVE_TRANSFER_STATUSES.has(plan.status) ? admin.user_id : undefined,
       cancelled_by: plan.status === 'cancelada' ? admin.user_id : undefined,
       demo_key: plan.key,
       demo_batch: DEMO_BATCH
-    });
+    };
+    assertValid('transfers', transfer);
+    transfers.push(transfer);
     existingTransferKeys.add(plan.key);
     addedTransfers++;
+  }
+
+  const movementsByKey = new Map(movements.filter(isDemoRecord).map(movement => [movement.demo_key, movement]));
+  const existingOrderKeys = new Set(orders.map(order => order.demo_key).filter(Boolean));
+  for(const spec of DEMO_SEED.orderSpecs){
+    if(existingOrderKeys.has(spec.key)) continue;
+    const movement = movementsByKey.get(spec.movementKey);
+    if(!movement) continue;
+    const isPurchase = movement.transaction_type === 'entrada' || movement.transaction_type === 'ajuste_entrada';
+    const prefix = isPurchase ? 'OC' : 'OV';
+    const order = {
+      order_id: nextOrderId(prefix, orders),
+      order_type: isPurchase ? 'adquisicion' : 'venta',
+      transaction_id: movement.transaction_id,
+      product_id: movement.product_id,
+      warehouse_id: movement.warehouse_id,
+      quantity: movement.quantity,
+      user_id: movement.user_id,
+      order_date: movement.transaction_date,
+      status: spec.status,
+      demo_key: spec.key,
+      demo_batch: DEMO_BATCH
+    };
+    assertValid('orders', order, { list: orders });
+    orders.push(order);
+    existingOrderKeys.add(spec.key);
+    const seededMovement = movements.find(candidate => candidate.transaction_id === movement.transaction_id);
+    if(seededMovement && !seededMovement.order_id){
+      seededMovement.order_id = order.order_id;
+      assignedOrders++;
+    }
+    addedOrders++;
+  }
+
+  const ordersByKey = new Map(orders.filter(isDemoRecord).map(order => [order.demo_key, order]));
+  const existingShipmentKeys = new Set(shipments.map(shipment => shipment.demo_key).filter(Boolean));
+  for(const spec of DEMO_SEED.shipmentSpecs){
+    if(existingShipmentKeys.has(spec.key)) continue;
+    const order = ordersByKey.get(spec.orderKey);
+    if(!order) continue;
+    const createdAt = isoDaysAgo(spec.daysAgo);
+    const shipment = {
+      shipment_id: nextShipmentId++,
+      order_id: order.order_id,
+      carrier: spec.carrier,
+      tracking_code: spec.trackingCode,
+      status: spec.status,
+      created_by: admin.user_id,
+      created_at: createdAt,
+      history: [{ status: spec.status, changed_at: createdAt, changed_by: admin.user_id }],
+      demo_key: spec.key,
+      demo_batch: DEMO_BATCH
+    };
+    assertValid('shipments', shipment, { list: shipments });
+    shipments.push(shipment);
+    existingShipmentKeys.add(spec.key);
+    addedShipments++;
   }
 
   if(addedProducts > 0) saveProducts(products);
   if(addedWarehouses > 0) saveWarehouses(warehouses);
   if(addedStock > 0) saveStock(stock);
-  if(addedMovements > 0) saveMovements(movements);
+  if(addedMovements > 0 || assignedOrders > 0) saveMovements(movements);
   if(addedTransfers > 0) saveTransfers(transfers);
+  if(addedOrders > 0) saveOrders(orders);
+  if(addedShipments > 0) saveShipments(shipments);
 
-  const addedSomething = addedProducts + addedWarehouses + addedStock + addedMovements + addedTransfers > 0;
+  const addedSomething = addedProducts + addedWarehouses + addedStock + addedMovements
+    + addedTransfers + addedOrders + addedShipments + assignedOrders > 0;
+
+  const issues = validateDemoSeed();
+  if(issues.length > 0){
+    return {
+      success: false,
+      error: `Los datos de demostración no son coherentes: ${issues.join('; ')}`
+    };
+  }
   if(addedSomething) writeFlag();
 
   return {
@@ -467,11 +398,210 @@ export function loadDemoData(){
       warehouses: addedWarehouses,
       stock: addedStock,
       movements: addedMovements,
-      transfers: addedTransfers
+      transfers: addedTransfers,
+      orders: addedOrders,
+      shipments: addedShipments
     },
     summary: getDemoDataSummary(),
     message: addedSomething
       ? 'Datos de demostración cargados sin modificar los registros existentes.'
       : 'No se agregaron registros porque los identificadores de demostración ya existían.'
   };
+}
+
+export function validateDemoSeed(){
+  const allProducts = loadProducts();
+  const allWarehouses = loadWarehouses();
+  const allUsers = loadUsers();
+  const categories = loadProductCategories();
+  const products = allProducts.filter(isDemoRecord);
+  const warehouses = allWarehouses.filter(isDemoRecord);
+  const stock = loadStock().filter(isDemoRecord);
+  const movements = loadMovements().filter(isDemoRecord);
+  const transfers = loadTransfers().filter(isDemoRecord);
+  const orders = loadOrders().filter(isDemoRecord);
+  const shipments = loadShipments().filter(isDemoRecord);
+  const total = products.length + warehouses.length + stock.length + movements.length
+    + transfers.length + orders.length + shipments.length;
+  if(total === 0) return ['No hay datos de demostración cargados'];
+
+  const issues = [];
+  const productIds = new Set(products.map(product => Number(product.product_id)));
+  const warehouseIds = new Set(warehouses.map(warehouse => Number(warehouse.warehouse_id)));
+  const userIds = new Set(allUsers.map(user => Number(user.user_id)));
+  const categoryIds = new Set(categories.map(category => Number(category.category_id)));
+  const productById = new Map(products.map(product => [Number(product.product_id), product]));
+  const warehouseById = new Map(warehouses.map(warehouse => [Number(warehouse.warehouse_id), warehouse]));
+  const movementById = new Map(movements.map(movement => [Number(movement.transaction_id), movement]));
+  const orderById = new Map(orders.map(order => [String(order.order_id), order]));
+  const shippedOrderIds = new Set(shipments.map(shipment => String(shipment.order_id)));
+  const categoryNames = new Set(categories.map(category => category.category_name));
+
+  const checkDuplicates = (list, getKey, label) => {
+    for(const key of uniqueKeys(list, getKey)) issues.push(`${label} duplicado: ${key}`);
+  };
+  checkDuplicates(products, product => String(product.sku).toLowerCase(), 'SKU de producto');
+  checkDuplicates(warehouses, warehouse => String(warehouse.name).trim().toLowerCase(), 'nombre de bodega');
+  checkDuplicates(movements, movement => String(movement.demo_key), 'demo_key de movimiento');
+  checkDuplicates(movements, movement => Number(movement.transaction_id), 'transaction_id de movimiento');
+  checkDuplicates(transfers, transfer => String(transfer.demo_key), 'demo_key de transferencia');
+  checkDuplicates(orders, order => String(order.demo_key), 'demo_key de orden');
+  checkDuplicates(orders, order => String(order.order_id), 'order_id');
+  checkDuplicates(shipments, shipment => String(shipment.demo_key), 'demo_key de envío');
+  checkDuplicates(shipments, shipment => String(shipment.order_id), 'order_id de envío');
+  checkDuplicates(stock, record => stockKey(record.product_id, record.warehouse_id), 'par producto/bodega de stock');
+
+  const warehouseIsActive = (warehouseId) => warehouseById.get(Number(warehouseId))?.status === 'activo';
+
+  for(const product of products){
+    if(!categoryIds.has(Number(product.category_id))) issues.push(`Producto ${product.sku} con categoría inexistente`);
+    const expectedCategory = DEMO_SEED.products.find(spec => spec.sku.toLowerCase() === String(product.sku).toLowerCase())?.category;
+    if(expectedCategory && !categoryNames.has(expectedCategory)) issues.push(`Categoría ${expectedCategory} no disponible para ${product.sku}`);
+  }
+
+  for(const warehouse of warehouses){
+    if(!['activo', 'inactivo'].includes(warehouse.status)) issues.push(`Bodega ${warehouse.name} con estado inválido`);
+  }
+
+  for(const movement of movements){
+    const product = productById.get(Number(movement.product_id));
+    const warehouse = warehouseById.get(Number(movement.warehouse_id));
+    if(!product) issues.push(`Movimiento ${movement.demo_key} con producto inexistente`);
+    if(!warehouse) issues.push(`Movimiento ${movement.demo_key} con bodega inexistente`);
+    else if(!warehouseIsActive(movement.warehouse_id)) issues.push(`Movimiento ${movement.demo_key} en bodega inactiva`);
+    if(!MOVEMENT_TYPES.has(movement.transaction_type)) issues.push(`Movimiento ${movement.demo_key} con tipo inválido`);
+    if(!(Number(movement.quantity) > 0)) issues.push(`Movimiento ${movement.demo_key} con cantidad inválida`);
+    if(!userIds.has(Number(movement.user_id))) issues.push(`Movimiento ${movement.demo_key} con usuario inexistente`);
+  }
+
+  for(const transfer of transfers){
+    if(!productIds.has(Number(transfer.product_id))) issues.push(`Transferencia ${transfer.demo_key} con producto inexistente`);
+    if(!warehouseIsActive(transfer.source_warehouse_id) || !warehouseIsActive(transfer.target_warehouse_id)){
+      issues.push(`Transferencia ${transfer.demo_key} con bodega inexistente o inactiva`);
+    }
+    if(String(transfer.source_warehouse_id) === String(transfer.target_warehouse_id)){
+      issues.push(`Transferencia ${transfer.demo_key} con origen y destino iguales`);
+    }
+    if(!TRANSFER_STATUSES.has(transfer.status)) issues.push(`Transferencia ${transfer.demo_key} con estado inválido`);
+    if(!(Number(transfer.quantity) > 0)) issues.push(`Transferencia ${transfer.demo_key} con cantidad inválida`);
+    if(!userIds.has(Number(transfer.created_by))) issues.push(`Transferencia ${transfer.demo_key} con usuario inexistente`);
+    if(transfer.status === 'cancelada' && transfer.confirmed_by){
+      issues.push(`Transferencia cancelada ${transfer.demo_key} con confirmación`);
+    }
+    if(EFFECTIVE_TRANSFER_STATUSES.has(transfer.status) && !transfer.confirmed_by){
+      issues.push(`Transferencia efectiva ${transfer.demo_key} sin confirmación`);
+    }
+    if(movements.some(movement => movement.demo_key === transfer.demo_key || Number(movement.transfer_id) === Number(transfer.transfer_id))){
+      issues.push(`Transferencia ${transfer.demo_key} generó movimientos de stock`);
+    }
+  }
+
+  const balances = new Map();
+  const addBalance = (productId, warehouseId, quantity) => {
+    const key = stockKey(productId, warehouseId);
+    balances.set(key, (balances.get(key) || 0) + quantity);
+  };
+  for(const movement of movements){
+    if(!productIds.has(Number(movement.product_id)) || !warehouseIds.has(Number(movement.warehouse_id))) continue;
+    addBalance(movement.product_id, movement.warehouse_id, ENTRY_TYPES.has(movement.transaction_type) ? Number(movement.quantity) : -Number(movement.quantity));
+  }
+  for(const transfer of transfers){
+    if(!EFFECTIVE_TRANSFER_STATUSES.has(transfer.status)) continue;
+    if(!productIds.has(Number(transfer.product_id))) continue;
+    addBalance(transfer.product_id, transfer.source_warehouse_id, -Number(transfer.quantity));
+    addBalance(transfer.product_id, transfer.target_warehouse_id, Number(transfer.quantity));
+  }
+
+  for(const record of stock){
+    if(!productIds.has(Number(record.product_id)) || !warehouseIds.has(Number(record.warehouse_id))){
+      issues.push(`Stock ${record.demo_key} con referencia inexistente`);
+    }
+    if(!(Number(record.quantity_available) >= 0)) issues.push(`Stock ${record.demo_key} con cantidad negativa`);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(record.update_date || ''))){
+      issues.push(`Stock ${record.demo_key} con update_date inválida`);
+    }
+  }
+  for(const [key, balance] of balances.entries()){
+    const record = stock.find(item => stockKey(item.product_id, item.warehouse_id) === key);
+    if(!record){
+      issues.push(`Falta registro de stock para ${key}`);
+      continue;
+    }
+    if(Number(record.quantity_available) !== Math.max(0, balance)){
+      issues.push(`Stock ${record.demo_key} no coincide con el saldo derivado`);
+    }
+  }
+  for(const record of stock){
+    if(!balances.has(stockKey(record.product_id, record.warehouse_id))){
+      issues.push(`Stock ${record.demo_key} sin movimientos que lo justifiquen`);
+    }
+  }
+
+  for(const order of orders){
+    if(!productIds.has(Number(order.product_id)) || !warehouseIds.has(Number(order.warehouse_id))){
+      issues.push(`Orden ${order.order_id} con referencia inexistente`);
+    }
+    if(!userIds.has(Number(order.user_id))) issues.push(`Orden ${order.order_id} con usuario inexistente`);
+    const movement = movementById.get(Number(order.transaction_id));
+    if(!movement) issues.push(`Orden ${order.order_id} sin movimiento asociado`);
+    else if(Number(movement.product_id) !== Number(order.product_id) || Number(movement.warehouse_id) !== Number(order.warehouse_id)){
+      issues.push(`Orden ${order.order_id} no coincide con su movimiento`);
+    }
+    const expectedPrefix = order.order_type === 'adquisicion' ? 'OC' : 'OV';
+    if(!String(order.order_id).startsWith(`${expectedPrefix}-`)){
+      issues.push(`Orden ${order.order_id} con prefijo inconsistente`);
+    }
+    if(!ORDER_STATUSES.has(order.status)) issues.push(`Orden ${order.order_id} con estado inválido`);
+    if(['borrador', 'cancelada'].includes(order.status) && shippedOrderIds.has(String(order.order_id))){
+      issues.push(`Orden ${order.order_id} en ${order.status} con envío asociado`);
+    }
+  }
+
+  for(const shipment of shipments){
+    const order = orderById.get(String(shipment.order_id));
+    if(!order){
+      issues.push(`Envío ${shipment.demo_key} con orden inexistente`);
+      continue;
+    }
+    if(order.order_type !== 'venta') issues.push(`Envío ${shipment.demo_key} asociado a una orden que no es de venta`);
+    if(!SHIPMENT_STATUSES.has(shipment.status)) issues.push(`Envío ${shipment.demo_key} con estado inválido`);
+    if(!String(shipment.carrier || '').trim() || !String(shipment.tracking_code || '').trim()){
+      issues.push(`Envío ${shipment.demo_key} sin transportista o seguimiento`);
+    }
+    if(!userIds.has(Number(shipment.created_by))) issues.push(`Envío ${shipment.demo_key} con usuario inexistente`);
+    const firstEvent = Array.isArray(shipment.history) ? shipment.history[0] : undefined;
+    if(!firstEvent || firstEvent.status !== shipment.status || !firstEvent.changed_at || !userIds.has(Number(firstEvent.changed_by))){
+      issues.push(`Envío ${shipment.demo_key} con historial inicial inválido`);
+    }
+    if(shipment.status === 'entregado' && !['aprobada', 'en_proceso', 'completada'].includes(order.status)){
+      issues.push(`Envío entregado ${shipment.demo_key} incompatible con orden ${order.status}`);
+    }
+    if(shipment.status === 'con_incidencia' && !['aprobada', 'en_proceso'].includes(order.status)){
+      issues.push(`Envío con incidencia ${shipment.demo_key} incompatible con orden ${order.status}`);
+    }
+    if(['borrador', 'cancelada'].includes(order.status)){
+      issues.push(`Envío ${shipment.demo_key} asociado a una orden ${order.status}`);
+    }
+  }
+
+  const presentOrderStatuses = new Set(orders.map(order => order.status));
+  for(const status of ORDER_STATUSES){
+    if(!presentOrderStatuses.has(status)) issues.push(`Falta orden en estado ${status}`);
+  }
+  const presentShipmentStatuses = new Set(shipments.map(shipment => shipment.status));
+  for(const status of SHIPMENT_STATUSES){
+    if(!presentShipmentStatuses.has(status)) issues.push(`Falta envío en estado ${status}`);
+  }
+  const presentTransferStatuses = new Set(transfers.map(transfer => transfer.status));
+  for(const status of TRANSFER_STATUSES){
+    if(!presentTransferStatuses.has(status)) issues.push(`Falta transferencia en estado ${status}`);
+  }
+  if(!stock.some(record => Number(record.quantity_available) === 0 && warehouseIsActive(record.warehouse_id))){
+    issues.push('No hay stock en cero en una bodega activa');
+  }
+  if(!orders.some(order => !shippedOrderIds.has(String(order.order_id)))){
+    issues.push('No hay órdenes sin envío');
+  }
+
+  return issues;
 }

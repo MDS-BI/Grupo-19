@@ -1,14 +1,43 @@
 import { escapeHtml } from '../storage.js';
 
-const STATUS_LABELS = { pendiente: 'Pendiente', confirmada: 'Confirmada', cancelada: 'Cancelada' };
-const STATUS_CLASSES = { pendiente: 'status-pending', confirmada: 'status-confirmed', cancelada: 'status-cancelled' };
+const STATUS_LABELS = {
+  pendiente: 'Pendiente',
+  en_transito: 'En tránsito',
+  recibida: 'Recibida',
+  confirmada: 'Confirmada',
+  cancelada: 'Cancelada'
+};
+const STATUS_CLASSES = {
+  pendiente: 'status-pending',
+  en_transito: 'status-shipment-transit',
+  recibida: 'status-confirmed',
+  confirmada: 'status-confirmed',
+  cancelada: 'status-cancelled'
+};
+const STATUS_OPTIONS = [
+  ['', 'Todos los estados'],
+  ['pendiente', 'Pendiente'],
+  ['en_transito', 'En tránsito'],
+  ['recibida', 'Recibida'],
+  ['confirmada', 'Confirmada'],
+  ['cancelada', 'Cancelada']
+];
 
 function setCount(id, value){
   const el = document.getElementById(id);
   if(el) el.textContent = String(value);
 }
 
+function syncStatusOptions(){
+  const select = document.getElementById('transfer-filter-status');
+  if(!select) return;
+  const previous = select.value;
+  select.innerHTML = STATUS_OPTIONS.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  select.value = [...select.options].some(option => option.value === previous) ? previous : '';
+}
+
 export function renderTransferList(tbody, emptyEl, transfers, { onConfirm, onCancel, canConfirm = true, canCancel = true }){
+  syncStatusOptions();
   tbody.innerHTML = '';
   setCount('transfer-count', transfers ? transfers.length : 0);
   if(!transfers || transfers.length === 0){

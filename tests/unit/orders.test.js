@@ -48,7 +48,8 @@ describe('orders domain', () => {
       warehouse_id: 1,
       quantity: 5,
       user_id: 1,
-      order_date: result.movement.transaction_date
+      order_date: result.movement.transaction_date,
+      status: 'aprobada'
     }]);
     expect(loadStock()[0].quantity_available).toBe(5);
   });

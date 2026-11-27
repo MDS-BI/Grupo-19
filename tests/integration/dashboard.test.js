@@ -56,4 +56,25 @@ describe('User Story 3 - home dashboard with record stats', () => {
     expect(qs('dashboard-quick-actions')).toBeNull();
   });
 
+  it('loads demo data from the dashboard and reports every seeded record type', async () => {
+    await bootWith(undefined);
+    const { loadDemoData, getDemoDataSummary } = await import('../../src/domain/demo-data.js');
+
+    qs('load-demo-data').click();
+
+    const status = qs('demo-data-status').textContent;
+    ['Productos:', 'Bodegas:', 'Stock:', 'Movimientos:', 'Transferencias:', 'Órdenes:', 'Envíos:'].forEach(label => {
+      expect(status).toContain(label);
+    });
+    expect(qs('demo-data-status').classList.contains('is-success')).toBe(true);
+    expect(qs('load-demo-data').disabled).toBe(true);
+
+    const first = getDemoDataSummary();
+    const second = loadDemoData();
+    expect(second.alreadyLoaded).toBe(true);
+    expect(getDemoDataSummary()).toEqual(first);
+    expect([...qs('view-dashboard').querySelectorAll('.stat-card')]
+      .filter(card => !card.closest('[hidden]'))).toHaveLength(4);
+  });
+
 });
