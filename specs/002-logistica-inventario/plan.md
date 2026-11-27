@@ -16,11 +16,12 @@ El desarrollo se basará en el Modelo Entidad-Relación que diseñamos, donde se
 **Tipo de Proyecto**: Aplicación web  
 **Objetivos de Rendimiento**: Interacciones responsivas para listas de hasta 500 registros; la búsqueda y las actualizaciones de la interfaz deben sentirse instantáneas  
 **Restricciones**: Huella mínima de librerías, despliegue simple, sin backend requerido; la estructura debe mantenerse extensible para módulos personalizados  
-**Escala/Alcance**: Módulo base con CRUD de datos maestros (Entidad) y documentos transaccionales (Documento), búsqueda y capacidades de navegación  
-**Control de Acceso (HU-08)**: Matriz de permisos por rol y excepciones por usuario persistidas en `localStorage`, con las reglas de negocio vigentes como límite superior (FR-124)  
+**Escala/Alcance (vigente)**: MVP canónico `HU-01`–`HU-15`; menú lateral con Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas; panel principal solo con cuatro indicadores; reposiciones en Alertas y órdenes/envíos en Movimientos  
+**Control de Acceso (HU-08)**: Matriz de permisos por rol y excepciones por usuario persistidas en `localStorage`, con las reglas de negocio vigentes como límite superior (FR-124); la semilla completa y las acciones prohibidas están en `spec.md:FR-124`  
 **Persistencia HU-08**: Claves `logistics:roles`, `logistics:role_permissions` y `logistics:user_permission_overrides`, junto a `logistics:active_user_id` existente  
-**Navegación (HU-08)**: `showModule()` sigue siendo el único punto de cambio de vista; se añade enrutado por hash `#/<module>` para hacer verificable el bloqueo de acceso directo (FR-115)  
-**Identidad**: Usuario activo simulado desde `USERS` y `logistics:active_user_id`; sin login, contraseñas ni backend
+**Persistencia canónica**: La spec enumera las claves `logistics:*`, formatos y reglas de no mutación; el dataset `logistics-demo-v1` deriva `quantity_available` de movimientos y transferencias confirmadas y publica por separado `min_stock_level`  
+**Navegación (HU-08)**: `showModule()` sigue siendo el único punto de cambio de vista; el enrutado por hash `#/<module>` hace verificable el bloqueo de acceso directo (FR-115); las rutas heredadas redirigen a la pestaña o sección permitida  
+**Identidad**: Usuario activo simulado desde `USERS` y `logistics:active_user_id`; sin login, contraseñas ni backend; si la clave falta o es inválida, se usa el primer usuario del catálogo y se persiste ese `user_id`
 
 ## Verificación de la Constitución
 
@@ -34,8 +35,9 @@ El desarrollo se basará en el Modelo Entidad-Relación que diseñamos, donde se
 - Pruebas (HU-08): Se cubrirán con Vitest la semilla de roles, el cálculo de permisos efectivos, la precedencia de FR-124, las landing pages, el cambio de usuario/cargo, el bloqueo de ruta y la no mutación de datos operativos.
 - Experiencia de Usuario (HU-08): La navegación no autorizada se ocultará o deshabilitará y el acceso denegado mostrará un aviso claro no bloqueante; el administrador conservará siempre el panel de permisos (FR-118).
 - Rendimiento (HU-08): La evaluación de permisos se resolverá en memoria a partir de la configuración cargada una sola vez por cambio de usuario/cargo, cumpliendo el objetivo de propagación en menos de 2 segundos (SC-042).
+- Calidad (2026-11-27): Antes de cerrar el MVP deben configurarse y ejecutarse `npm run lint`, `npm run format:check`, `npm run analyze`, `npm test` y `npm run build`, con código 0 y cero advertencias sin resolver que afecten corrección o mantenibilidad; T168 registra la evidencia requerida por el principio de calidad de la constitución.
 
-**Resultado de la comprobación**: sin violaciones de la constitución. La HU-08 refuerza los principios existentes (dominio separado, pruebas automatizadas, UX consistente y rendimiento) y no introduce dependencias externas.
+**Resultado de la comprobación**: las decisiones funcionales respetan la constitución, pero la verificación de calidad queda pendiente hasta ejecutar T168; por eso no se declara conformidad final sin esa evidencia.
 
 ## Estructura del Proyecto
 
@@ -97,7 +99,9 @@ tests/
 └── setup/
 ```
 
-**Decisión de Estructura**: Una aplicación Vite simple con un único punto de entrada HTML, un pequeño conjunto de módulos JavaScript y CSS en un archivo separado. Se usará localStorage para la persistencia de modo que la aplicación permanezca ligera y autónoma. El módulo base (Entidad/Documento, `entity-form.js`/`document-form.js`) se conserva intacto para no introducir regresiones (ver FR-001–039), mientras que el dominio de Logística e Inventario se construye como una capa adicional: `src/storage.js` concentra los esquemas, la persistencia y los helpers de validación/saneamiento compartidos por las entidades logísticas (`PRODUCTS`, `PRODUCT_CATEGORIES`, `WAREHOUSES`, `USERS`, `STOCK`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS`, `REPLENISHMENT_REQUESTS`); `src/domain/` concentra las reglas de negocio de cada historia de usuario (productos, bodegas, movimientos, transferencias, stock, alertas y reposiciones) desacopladas de la interfaz; y `src/components/` añade un formulario y un listado por historia de usuario junto a los componentes base. `shell.js` posee el marco del espacio de trabajo ERP — un logotipo monograma SVG en línea derivado del nombre del módulo, la barra superior y la barra lateral de módulos (ahora incluyendo Productos, Bodegas, Stock, Movimientos, Transferencias, Alertas y Reposiciones) — envolviendo todas las vistas para que la marca y la navegación permanezcan consistentes sin duplicar marcado. `dashboard.js` renderiza los botones de acción rápida y las tarjetas de estadísticas de la pantalla de entrada, leyendo los recuentos del almacenamiento cada vez que se vuelve visible. `module-config.js` centraliza todos los puntos de adaptación — nombre del módulo, etiquetas de términos, definiciones de campos personalizados, ciclo de vida de estados y color de acento — manteniendo la personalización del dominio fuera del código central; el estilo se controla mediante propiedades personalizadas de CSS (tokens de diseño) en `styles.css` para que el color de acento configurado se aplique globalmente.
+**Decisión de Estructura**: Una aplicación Vite simple con un único punto de entrada HTML, un pequeño conjunto de módulos JavaScript y CSS en un archivo separado. Se usará localStorage para la persistencia de modo que la aplicación permanezca ligera y autónoma. El módulo base (Entidad/Documento, `entity-form.js`/`document-form.js`) se conserva intacto para no introducir regresiones (ver FR-001–039), mientras que el dominio de Logística e Inventario se construye como una capa adicional: `src/storage.js` concentra los esquemas, la persistencia y los helpers de validación/saneamiento compartidos por las entidades logísticas (`PRODUCTS`, `PRODUCT_CATEGORIES`, `WAREHOUSES`, `USERS`, `STOCK`, `INVENTORY_TRANSACTIONS`, `STOCK_TRANSFERS`, `REPLENISHMENT_REQUESTS`); `src/domain/` concentra las reglas de negocio de cada historia de usuario (productos, bodegas, movimientos, transferencias, stock, alertas y reposiciones) desacopladas de la interfaz; y `src/components/` añade un formulario y un listado por historia de usuario junto a los componentes base. `shell.js` posee el marco del espacio de trabajo ERP — un logotipo monograma SVG en línea derivado del nombre del módulo, la barra superior y la barra lateral de módulos (históricamente con Reposiciones; vigente con Productos, Bodegas, Stock, Movimientos, Transferencias y Alertas según HU-12/HU-14) — envolviendo todas las vistas para que la marca y la navegación permanezcan consistentes sin duplicar marcado. `dashboard.js` renderizaba históricamente botones de acción rápida y ahora solo las cuatro tarjetas de indicadores de la pantalla de entrada, leyendo los recuentos del almacenamiento cada vez que se vuelve visible. `module-config.js` centraliza todos los puntos de adaptación — nombre del módulo, etiquetas de términos, definiciones de campos personalizados, ciclo de vida de estados y color de acento — manteniendo la personalización del dominio fuera del código central; el estilo se controla mediante propiedades personalizadas de CSS (tokens de diseño) en `styles.css` para que el color de acento configurado se aplique globalmente.
+
+> **Nota de vigencia (2026-11-27)**: la descripción estructural anterior es historial de la plantilla base; la interfaz vigente se rige por FR-135–FR-147, por la reconciliación HU-12/HU-14 y por la matriz canónica de FR-124. No debe interpretarse que el menú incluye Reposiciones ni que el panel ofrece accesos rápidos.
 
 ## Ampliación: Diseño para HU-08
 
@@ -165,8 +169,9 @@ Los recursos se identifican con claves estables: `module:<nombre>`, `view:<nombr
 ## Verificación
 
 - `T066`: `npx vitest run` y `npm run build` desde la raíz del repositorio.
-- `T067`: validación manual de los escenarios de aceptación de HU-01 a HU-08 con `spec.md`, incluyendo el recorrido de `quickstart.md`.
+- `T067`: validación manual de los escenarios de aceptación de `HU-01` a `HU-15` con `spec.md`, incluyendo el recorrido de `quickstart.md` y los criterios manuales parcialmente cubiertos por T136/T145.
 - `T068`: reconciliación de `spec.md`, `plan.md`, `tasks.md` y `checklists/requirements.md` con la implementación actual.
+- `T168`: ejecución registrada de linting, formato, análisis estático, `npm test` y `npm run build`; requisito bloqueante del criterio de calidad obligatorio de `spec.md`.
 - Los casos de HU-08 quedaron incorporados a la suite en T085–T086; su ejecución está cubierta por `T066`.
 - La ejecución de la suite no se realizó durante la reconciliación documental de 2026-11-17; T066 conserva esa evidencia histórica y quedó verificado nuevamente el 2026-11-25 con 34 archivos/302 pruebas OK y build correcto. T067 sigue parcial hasta registrar la validación manual por escenario.
 
@@ -256,7 +261,7 @@ No se crea un módulo `orders`, no se añaden claves de contador y no se renombr
 
 Esta ampliación cubre **exclusivamente HU-10 (buscador y filtros de transferencias)** y **HU-11 (seguimiento de envíos al comprador)**. No reprograma, reemplaza ni elimina la planificación de HU-01 a HU-09; no crea ramas, commits ni push; y no implementa código. Las tareas derivadas se generarán más adelante con `/speckit.tasks`.
 
-Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2026-11-23: búsqueda parcial e insensible a mayúsculas (HU-10), los tres roles pueden actualizar estados, una OV tiene como máximo un envío, avance secuencial con `Entregado` terminal, vista propia «Seguimiento de envíos» y relación 1:1 OV–envío.
+Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2026-11-23: búsqueda parcial e insensible a mayúsculas (HU-10), los tres roles pueden actualizar estados, una OV tiene como máximo un envío, avance secuencial con `Entregado` terminal y relación 1:1 OV–envío. La mención original a una «vista propia» de seguimiento quedó superada por FR-133: la interfaz vigente es una pestaña dentro de Movimientos, sin `nav-shipments`.
 
 ### Contexto Técnico HU-10/HU-11
 
@@ -266,7 +271,7 @@ Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2
 **Dominio HU-11**: nuevo módulo `src/domain/shipments.js` con creación, avance de estado, consulta e historial embebido.  
 **Identidad**: usuario activo simulado de `logistics:active_user_id`; sin autenticación.  
 **Permisos**: matriz existente más `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status`; FR-124 se mantiene como límite superior.  
-**Navegación**: módulo `shipments`, vista `view-shipments` y ruta hash `#/shipments` gestionada por `showModule()`.  
+**Navegación (vigente)**: `shipments` permanece como recurso lógico de permisos y la pestaña «Seguimiento de envíos» vive dentro de Movimientos; `#/shipments` redirige a esa pestaña cuando el permiso está concedido.  
 **Pruebas**: Vitest con jsdom; se amplían pruebas de transferencias y se añaden pruebas unitarias/de integración de envíos.  
 **Clarificaciones**: resueltas en `spec.md`; no quedan `NEEDS CLARIFICATION`.
 
@@ -278,7 +283,7 @@ Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2
 - Rendimiento: el filtrado se resuelve en memoria sobre listas ya cargadas, sin round-trips ni dependencias; compatible con el objetivo de 500 registros.
 - Seguridad/roles: se mantiene el modelo de roles simulados; la matriz puede restringir pero no otorgar acciones prohibidas (FR-124), y los textos visibles se escapan con `escapeHtml`.
 
-**Resultado**: sin violaciones de la constitución. El diseño es aditivo y no altera los contratos de HU-01 a HU-09.
+**Resultado histórico**: sin violaciones de la constitución para HU-10/HU-11 en el momento de ese diseño; el resultado vigente quedó condicionado en la Fase 20 a la ejecución de linting, formato y análisis estático mediante T168.
 
 ### Diseño HU-10 — Búsqueda y filtros de transferencias
 
@@ -329,9 +334,9 @@ Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2
 
 **Interfaz y navegación**
 
-- Nuevo módulo `shipments` en `MODULES`/`VIEWS` de `app.js` y `permissions.js`, botón `nav-shipments` en la barra lateral y contenedor `view-shipments` en `index.html`.
-- Componentes nuevos: `shipment-form.js` (selección de OV elegible, transportista y código de seguimiento) y `shipment-list.js` (listado, búsqueda, historial y acción de avance).
-- `showModule()` aplica el guard `module:shipments`; la ruta directa `#/shipments` se bloquea con el mensaje de falta de permiso y redirección a la landing permitida.
+- `shipments` permanece como módulo/vista lógico en `MODULES`/`VIEWS` de `app.js` y `permissions.js`, pero la interfaz vigente NO crea `nav-shipments`: el contenedor de seguimiento se integra como pestaña de Movimientos (FR-133, T160).
+- Componentes nuevos: `shipment-form.js` (selección de OV elegible, transportista y código de seguimiento) y `shipment-list.js` (listado, búsqueda, historial y acción de avance), alojados en la pestaña de Movimientos.
+- `showModule()` aplica el guard `module:shipments`; la ruta directa `#/shipments` redirige a la pestaña permitida y, si no hay permiso, muestra el mensaje de falta de permiso y redirige a la landing permitida.
 - La interfaz reutiliza tokens CSS existentes; no se crea un tema nuevo ni se modifica el marco ERP.
 - Puntos de cambio previstos: `src/storage.js`, `src/domain/shipments.js`, `src/domain/seed.js`, `src/domain/permissions.js`, `src/components/shipment-form.js`, `src/components/shipment-list.js`, `src/components/shell.js`, `src/app.js`, `index.html`, `tests/unit/shipments.test.js`, `tests/integration/shipments.test.js`, `tests/unit/storage.test.js`, `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` y `tests/integration/workspace-shell.test.js`.
 
@@ -357,7 +362,7 @@ Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2
 | Unicidad 1:1 mal declarada | Usar `unique: [['shipment_id'], ['order_id']]`, nunca un array plano compuesto. |
 | Matriz persistida sin filas nuevas | Confiar en el fallback semilla sin sobrescribir la configuración guardada. |
 | Datos demo sin órdenes OV | Documentar la vista vacía hasta registrar una salida real; no generar backfill. |
-| Recuento de navegación | Ajustar la prueba que espera 11 botones a 12 al añadir `nav-shipments`. |
+| Recuento de navegación | Histórico: se ajustó de 11 a 12 botones con `nav-shipments`; vigente: T146/T160 dejan seis secciones y el seguimiento como pestaña, sin `nav-shipments`. |
 
 **Reevaluación post-diseño (Fase 1)**: sin nuevas violaciones de la constitución. El diseño mantiene la separación dominio/interfaz, preserva HU-01–HU-09, agrega una vista con permisos coherentes y define criterios verificables antes de generar tareas.
 
@@ -373,12 +378,33 @@ Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2
 
 ## Fase 18: HU-15 — Datos de ejemplo con nombres ficticios variados (2026-11-26)
 
-- Límites: esta fase se añade al final del plan sin reescribir las fases anteriores ni modificar `spec.md`.
+- Límites: esta fase se añade al final del plan sin reescribir las fases anteriores; sus decisiones abiertas se consolidaron en la Fase 19.
 - Alcance: renombrar los cuatro usuarios semilla conservando `user_id`, orden, roles, bodega asignada y referencias por `user_id` (FR-148–FR-150, SC-071 y SC-073).
 - Persistencia: `src/domain/seed.js` define los nuevos valores; `src/storage.js` aplica una migración exacta por (`user_id`, nombre, correo), sin duplicados, sin alterar usuarios modificados y sin tocar `logistics:active_user_id`; la siembra sigue ocurriendo solo si el catálogo está vacío (FR-152 y FR-153).
-- Datos de demostración: `src/domain/demo-data.js` deriva la bodega desde rol + orden del catálogo (`user_id` 1–4; los `encargado_bodega` en los ids 2 y 4), sin comparar nombres; la interpretación de “posición” queda pendiente de reflejo en la spec (A1).
-- Verificación de nombres: la condición de nombres ficticios se mantiene como revisión manual documentada con evidencia en `checklists/requirements.md`; el criterio objetivo (A2) queda pendiente de reflejo en la spec.
-- Fallos: la spec aún no define el comportamiento ante una escritura fallida durante la migración (U1); esta fase no introduce una regla de rollback sin actualizar `spec.md`.
+- Datos de demostración: `src/domain/demo-data.js` deriva la bodega desde rol + orden del catálogo (`user_id` 1–4; los `encargado_bodega` en los ids 2 y 4), sin comparar nombres; la interpretación operativa quedó definida en HU-15 y FR-151 durante la Fase 19.
+- Verificación de nombres: la condición de nombres ficticios se mantiene como revisión manual documentada con evidencia en `checklists/requirements.md`; el criterio objetivo de no correspondencia con personas reales o públicas se conserva como revisión manual (A1) y no se instrumentó en esta ronda.
+- Fallos: el comportamiento ante una escritura fallida durante la migración quedó definido en la Fase 20: rollback de `logistics:users` y `logistics:active_user_id`, error claro y migración no marcada como aplicada.
 - Verificación: ampliar `tests/unit/storage.test.js`, `tests/unit/demo-data.test.js` y `tests/integration/shipments.test.js`; ejecutar `npx vitest run` y `npm run build`; actualizar el checklist `HU15-009` y el registro incremental de `tasks.md` con T153–T158 cuando se generen; sin crear ramas ni commits.
-- Constitución: la comprobación general no se reabre; N1 permanece documentado como no verificable por ausencia de `.specify/memory/constitution.md`.
+- Constitución: `.specify/memory/constitution.md` existe y rige el proyecto; la afirmación histórica N1 sobre su ausencia quedó corregida en la Fase 19.
+
+## Fase 19: Consolidación documental post-clarificación — 2026-11-27
+
+- Límites: solo documentación; no se modifica código, no se crean ramas ni commits y no se ejecutan pruebas nuevas en esta fase.
+- Alcance: alinear `spec.md`, `plan.md`, `tasks.md` y `checklists/requirements.md` con las cinco decisiones registradas en la sesión de clarificación 2026-11-27.
+- Decisiones aplicadas: HU-15 es parte del MVP; envíos es pestaña de Movimientos con permisos y alias `#/shipments`; el cambio de cargo abre de inmediato la landing del nuevo rol; el dataset canónico es `logistics-demo-v1`; la confirmación de transferencias revalida stock en origen y se rechaza sin cambios si es insuficiente.
+- Requisitos nuevos: FR-154 y FR-155, ampliados en Fase 20 con FR-156; criterios nuevos: SC-076 y SC-077, ampliados con SC-078; escenarios nuevos: HU-05 escenario 6; casos límite nuevos: alias `#/shipments`, confirmación con stock insuficiente y fallo del cargador demo.
+- Trazabilidad: las decisiones deben quedar reflejadas en las filas de HU-05, HU-08, HU-11 y HU-15 de `spec.md`, y en T159–T163 de `tasks.md`.
+- Riesgos residuales: medición instrumentada de SC-011/SC-015/SC-017/SC-024/SC-027/SC-030/SC-033 (T067), validación visual de T136/T145, evidencia parcial de T031/T036/T048/T065 y diferimiento histórico de T107, ahora bloqueante del MVP canónico. La regla de rollback ante fallo de escritura en la migración de HU-15 quedó definida en la Fase 20.
+- Verificación: revalidación documental en `checklists/requirements.md` con cobertura FR-001–FR-156, SC-001–SC-078, US1–US15 y casos límite, ampliada en Fase 20 con FR-156/SC-078; sin ejecución de `npx vitest run` ni `npm run build` en esta fase.
+
+## Fase 20: Consolidación reconstruible del MVP — 2026-11-27
+
+- Límites: solo documentación de `spec.md`, `plan.md`, `tasks.md` y checklist; no se modifica código, no se crean ramas ni commits y no se ejecutan pruebas nuevas en esta fase.
+- Alcance canónico: el MVP es `HU-01`–`HU-15`; las referencias históricas a `US1`, `US8`, CRUD genérico, `nav-shipments`, doce botones de menú o vista propia de envíos quedan subordinadas a los requisitos vigentes de `spec.md`.
+- Datos: `logistics-demo-v1` deriva `quantity_available` de movimientos y transferencias confirmadas y publica por separado la tabla de `min_stock_level`; la tabla de stock publicada en versiones anteriores quedó corregida en `spec.md`. El cargador es una acción utilitaria de la barra superior con FR-156/SC-078, no una tarjeta ni botón del panel principal.
+- Permisos: `spec.md:FR-124` contiene la matriz semilla completa, landing por rol, acciones prohibidas y regla de que las excepciones individuales nunca conceden una acción prohibida; `plan.md` usa esa tabla como contrato y no redefine la matriz.
+- Terminado: `T031`, `T036`, `T048`, `T065`, `T067`, `T107`, `T136` y `T145` son bloqueantes; cada una requiere evidencia automatizada o revisión manual registrada antes de declarar terminado el MVP.
+- Calidad: T168 debe configurar y ejecutar `npm run lint`, `npm run format:check`, `npm run analyze`, `npm test` y `npm run build`, con resultado 0 y sin advertencias relevantes; sin esa evidencia no se afirma conformidad con la constitución.
+- Persistencia: `spec.md` es la fuente canónica de claves, formatos, estado inicial, usuario activo por defecto y reglas de no mutación; este plan no introduce claves adicionales.
+- Trazabilidad: T164–T168 en `tasks.md` cubren las cinco decisiones de esta ronda y las correcciones de consistencia posteriores al análisis, y actualizan el registro incremental sin renumerar T001–T163.
 

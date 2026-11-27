@@ -3,7 +3,7 @@
 **Entrada**: Documentos de diseño desde `/specs/002-logistica-inventario/`
 **Prerrequisitos**: `plan.md`, `spec.md`, `data-model.md`, `MER.md`, `contracts/`, `research.md`, `quickstart.md`
 **Pruebas**: Se incluyen tareas de prueba conforme al Principio II de la Constitución (Test-First & Verification).
-**Estado de marcado (2026-11-17; ampliado 2026-11-22; auditado y ampliado 2026-11-25)**: Los ítems `[x]` tienen evidencia de implementación en `src/`, `index.html`, `tests/` y/o documentación. La auditoría de 2026-11-25 conserva `[ ]` en T002, T004, T007, T008, T012, T013, T031, T036, T048, T065 y T067 por evidencia parcial o validación manual pendiente. T085–T094, T095–T106, T108–T135, T137 y T138–T144 están verificados con su evidencia correspondiente; T066 incluye la ejecución de 34 archivos/302 pruebas y build correcto de 2026-11-25. T107 continúa diferida. T136 y T145 permanecen `[ ]`: el usuario confirmó manualmente pestañas, buscador/filtros y menú lateral, pero esa evidencia no cubre todos sus criterios; el detalle está en cada tarea. T146–T152 cubren HU-12/HU-14 sin renumerar ni sobrescribir tareas anteriores; T068 quedó reconciliado al ocultar la interfaz base sin borrar datos ni funciones. Verificación final de 2026-11-25: `npx vitest run` con 34 archivos/304 pruebas OK y `npm run build` correcto.
+**Estado de marcado (2026-11-17; ampliado 2026-11-22; auditado y ampliado 2026-11-25)**: Los ítems `[x]` tienen evidencia de implementación en `src/`, `index.html`, `tests/` y/o documentación. La auditoría de 2026-11-25 conserva `[ ]` en T002, T004, T007, T008, T012, T013, T031, T036, T048, T065 y T067 por evidencia parcial o validación manual pendiente. T085–T094, T095–T106, T108–T135, T137 y T138–T144 están verificados con su evidencia correspondiente; T066 incluye la ejecución de 34 archivos/302 pruebas y build correcto de 2026-11-25. T107 continúa diferida históricamente y es bloqueante del MVP canónico según Fase 20. T136 y T145 permanecen `[ ]`: el usuario confirmó manualmente pestañas, buscador/filtros y menú lateral, pero esa evidencia no cubre todos sus criterios; el detalle está en cada tarea. T146–T152 cubren HU-12/HU-14 sin renumerar ni sobrescribir tareas anteriores; T068 quedó reconciliado al ocultar la interfaz base sin borrar datos ni funciones. Verificación final de 2026-11-25: `npx vitest run` con 34 archivos/304 pruebas OK y `npm run build` correcto.
 
 ## Formato: `[ID] [P?] [Historia] Descripción`
 
@@ -266,9 +266,9 @@
 - [x] T064 [P] Añadir refinamientos de accesibilidad (etiquetas, orden de foco, `aria-current` y semántica de tablas) en `src/styles.css` y los componentes de `src/components/` — completado: tablas con `scope="col"` y navegación accesible preservada.
 - [ ] T065 [P] Verificar el rendimiento de listados y búsquedas con 500 registros en `src/domain/products.js`, `src/domain/warehouses.js`, `src/domain/movements.js`, `src/domain/transfers.js`, `src/domain/stock.js`, `src/domain/alerts.js` y `src/domain/replenishments.js` — parcial 2026-11-25: `tests/unit/performance.test.js:18-77` mide productos, bodegas, stock, alertas, búsquedas y transferencias, pero no siembra transferencias para `listTransfers()` y no ejerce `listMovements()` ni `listReplenishments()` con 500 registros.
 - [x] T066 Ejecutar `npx vitest run` y `npm run build` en la raíz del repositorio para verificar que no hay regresiones, incluidos `tests/unit/permissions.test.js` y `tests/integration/permissions.test.js` de HU-08 — evidencia 2026-11-25: 34 archivos/302 pruebas OK y build OK (`dist/index.html`, CSS y JS generados correctamente`).
-- [ ] T067 Validar manualmente los escenarios de aceptación de US1–US8 usando `specs/002-logistica-inventario/spec.md` y el recorrido de `specs/002-logistica-inventario/quickstart.md`, y registrar los resultados en `specs/002-logistica-inventario/tasks.md`
+- [ ] T067 Validar manualmente los escenarios de aceptación de `HU-01`–`HU-15` usando `specs/002-logistica-inventario/spec.md` y el recorrido de `specs/002-logistica-inventario/quickstart.md`, con foco en US1–US8 y verificación explícita de los criterios manuales de HU-09–HU-15 ya cubiertos parcialmente por T136/T145, y registrar los resultados en `specs/002-logistica-inventario/tasks.md`
   - Evidencia histórica (2026-11-22): `npx vitest run` 30 archivos / 260 pruebas OK; `npm run build` OK. Cobertura automatizada de aceptación: HU-01 `tests/integration/products.test.js`, HU-02 `tests/integration/stock.test.js`, HU-03 `tests/integration/movements.test.js`, HU-04 `tests/integration/warehouses.test.js`, HU-05 `tests/integration/transfers.test.js`, HU-06 `tests/integration/alerts.test.js`, HU-07 `tests/integration/replenishments.test.js`, HU-08 `tests/integration/permissions.test.js` + `tests/unit/permissions.test.js`. Residual HU-07/HU-03/HU-05 con rollback atómico verificado por unit tests.
-  - Auditoría 2026-11-25: parcial; lo registrado es cobertura automatizada y las cifras quedaron desactualizadas. Falta el registro manual scenario por scenario de US1–US8/quickstart.
+  - Auditoría 2026-11-25: parcial; lo registrado es cobertura automatizada y las cifras quedaron desactualizadas. Falta el registro manual escenario por escenario de `HU-01`–`HU-15`/quickstart, incluidos los criterios visuales y de umbrales temporales pendientes.
 - [x] T068 [P] Reconciliar `specs/002-logistica-inventario/plan.md`, `spec.md`, `tasks.md` y `checklists/requirements.md` con la estructura final implementada. Evidencia histórica: edición documental de 2026-11-17. Resolución 2026-11-25: la contradicción de HU-12/HU-14 quedó cerrada sin borrar funcionalidad: Entidades, Documentos, Búsqueda, Reposiciones y Envíos conservan sus vistas/formularios y siguen disponibles solo por código o rutas heredadas, pero no aparecen como accesos visibles; el menú lateral muestra seis secciones, el panel principal solo cuatro indicadores y Movimientos/Alertas usan pestañas. Verificado en T146–T152 con 34 archivos/304 pruebas y build correcto.
 
 ### Trabajo residual identificado en la reconciliación
@@ -374,7 +374,7 @@ Task: "Integrar shell.js y app.js"
 5. **DETENERSE y VALIDAR**: probar el catálogo de productos con los tres roles y sus landing pages de forma independiente.
 6. Demostrar si está listo.
 
-El MVP histórico del módulo era solo US1; con HU-08 el MVP recomendado incluye US8 porque gobierna lo que cada usuario puede ver.
+El MVP histórico del módulo era solo US1; con HU-08 el MVP recomendado incluye US8 porque gobierna lo que cada usuario puede ver. Decisión vigente (Fase 20): el MVP canónico comprende `HU-01`–`HU-15`, no solo `US1`/`US8`.
 
 ### Entrega Incremental
 
@@ -423,7 +423,7 @@ El MVP histórico del módulo era solo US1; con HU-08 el MVP recomendado incluye
 |---|---|---|
 | Completado | T001, T003, T005–T006, T009–T011, T014–T030, T032–T035, T037–T047, T049–T064, T066, T069–T106, T108–T135, T137, T138–T144, T146–T152 | Archivo o prueba presente en `src/`, `index.html`, `tests/` o documentación reconciliada. |
 | Parcial o pendiente de verificación | T002, T004, T007, T008, T012, T013, T031, T036, T048, T065, T067, T136, T145 | Implementación o documentación base presente con brecha descrita en la propia tarea; T136 y T145 tienen confirmación manual parcial del usuario, pero no cubren todos sus criterios; se mantienen `[ ]`. |
-| Diferida | T107 | Mejora UX opcional de HU-09; no bloquea el MVP. |
+| Diferida históricamente, bloqueante del MVP | T107 | Mejora UX opcional de HU-09 no ejecutada; Fase 20 exige su evidencia para cerrar `HU-01`–`HU-15`. |
 | Salto de numeración | T140 | No aparece en el historial conservado; la numeración pasa de T139 a T141 y no se renumera. |
 | Completadas HU-08 | T085–T094 | Generadas en 2026-11-22 y verificadas con dominio, matriz, panel, enrutado y pruebas. |
 | Sustituida | T002 | Restauración eliminada; convertida en verificación segura del estado actual y auditada como parcial en 2026-11-25. |
@@ -459,17 +459,17 @@ El MVP histórico del módulo era solo US1; con HU-08 el MVP recomendado incluye
 - [x] T104 [P] [US9] Mostrar el error `errors.storage` devuelto por `registerMovement()` cuando falla la escritura: contenedor `error-movement-storage` en `index.html`, `ERROR_FIELDS` ampliado en `src/components/movement-form.js` y prueba en `tests/integration/orders.test.js`; rollback atómico conservado (FR-128). Evidencia: 6/6 pruebas de integración OK
 - [x] T105 [US9] Reforzar `LOGISTICS_SCHEMAS.orders` invocando `validateRecord('orders', order, { list: orders })` desde `createOrderForMovement()` en `src/domain/orders.js`, con prueba de rechazo en `tests/unit/orders.test.js` y sin duplicar validaciones en la interfaz. Evidencia: 12/12 pruebas unitarias de órdenes OK
 - [x] T106 [US9] Declarar `order_id` como opcional en `LOGISTICS_SCHEMAS.movements` de `src/storage.js` y verificarlo en `tests/unit/storage.test.js`, alineando el esquema con el campo ya persistido. Evidencia: 43/43 pruebas unitarias de almacenamiento OK
-- [ ] T107 [US9] Diferida: añadir como mejora UX opcional los filtros por tipo de orden, producto y bodega y la columna de usuario en `src/components/order-list.js`, `src/app.js`, `index.html` y `src/styles.css`, con prueba en `tests/integration/orders.test.js`
+- [ ] T107 [US9] Diferida históricamente, bloqueante para el cierre del MVP canónico: añadir como mejora UX opcional los filtros por tipo de orden, producto y bodega y la columna de usuario en `src/components/order-list.js`, `src/app.js`, `index.html` y `src/styles.css`, con prueba en `tests/integration/orders.test.js`
 - [x] T108 [US9] Documentar la política de numeración: no se reutilizan correlativos mientras se conserve `logistics:orders`; borrar esa clave reinicia la derivación del máximo y no se añade contador ni migración. Comportamiento de `src/domain/orders.js` preservado y aclarado en `spec.md`, `data-model.md` y `contracts/logistics-storage.md`
 - [x] T109 [US9] Eliminar `orderPrefixForMovementType()` sin consumidores y corregir la ordenación por `transaction_id` con valores legacy no numéricos en `src/domain/orders.js`, con prueba de regresión en `tests/unit/orders.test.js`
 - [x] T110 [US9] Ejecutar `npx vitest run` y `npm run build` en la raíz, incluyendo HU-01–HU-09, y actualizar la evidencia en `tasks.md`. Evidencia: 32 archivos/279 pruebas OK y build OK; T066 conserva su evidencia histórica de 2026-11-22
 
-**Punto de control**: OC/OV se generan solo para entradas y salidas normales, numeraciones persisten sin reutilización mientras exista el historial, rollback es atómico y visible, panel depende solo de Movimientos, y la deuda cerrada no afecta lo ya implementado; T107 queda diferida explícitamente.
+**Punto de control**: OC/OV se generan solo para entradas y salidas normales, numeraciones persisten sin reutilización mientras exista el historial, rollback es atómico y visible, panel depende solo de Movimientos, y la deuda cerrada no afecta lo ya implementado; T107 queda diferida históricamente y su evidencia es bloqueante para cerrar el MVP canónico.
 
 ### Dependencias HU-09 (complemento de la sección anterior)
 
 - US9 (Fase 12): depende de la Fase 2, de US3 para los movimientos, de US4 para las bodegas y de US8 para el guard `movements`; no introduce Fase nueva en el código ni permiso `orders`.
-- T095–T103 son verificaciones ya ejecutadas; T104–T106 y T108–T110 se ejecutaron y verificaron secuencialmente. T107 permanece diferida.
+- T095–T103 son verificaciones ya ejecutadas; T104–T106 y T108–T110 se ejecutaron y verificaron secuencialmente. T107 permanece diferida históricamente y es bloqueante según Fase 20.
 - T104, T107 y T110 comparten `index.html`, `src/app.js` o `tests/integration/orders.test.js`; T104 y T110 se ejecutaron por separado, T107 sigue sin ejecutarse.
 - T105 y T106 comparten `src/storage.js`; T105, T108 y T109 comparten `src/domain/orders.js`, por lo que se ejecutaron secuencialmente.
 
@@ -491,7 +491,7 @@ Task: "npm run build"
 | Estado | IDs | Criterio usado |
 |---|---|---|
 | Completado | T095–T103, T104–T106, T108–T110 | Implementación, pruebas y documentación presentes; 279/279 pruebas OK y build OK el 2026-11-23. |
-| Diferida | T107 | Mejora UX opcional; no ejecutada ni marcada como completada. |
+| Diferida históricamente, bloqueante del MVP | T107 | Mejora UX opcional no ejecutada; requiere evidencia antes de cerrar `HU-01`–`HU-15`. |
 
 `npx vitest run` y `npm run build` se ejecutaron en esta edición HU-09 con resultado OK; T066 conserva su evidencia histórica.
 
@@ -499,7 +499,7 @@ Task: "npm run build"
 
 ## Fase 13: Historia de Usuario 10 - Buscador y filtros de transferencias entre bodegas (Prioridad: P2) (Ampliación 2026-11-23)
 
-**Nota de alcance**: T111–T137 se añaden al final por instrucción explícita; no reordenan, reemplazan ni cambian el estado de T001–T110. T107 continúa diferida. Esta ampliación implementa solo HU-10 y HU-11, sin crear ramas, commits ni push desde la generación de tareas.
+**Nota de alcance**: T111–T137 se añaden al final por instrucción explícita; no reordenan, reemplazan ni cambian el estado de T001–T110. T107 continúa diferida históricamente y es bloqueante del MVP canónico. Esta ampliación implementa solo HU-10 y HU-11, sin crear ramas, commits ni push desde la generación de tareas.
 
 **Objetivo**: Buscar y filtrar transferencias registradas por producto, identificador de transferencia, bodegas y estado, conservando el listado completo por defecto y sin alterar datos operativos.
 
@@ -539,7 +539,7 @@ Task: "npm run build"
 - [X] T120 [US11] Crear pruebas unitarias en `tests/unit/shipments.test.js` para `createShipment()`, `advanceShipmentStatus()` y `listShipments()`, cubriendo OV existente con `order_type = "venta"`, rechazo de OC y de OV duplicada, validación de `createdBy` y `actorUserId` contra `USERS`, evento inicial `en_bodega`, transiciones inmediatas, rechazo de retrocesos, saltos, repeticiones y cambios desde `entregado`, eventos `history` con `changed_at` ISO y `changed_by`, búsqueda parcial e insensible a mayúsculas por `orderId` y `trackingCode`, filtro exacto por `status`, y ausencia de llamadas a `registerMovement()` ni cambios en `logistics:orders`, `logistics:inventory_transactions` o `logistics:stock` (FR-130, FR-131, FR-132)
 - [X] T121 [P] [US11] Crear pruebas de integración en `tests/integration/shipments.test.js` para la vista `#view-shipments`, la ruta `#/shipments`, el formulario con OV elegibles, el rechazo de duplicados, el listado con etiquetas «En bodega», «En tránsito», «En reparto» y «Entregado», el historial visible, los filtros por OV/código/estado, los botones de avance sujetos a `action:shipments.update_status`, la denegación de `module:shipments`, la persistencia tras recarga, la no mutación de stock, movimientos ni órdenes y la ausencia de conexiones automáticas con transportistas comprobando que no se invoca `fetch`, `XMLHttpRequest` ni otro cliente HTTP externo durante el registro o avance manual (FR-130, FR-132, FR-133; Escenario HU-11 10)
 - [X] T122 [P] [US11] Actualizar `tests/unit/permissions.test.js` y `tests/integration/permissions.test.js` para los recursos `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status`, verificando que los tres roles definidos pueden ver y actualizar estados, que no se añaden entradas a `FORBIDDEN_BY_ROLE` y que una matriz persistida sin las filas nuevas resuelve el acceso mediante el fallback de `ROLE_PERMISSION_SEED` sin sobrescribirse (FR-130, FR-133, FR-124)
-- [X] T123 [P] [US11] Actualizar `tests/integration/workspace-shell.test.js` para esperar 12 botones `.nav-module`, comprobar `#nav-shipments`, verificar que desaparece al denegar `module:shipments` y confirmar que `#/shipments` muestra el aviso de acceso restringido y redirige a la landing permitida (FR-113, FR-115, FR-133)
+- [X] T123 [P] [US11] Histórico, superado por T146/T160: Actualizar `tests/integration/workspace-shell.test.js` para esperar 12 botones `.nav-module`, comprobar `#nav-shipments`, verificar que desaparece al denegar `module:shipments` y confirmar que `#/shipments` muestra el aviso de acceso restringido y redirige a la landing permitida (FR-113, FR-115, FR-133). La interfaz vigente tiene seis secciones, sin `nav-shipments`, y usa la pestaña de Movimientos.
 
 ### Implementación de la Historia de Usuario 11
 
@@ -547,7 +547,7 @@ Task: "npm run build"
 - [X] T125 [P] [US11] Crear `src/domain/shipments.js` con `createShipment({ orderId, carrier, trackingCode, createdBy })`, `advanceShipmentStatus(shipmentId, actorUserId)` y `listShipments(filters)`, validando contra `validateRecord('shipments', ...)` y, antes de cualquier escritura, comprobando explícitamente que la OV existe en `loadOrders()` con `order_type = "venta"`, que no existe un envío previo con el mismo `order_id` en `loadShipments()`, que `createdBy` y `actorUserId` corresponden a usuarios válidos de `loadUsers()`, que `carrier` y `trackingCode` son texto no vacío, que el estado inicial es `en_bodega` y que todo avance usa únicamente `en_transito`, `en_reparto` o `entregado` según la transición inmediatamente siguiente; cualquier validación fallida DEBE devolver errores y NO DEBE invocar `saveShipments()` ni persistir parcialmente; persistir `history[]` embebido con `changed_at` ISO y `changed_by`, sin llamar a `registerMovement()`, sin conexiones automáticas con transportistas y sin modificar `STOCK`, movimientos ni órdenes (FR-130, FR-131, FR-132; Escenarios HU-11 1, 3, 4, 5, 7, 8, 9, 10)
 - [X] T126 [P] [US11] Actualizar `src/domain/seed.js` para incluir `shipments` en `ALL_MODULES` y `OPERATION_MODULES`, añadir `shipment-form` a `SECTIONS`, sembrar `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status` para `administrador`, `supervisor_inventario` y `encargado_bodega`, permitir `section:shipment-form` cuando corresponda y no reescribir una matriz `ROLE_PERMISSIONS` ya persistida (FR-130, FR-133)
 - [X] T127 [P] [US11] Actualizar `src/domain/permissions.js` añadiendo `shipments` a `MODULES`, sin nuevas entradas en `FORBIDDEN_BY_ROLE`, para que `canAccessModule()`, `resolveLandingModule()` y el panel de permisos reconozcan el módulo y la matriz solo pueda restringir lo permitido por reglas de negocio (FR-124, FR-133)
-- [X] T128 [P] [US11] Añadir en `index.html` el botón `#nav-shipments` con `class="nav-module"`, `data-module="shipments"` y un elemento `<span class="nav-label">Seguimiento de envíos</span>`, la sección `#view-shipments`, el formulario `#shipment-form` con `#shipment-order`, `#shipment-carrier`, `#shipment-tracking-code`, `#shipment-submit-button` y contenedores `error-shipment-orderId`, `error-shipment-carrier`, `error-shipment-trackingCode`, `error-shipment-createdBy`, además del listado con `#shipment-search`, `#shipment-filter-status`, `#shipment-count`, `#shipment-list-body` y `#shipment-list-empty` (FR-113, FR-133; Escenario HU-11 11)
+- [X] T128 [P] [US11] Histórico, superado por T146/T160: Añadir en `index.html` el botón `#nav-shipments` con `class="nav-module"`, `data-module="shipments"` y un elemento `<span class="nav-label">Seguimiento de envíos</span>`, la sección `#view-shipments`, el formulario `#shipment-form` con `#shipment-order`, `#shipment-carrier`, `#shipment-tracking-code`, `#shipment-submit-button` y contenedores `error-shipment-orderId`, `error-shipment-carrier`, `error-shipment-trackingCode`, `error-shipment-createdBy`, además del listado con `#shipment-search`, `#shipment-filter-status`, `#shipment-count`, `#shipment-list-body` y `#shipment-list-empty` (FR-113, FR-133; Escenario HU-11 11). La interfaz vigente integra estos controles en una pestaña de Movimientos, sin botón de menú propio.
 - [X] T129 [P] [US11] Crear `src/components/shipment-form.js` con funciones para poblar `#shipment-order` solo con órdenes `order_type = "venta"` sin envío existente, mostrar errores de validación en los contenedores `error-shipment-*`, construir el payload con `orderId`, `carrier`, `trackingCode` y `createdBy`, y conservar el usuario activo del ERP sin selector manual (FR-131, FR-133)
 - [X] T130 [P] [US11] Crear `src/components/shipment-list.js` para renderizar en `#shipment-list-body` el `order_id`, `carrier` y `tracking_code` escapados, las etiquetas de estado, el historial con `changed_at` y `changed_by`, `#shipment-count`, `#shipment-list-empty` y el botón de avance solo cuando `canUpdateStatus` sea verdadero y el estado no sea `entregado` (FR-132, FR-133)
 - [X] T131 [US11] Integrar HU-11 en `src/app.js`: importar el dominio y los componentes, añadir `shipments` a `MODULES` y `VIEWS` con `shipments: 'view-shipments'`, implementar `refreshShipments()` con guard `module:shipments`, cablear `submit` de `#shipment-form`, eventos de filtros y avance de estado con `guardAction('shipments.create')` y `guardAction('shipments.update_status')`, mostrar errores, deshabilitar `#shipment-form` según permisos en `applyPermissionUiState()` y refrescar la vista tras crear o avanzar (FR-130, FR-133)
@@ -565,7 +565,7 @@ Task: "npm run build"
 - [X] T134 Ejecutar `npx vitest run` en la raíz del repositorio, incluyendo `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js`, `tests/unit/shipments.test.js`, `tests/integration/shipments.test.js`, `tests/unit/storage.test.js`, `tests/unit/permissions.test.js`, `tests/integration/permissions.test.js` y `tests/integration/workspace-shell.test.js`, y registrar el resultado en `specs/002-logistica-inventario/tasks.md`
 - [X] T135 Ejecutar `npm run build` en la raíz del repositorio y registrar el resultado en `specs/002-logistica-inventario/tasks.md`
 - [ ] T136 Validar manualmente todos los escenarios de `specs/002-logistica-inventario/quickstart.md` para HU-10 y HU-11, incluyendo búsqueda parcial, filtros combinados, estado vacío, 1:1 OV–envío, transiciones secuenciales, denegación por permisos, persistencia y verificación explícita de que no existen conexiones automáticas con transportistas, y registrar la evidencia en `specs/002-logistica-inventario/tasks.md` — confirmación manual del usuario (2026-11-25): probó en navegador las pestañas de Movimientos (Entradas, Salidas, Historial, Órdenes y Envíos), la pestaña Reposiciones en Alertas y el buscador/filtros de Transferencias. Esta evidencia no cubre todos los criterios: falta confirmar búsqueda parcial por texto/ID y capitalización, filtros combinados, estado vacío, 1:1 OV–envío, transiciones secuenciales con rechazo de retroceso/salto/repetición y estado terminal, denegación por permisos, persistencia tras recarga y ausencia explícita de conexiones automáticas con transportistas; se mantiene `[ ]`.
-- [X] T137 Registrar el marcado final de T111–T137 en `specs/002-logistica-inventario/tasks.md`, conservando T001–T110 sin cambios, T107 como diferida y T066 con su evidencia histórica
+- [X] T137 Registrar el marcado final de T111–T137 en `specs/002-logistica-inventario/tasks.md`, conservando T001–T110 sin cambios, T107 como diferida históricamente y bloqueante del MVP, y T066 con su evidencia histórica
 
 **Evidencia de verificación**
 - T118: `npx vitest run tests/unit/transfers.test.js tests/integration/transfers.test.js` → `Test Files 2 passed (2)`, `Tests 21 passed (21)`.
@@ -648,7 +648,7 @@ Task: "T130 crear src/components/shipment-list.js"
 ### Entrega Incremental
 
 1. US10 → validar → demostrar sin tocar permisos ni navegación.
-2. US11 → validar → demostrar con módulo propio, ruta y matriz actualizada.
+2. US11 → validar → demostrar con módulo lógico y ruta alias; la interfaz vigente usa la pestaña de Movimientos sin `nav-shipments` (histórico: módulo propio con matriz actualizada).
 3. Verificación final → suite completa, build y evidencia documental.
 
 ### Estrategia de Equipo Paralelo
@@ -668,7 +668,7 @@ Task: "T130 crear src/components/shipment-list.js"
 | Nuevas US10 | T111–T118 | Tareas generadas desde HU-10, `plan.md`, `data-model.md`, `contracts/logistics-storage.md` y `quickstart.md`. |
 | Nuevas US11 | T119–T133 | Tareas generadas desde HU-11, `MER.md`, `data-model.md`, `contracts/logistics-storage.md` y `quickstart.md`. |
 | Nueva verificación | T134–T137 | Suite completa, build, validación manual y registro de evidencia. |
-| Sin cambios | T001–T110 | Se conservan tal cual, incluida T107 como diferida y T066 con su evidencia histórica. |
+| Sin cambios | T001–T110 | Se conservan tal cual, incluida T107 como diferida históricamente y bloqueante del MVP, y T066 con su evidencia histórica. |
 
 Los comandos `npx vitest run` y `npm run build` de T134–T135 deben ejecutarse después de la implementación; esta generación de tareas no ejecuta código ni modifica ramas, commits o push.
 
@@ -686,7 +686,7 @@ Los comandos `npx vitest run` y `npm run build` de T134–T135 deben ejecutarse 
 - [X] T142 [P] Ajustar textos y semántica visual del panel en `src/components/dashboard.js`, `index.html` y `src/styles.css`, conservando datos y lógica existentes: pista de datos demo solo cuando corresponda, copy de alertas sin exageración y colores/captions neutros para pendientes.
 - [X] T143 Presentar la matriz de permisos de forma más clara en `src/components/permissions-panel.js`, `index.html` y `src/styles.css`: etiquetas legibles, cabeceras desde `getRoles()`, feedback por severidad y badge/tooltip de bloqueo en celdas `admin:permissions`, sin alterar el funcionamiento de los permisos.
 - [X] T144 [P] Añadir indicador de scroll horizontal y `aria-label` a contenedores de tablas anchas en `index.html` y `src/styles.css`, sin modificar columnas, datos ni comportamiento.
-- [ ] T145 Verificar en navegador los cambios visuales de `index.html`, `src/styles.css`, `src/components/shell.js`, `src/components/dashboard.js` y `src/components/permissions-panel.js`, sin marcar tareas como completadas — confirmación manual del usuario (2026-11-25): probó en navegador las pestañas de Movimientos y Alertas, el buscador/filtros de Transferencias y el menú lateral de seis secciones sin Entidades, Documentos ni Búsqueda. No cubre explícitamente la revisión visual del panel principal (`src/components/dashboard.js`, cuatro indicadores y sin accesos rápidos), del panel de permisos (`src/components/permissions-panel.js`) ni del resto de cambios de `src/styles.css`; se mantiene `[ ]`.
+- [ ] T145 Verificar en navegador los cambios visuales de `index.html`, `src/styles.css`, `src/components/shell.js`, `src/components/dashboard.js` y `src/components/permissions-panel.js`, sin marcar tareas como completadas — confirmación manual del usuario (2026-11-25): probó en navegador las pestañas de Movimientos y Alertas, el buscador/filtros de Transferencias y el menú lateral de seis secciones sin Entidades, Documentos ni Búsqueda. No cubre explícitamente la revisión visual del panel principal (`src/components/dashboard.js`, cuatro indicadores y sin accesos rápidos), del panel de permisos (`src/components/permissions-panel.js`) ni del resto de cambios de `src/styles.css`; tampoco registra los 20 recorridos cronometrados exigidos por SC-064; se mantiene `[ ]`.
 
 ---
 
@@ -717,7 +717,7 @@ Los comandos `npx vitest run` y `npm run build` de T134–T135 deben ejecutarse 
 
 | HU | Funcionalidad incorporada | Archivos principales | Evidencia |
 |---|---|---|---|
-| HU-09 | Órdenes `OC`/`OV` generadas desde entradas y salidas normales, secuencias independientes, persistencia y rollback atómico; panel dentro de Movimientos sin permiso propio. T107 queda diferida. | `src/domain/orders.js`, `src/domain/movements.js`, `src/storage.js`, `src/components/movement-form.js`, `src/components/order-list.js`, `src/app.js`, `index.html` | T095–T106, T108–T110; `tests/unit/orders.test.js`, `tests/unit/storage.test.js`, `tests/integration/orders.test.js`. |
+| HU-09 | Órdenes `OC`/`OV` generadas desde entradas y salidas normales, secuencias independientes, persistencia y rollback atómico; panel dentro de Movimientos sin permiso propio. T107 queda diferida históricamente y es bloqueante del MVP canónico. | `src/domain/orders.js`, `src/domain/movements.js`, `src/storage.js`, `src/components/movement-form.js`, `src/components/order-list.js`, `src/app.js`, `index.html` | T095–T106, T108–T110; `tests/unit/orders.test.js`, `tests/unit/storage.test.js`, `tests/integration/orders.test.js`. |
 | HU-10 | Búsqueda y filtros combinados de transferencias por producto, bodegas y estado, integrados en el listado existente. | `src/domain/transfers.js`, `src/components/transfer-list.js`, `src/app.js`, `index.html` | T111–T118, T134; `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js`. T136 tiene confirmación manual parcial de buscador/filtros; faltan criterios detallados en T136. |
 | HU-11 | Seguimiento de envíos 1:1 con orden de venta, estados secuenciales, historial, restricciones por permiso y ausencia de clientes HTTP externos. | `src/storage.js`, `src/domain/shipments.js`, `src/domain/seed.js`, `src/domain/permissions.js`, `src/components/shipment-form.js`, `src/components/shipment-list.js`, `src/app.js`, `index.html` | T119–T135, T137; `tests/unit/storage.test.js`, `tests/unit/shipments.test.js`, `tests/unit/permissions.test.js`, `tests/integration/shipments.test.js`, `tests/integration/permissions.test.js`, `tests/integration/workspace-shell.test.js`. T136 tiene confirmación manual parcial de la pestaña Envíos; faltan 1:1, transiciones, permisos, persistencia y ausencia de conexiones. |
 | HU-12 | Menú lateral reducido a seis secciones; accesos base/alias ocultados sin borrar vistas, formularios ni permisos. | `index.html`, `src/app.js`, `src/components/shell.js`, `src/styles.css` | T068, T146, T148, T150–T152; `tests/integration/workspace-shell.test.js`, `tests/integration/permissions.test.js`. |
@@ -732,7 +732,7 @@ Los ajustes visuales de Fase 16 se conservan como trabajo intermedio: T138–T14
 
 **Nota de IDs**: T153–T158 se añaden al final; no reordenan, renumeran, desmarcan ni modifican T001–T152 ni las tareas de HU-12 a HU-14. T140 sigue sin existir por decisión histórica documentada.
 
-**Objetivo**: Renombrar la semilla, migrar solo coincidencias exactas, derivar bodegas de rol + orden del catálogo y conservar historial, permisos y usuario activo (FR-148–FR-153, SC-071–SC-075). La interpretación operativa de “posición” y el comportamiento ante fallo de escritura siguen pendientes de reflejo en `spec.md` (A1 y U1); esta fase no modifica ese archivo.
+**Objetivo**: Renombrar la semilla, migrar solo coincidencias exactas, derivar bodegas de rol + orden del catálogo y conservar historial, permisos y usuario activo (FR-148–FR-153, SC-071–SC-075). La interpretación operativa de “posición” quedó definida en la Fase 19; el comportamiento ante fallo de escritura sigue registrado como riesgo residual.
 
 **Criterio de aceptación independiente**: con un navegador vacío aparecen los cuatro usuarios nuevos en orden; con la semilla anterior se migran solo las coincidencias exactas; cargas repetidas no producen cambios; las bodegas de demostración no se reasignan por el renombrado; y la suite completa pasa sin regresiones (SC-071–SC-075).
 
@@ -759,3 +759,66 @@ Los ajustes visuales de Fase 16 se conservan como trabajo intermedio: T138–T14
 | HU-15 | Catálogo semilla con nombres y correos ficticios, migración exacta e idempotente y bodegas por rol + orden. | `src/domain/seed.js`, `src/domain/demo-data.js`, `src/storage.js` | T153–T158; `tests/unit/storage.test.js`, `tests/unit/demo-data.test.js`, `tests/integration/shipments.test.js`; 34 archivos/308 pruebas OK y build correcto. |
 
 **Punto de control**: las tareas previas permanecen intactas; los cuatro usuarios nuevos aparecen en orden, la migración es idempotente, las bodegas no cambian por el renombrado y la suite completa y el build pasan sin regresiones. Verificado el 2026-11-26 con 34 archivos/308 pruebas y build correcto; sin crear ramas, commits ni push adicionales, conservando el historial previo del repositorio.
+
+---
+
+## Fase 19: Consolidación documental post-clarificación — 2026-11-27
+
+**Nota de IDs**: T159–T163 se añaden al final; no reordenan, renumeran ni desmarcan T001–T158. T140 sigue sin existir por decisión histórica documentada.
+
+**Objetivo**: dejar `spec.md`, `plan.md` y `tasks.md` suficientes para reconstruir el MVP sin leer código, incorporando las cinco decisiones de la sesión de clarificación 2026-11-27.
+
+**Criterio de aceptación independiente**: una persona que solo lea los tres artefactos puede determinar el alcance de HU-15, la navegación de envíos, el cambio de rol, el dataset demo y la revalidación de stock al confirmar transferencias.
+
+**Paralelismo**: T159 ∥ T160 ∥ T161; T162 depende de T159–T161; T163 depende de T162.
+
+### Documentación de decisiones
+
+- [X] T159 [P] [US15] Registrar en `spec.md` y `plan.md` que HU-15 forma parte del MVP vigente, con T153–T158 completos y evidencia de 34 archivos/308 pruebas y build correcto (FR-148–FR-153, SC-071–SC-075).
+- [X] T160 [P] [US8,US11] Registrar que Seguimiento de envíos es pestaña de Movimientos con entradas `module:shipments`, `view:shipments`, `action:shipments.create` y `action:shipments.update_status`, sin `nav-shipments`, con alias `#/shipments`, y que el cambio de cargo abre de inmediato la landing del nuevo rol (FR-107, FR-117, FR-133, FR-147, SC-060, SC-066–SC-068).
+- [X] T161 [P] [US5,US15] Documentar el conjunto canónico `logistics-demo-v1` y la regla de confirmación de transferencias con stock insuficiente, añadiendo FR-154, FR-155, SC-076, SC-077, el escenario 6 de HU-05 y los casos límite correspondientes.
+- [X] T162 [P] Actualizar `plan.md` con la Fase 19, corregir la afirmación histórica sobre la ausencia de `.specify/memory/constitution.md` y conservar los riesgos residuales de medición, validación visual y rollback de migración.
+- [X] T163 Revalidar `checklists/requirements.md` con la sección `Revalidación post-clarificación — 2026-11-27`, cubriendo FR-001–FR-155, SC-001–SC-077, US1–US15 y casos límite, ampliado en Fase 20 a FR-001–FR-156 y SC-001–SC-078, sin crear ramas ni commits.
+
+### REGISTRO INCREMENTAL (Fase 19)
+
+| Ámbito | Decisión consolidada | Archivos principales | Evidencia |
+|---|---|---|---|
+| HU-15 | Parte del MVP, con dataset canónico `logistics-demo-v1` y cargador utilitario en la barra superior | `spec.md`, `plan.md`, `tasks.md`, `checklists/requirements.md` | T159, T161, T165; FR-154, FR-156, SC-076, SC-078 |
+| HU-08/HU-11 | Envíos como pestaña de Movimientos y landing inmediata tras cambio de cargo | `spec.md`, `plan.md`, `tasks.md` | T160; FR-107, FR-117, FR-133, FR-147 |
+| HU-05 | Confirmación revalida stock y se rechaza sin cambios si es insuficiente | `spec.md`, `plan.md`, `tasks.md` | T161; FR-155, SC-077 |
+| Calidad documental | Cobertura completa y riesgos residuales registrados | `checklists/requirements.md`, `plan.md` | T162, T163 |
+
+**Punto de control**: los tres artefactos quedan alineados; no se modificó código, no se crearon ramas ni commits y no se ejecutaron pruebas nuevas en esta fase.
+
+---
+
+## Fase 20: Consolidación reconstruible del MVP — 2026-11-27
+
+**Nota de IDs**: T164–T168 se añaden al final; no reordenan, renumeran ni desmarcan T001–T163. T140 sigue sin existir por decisión histórica documentada.
+
+**Objetivo**: garantizar que `spec.md`, `plan.md` y `tasks.md` permitan reconstruir el MVP canónico `HU-01`–`HU-15` sin leer código.
+
+**Criterio de aceptación independiente**: una persona o agente que solo lea los tres artefactos puede determinar alcance, dataset, permisos, tareas bloqueantes y verificaciones de calidad obligatorias.
+
+**Paralelismo**: T165 ∥ T166 ∥ T168; T167 depende del cierre de T031, T036, T048, T065, T067, T107, T136 y T145.
+
+### Documentación y verificación
+
+- [X] T164 [P] Registrar en `spec.md`, `plan.md` y `tasks.md` que el MVP canónico comprende `HU-01`–`HU-15`, que las menciones históricas a `US1`/`US8` quedan subordinadas y que T031, T036, T048, T065, T067, T107, T136 y T145 son bloqueantes (C4, C5).
+- [ ] T165 [P] [US15] Verificar que `src/domain/demo-data.js` reproduce exactamente la tabla derivada de `quantity_available` y la tabla separada de `min_stock_level` publicadas en `spec.md`; verificar que el botón «Cargar datos de demostración» está en la barra superior, exige `action:base.manage`, publica el resultado en `#demo-data-status`, que `alreadyLoaded` deshabilita la carga y que un fallo de escritura restaura el estado previo sin activar la marca; actualizar `tests/unit/demo-data.test.js` con ambos conjuntos de valores y con la regla de que los movimientos/transferencias son la fuente autoritativa, además de una prueba de integración de la barra superior (C6, C7, C8, FR-154, FR-156, SC-076, SC-078).
+- [ ] T166 [P] [US8] Verificar que `src/domain/seed.js` y `src/domain/permissions.js` coinciden con la matriz semilla canónica de `spec.md:FR-124`, incluidos landing por rol, acciones permitidas/prohibidas y que las excepciones individuales no conceden acciones prohibidas; ampliar `tests/unit/permissions.test.js` y `tests/integration/permissions.test.js` (C11).
+- [ ] T167 Cerrar con evidencia automatizada o revisión manual registrada las tareas bloqueantes T031, T036, T048, T065, T067, T107, T136 y T145; verificar también el rollback de HU-15 ante fallo de escritura conforme a FR-153; actualizar `spec.md`, `plan.md`, `tasks.md` y `checklists/requirements.md` solo cuando la evidencia exista (C5, C9, criterio de terminado del MVP).
+- [ ] T168 [P] Configurar en `package.json` los scripts `lint`, `format:check` y `analyze`, y ejecutar `npm run lint` (ESLint sobre `src/`, `tests/` y JavaScript raíz con `--max-warnings=0`), `npm run format:check` (Prettier `--check` sobre código, configuración, HTML, CSS y Markdown de la feature), `npm run analyze` (ESLint estático con reglas estrictas de corrección/mantenibilidad), `npm test` y `npm run build`; registrar comandos, resultados y advertencias resueltas en `specs/002-logistica-inventario/plan.md` y en esta fase, exigiendo código 0 y cero advertencias sin resolver que afecten corrección o mantenibilidad antes de declarar conformidad constitucional (C13, criterio de calidad obligatorio).
+
+### REGISTRO INCREMENTAL (Fase 20)
+
+| Ámbito | Decisión consolidada | Archivos principales | Evidencia |
+|---|---|---|---|
+| Alcance | MVP canónico `HU-01`–`HU-15`; tareas pendientes bloqueantes | `spec.md`, `plan.md`, `tasks.md` | T164 |
+| Dataset | Movimientos/transferencias autoritativos; mínimos publicados por separado | `spec.md`, `src/domain/demo-data.js`, `tests/unit/demo-data.test.js` | T165 |
+| Permisos | Matriz semilla y reglas prohibidas documentadas en `spec.md` | `spec.md`, `src/domain/seed.js`, `src/domain/permissions.js` | T166 |
+| Terminado | Cierre evidenciado de T031/T036/T048/T065/T067/T107/T136/T145 | `spec.md`, `plan.md`, `tasks.md`, `checklists/requirements.md` | T167 |
+| Calidad | `npm run lint`, `npm run format:check`, `npm run analyze`, `npm test` y `npm run build` | `package.json`, `plan.md`, `tasks.md` | T168 |
+
+**Punto de control**: la documentación ya permite reconstruir el MVP; la implementación solo podrá declararse terminada después de T165–T168 y del cierre evidenciado de las tareas bloqueantes.

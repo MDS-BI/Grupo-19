@@ -186,3 +186,42 @@
 
 - Se conservaron intactas las validaciones históricas y el estado pendiente de T031, T036, T048, T065, T067, T107, T136 y T145.
 - No se crearon carpetas ni ramas nuevas, conforme a la instrucción explícita del usuario.
+
+---
+
+## Revalidación post-clarificación — 2026-11-27
+
+**Funcionalidad**: [spec.md](../spec.md)
+
+### Verificación de Cobertura
+
+- [x] FR-001–FR-156 cubiertos: aclaraciones aplicadas a FR-048, FR-055, FR-066–FR-069, FR-087, FR-107, FR-113–FR-124, FR-133, FR-135–FR-154, FR-155 y FR-156.
+- [x] SC-001–SC-078 cubiertos: verificados SC-001–SC-010, SC-011–SC-039, SC-040–SC-061, SC-062–SC-070, SC-071–SC-075, SC-076–SC-077 y SC-078.
+- [x] US1–US15 cubiertos: se revisaron todas las historias; HU-05 añadió el escenario de revalidación de stock, HU-08 quedó con landing inmediata, HU-11 quedó como pestaña en Movimientos y HU-15 quedó implementada con dataset canónico.
+- [x] Casos límite cubiertos: se revisó la sección `## Casos Límite` completa, incluidos URL antiguas, `#/shipments`, bodegas inactivas, stock ausente o en cero, migración idempotente y confirmación con stock insuficiente.
+- [x] Suposiciones cubiertas: se registraron la eliminación del selector manual, la ausencia de autenticación real, el panel lateral como único acceso y el conjunto `logistics-demo-v1` como fuente canónica de datos de demostración.
+
+### Verificación de Calidad
+
+- [x] No aparece `[NEEDS CLARIFICATION]` y las cinco preguntas de esta sesión tienen respuesta registrada en `spec.md`.
+- [x] No se introdujeron contradicciones nuevas entre historias, FR, SC, entidades o reglas de negocio.
+- [x] La definición de "posición" quedó operativa en la regla de responsables de bodega por rol y orden del catálogo.
+- [x] El estado de HU-15 coincide entre `spec.md`, `plan.md` y `tasks.md` en la documentación vigente.
+- [x] La navegación de envíos, el cambio de rol, el dataset demo y la confirmación de transferencias tienen criterios observables.
+
+### Riesgos pendientes documentados
+
+- SC-011, SC-015, SC-017, SC-024, SC-027, SC-030 y SC-033 siguen sin método de medición instrumentado; permanecen vinculados a T067.
+- T136 y T145 conservan validación manual parcial con revisión visual pendiente.
+- T031, T036, T048 y T065 siguen con evidencia parcial; T107 continúa diferida históricamente y es bloqueante del MVP canónico según Fase 20.
+- El comportamiento ante fallo de escritura durante la migración de HU-15 quedó definido en Fase 20 y su verificación depende de T167; la instrumentación de umbrales temporales sigue pendiente en T067.
+
+### Notas
+
+- Esta revalidación es documental y no sustituye la ejecución de pruebas ni la verificación visual pendiente.
+
+## Detalles Técnicos y Suposiciones
+
+- **Suposición**: No se dispone de biblioteca de instrumentación en el alcance de 002; los umbrales temporales se miden manualmente hasta que T067 defina evidencia.
+- **Suposición**: La reconstrucción debe partir de `spec.md`, `plan.md`, `tasks.md` y los artefactos de apoyo, sin leer código.
+- **Investigación suplementaria**: N/A — no se citaron ni añadieron URLs externas en esta ronda.
