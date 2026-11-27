@@ -408,3 +408,12 @@ Las decisiones funcionales aplicadas son las registradas en `spec.md`, sesión 2
 - Persistencia: `spec.md` es la fuente canónica de claves, formatos, estado inicial, usuario activo por defecto y reglas de no mutación; este plan no introduce claves adicionales.
 - Trazabilidad: T164–T168 en `tasks.md` cubren las cinco decisiones de esta ronda y las correcciones de consistencia posteriores al análisis, y actualizan el registro incremental sin renumerar T001–T163.
 
+## Fase 21: Navegación por pestañas del navegador — 2026-11-27
+
+- Alcance: HU-16 con FR-157–FR-160 y SC-079–SC-082; ampliación de navegación que no altera el MVP canónico `HU-01`–`HU-15` ni renombra los FR-125–FR-128 de órdenes.
+- Arquitectura: `src/app.js` conserva `showModule()` y las pestañas internas de Movimientos/Alertas; añade `navigateToModule()`, `openModuleInBrowserTab()` y sincronización de `#/<modulo>` para abrir los módulos laterales en pestañas nuevas.
+- Persistencia: no se introduce clave ni estado de pestañas; `window.open` solo navega a la misma página con hash y no escribe en `localStorage`.
+- Permisos: el guard se aplica antes de abrir; un módulo no autorizado no abre pestaña y muestra el aviso, y un hash no autorizado redirige a la landing del rol.
+- Respaldo: si `window.open` devuelve `null` o lanza error, la navegación ocurre en la pestaña actual; los flujos internos (`data-goto`, reposición desde alerta) nunca usan `window.open`.
+- Verificación: `tests/integration/browser-tabs.test.js` cubre apertura, hash, denegación, respaldo y flujos internos, conservando las pruebas de las pestañas internas y del panel de indicadores.
+

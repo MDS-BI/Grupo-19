@@ -158,3 +158,16 @@ También debe ejecutarse la suite completa para detectar regresiones en HU-01–
 - Movimientos tiene las pestañas Entradas, Salidas, Historial, Órdenes y Seguimiento de envíos; Alertas tiene Alertas y Reposiciones. El cambio de pestaña cambia solo el contenido, sin crear registros ni modificar datos (T147–T152).
 - Las rutas heredadas `#/shipments` y `#/replenishments` siguen funcionando como alias de las pestañas; las rutas genéricas `#/entities`, `#/documents` y `#/search` redirigen a una vista permitida (T150).
 - T145 permanece `[ ]`: la confirmación del usuario cubre menú, pestañas y buscador/filtros, pero no la revisión visual explícita del panel principal de cuatro indicadores, del panel de permisos ni del resto de estilos de Fase 16.
+
+### HU-16 — Pestañas del navegador
+
+1. Pulsar **Productos** en el menú lateral; debe abrirse una pestaña nueva con la misma página y el hash `#/products`.
+2. Recargar la pestaña nueva; debe mostrar directamente Productos y dejar el resto de vistas ocultas.
+3. Pulsar **Alertas** y **Permisos** con un perfil autorizado; cada apertura debe crear una pestaña distinta con su hash.
+4. Cambiar al usuario sin permiso de administrador y pulsar **Permisos**; no debe abrirse pestaña y debe aparecer el aviso de acceso.
+5. Abrir manualmente una URL con `#/entities` u otro hash no autorizado; debe redirigirse a la landing del rol con aviso.
+6. Simular un navegador que bloquea ventanas emergentes; al pulsar un módulo permitido debe navegar en la pestaña actual con el mismo hash.
+7. Usar los accesos internos (`data-goto` o «Solicitar» desde una alerta); deben navegar en la misma pestaña sin crear otra.
+8. Confirmar que no aparece `workspace-tabs`, que no se persiste lista de pestañas ni borradores y que las pestañas internas de Movimientos y Alertas siguen funcionando.
+
+**Verificación automatizada**: `tests/integration/browser-tabs.test.js` (SC-079–SC-082).

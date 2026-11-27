@@ -87,12 +87,33 @@ const TOP_LEVEL_MODULES = ROUTABLE_MODULES.filter(moduleName => !ALIAS_TO_PARENT
 
 let wired = false;
 let activeUser = null;
+let lastHash = '';
 
 function getActiveRole(){ return activeUser ? activeUser.role : ''; }
 function getActiveUserId(){ return activeUser ? Number(activeUser.user_id) : undefined; }
 function currentCan(action){ return canPerform(getActiveRole(), action, getActiveUserId()); }
 function currentCanModule(moduleName){ return canAccessModule(getActiveRole(), moduleName, getActiveUserId()); }
 function currentCanAdminPanel(){ return getEffectivePermission(getActiveRole(), 'panel', ADMIN_RESOURCE, getActiveUserId()); }
+function currentLanding(){ return resolveLandingModule(getActiveRole(), getActiveUserId()).module; }
+function isModuleAllowed(moduleName){
+  if(!ROUTABLE_MODULES.includes(moduleName)) return false;
+  const parent = ALIAS_TO_PARENT[moduleName] ? ALIAS_TO_PARENT[moduleName] : moduleName;
+  return ALIAS_TO_PARENT[moduleName]
+    ? guardModuleAccess(parent, { silent: true }) && guardModuleAccess(moduleName, { silent: true })
+    : guardModuleAccess(moduleName, { silent: true });
+}
+function isHashModuleAllowed(moduleName){
+  return !HIDDEN_LEGACY_MODULES.includes(moduleName) && isModuleAllowed(moduleName);
+}
+function moduleFromHash(hash){
+  const raw = String(hash || '').replace(/^#\/?/, '').split(/[?/]/)[0];
+  return ROUTABLE_MODULES.includes(raw) ? raw : null;
+}
+function browserTabUrl(module){
+  const url = new URL(window.location.href);
+  url.hash = `#/${module}`;
+  return url.href;
+}
 
 function setAccessNotice(message = '', severity = 'info'){
   const el = qs('access-notice');
@@ -129,6 +150,53 @@ function guardModuleAccess(moduleName, { silent = false } = {}){
 function guardAction(action, message){
   if(currentCan(action)) return true;
   return deny(message || 'Acción no permitida para el perfil activo (simulación).');
+}
+
+function syncHash(module, tab){
+  const hash = `#/${module}${tab && !ALIAS_TO_PARENT[module] ? `/${tab}` : ''}`;
+  lastHash = hash;
+  if(window.location.hash !== hash) window.location.hash = hash;
+}
+
+function navigateToModule(name, opts = {}){
+  if(!isModuleAllowed(name)){
+    const message = 'Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).';
+    if(!opts.silentDeny) setAccessNotice(message, 'warning');
+    const landing = currentLanding();
+    if(landing !== name && isModuleAllowed(landing)){
+      const result = navigateToModule(landing, { ...opts, silentDeny: true });
+      if(!opts.silentDeny) setAccessNotice(message, 'warning');
+      return result;
+    }
+    showModule(landing);
+    syncHash(landing);
+    return landing;
+  }
+  const tab = opts.tab || null;
+  showModule(name, { ...opts, tab });
+  syncHash(name, tab);
+  return name;
+}
+
+function openModuleInBrowserTab(module){
+  if(!ROUTABLE_MODULES.includes(module)) return;
+  if(!isModuleAllowed(module)){
+    setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).', 'warning');
+    return;
+  }
+  if(HIDDEN_LEGACY_MODULES.includes(module)){
+    navigateToModule(module);
+    return;
+  }
+  let opened = null;
+  try{ opened = window.open(browserTabUrl(module), '_blank'); }catch(e){ opened = null; }
+  if(!opened){
+    navigateToModule(module);
+    return;
+  }
+  if(opened.opener){
+    try{ opened.opener = null; }catch(e){}
+  }
 }
 
 function tabButtons(parent){
@@ -637,7 +705,7 @@ function refreshAlerts(){
       prefillReplenishmentFromAlert({ productId: alert.product_id, warehouseId: alert.warehouse_id, quantity: alert.deficit });
       const origin = qs('replenishment-form-origin');
       if(origin) origin.textContent = 'Origen: alerta HU-06';
-      showModule('replenishments', { focusForm: true });
+      navigateToModule('replenishments', { focusForm: true });
     }
   });
 }
@@ -940,12 +1008,11 @@ function onActiveUserChange(){
   if(user){
     activeUser = user;
     setActiveUserId(user.user_id);
-    const landing = resolveLandingModule(user.role, user.user_id);
-    showModule(landing.module);
-    setAccessNotice(`Perfil activo (simulación): ${user.user_name} — ${roleLabel(user.role)}. Sin autenticación real ni seguridad.`);
+    navigateToModule(resolveLandingModule(user.role, user.user_id).module);
+    setAccessNotice(`Perfil activo (simulación): ${user.user_name} — ${roleLabel(user.role)}. Sin autenticación real ni seguridad.`, 'info');
     return;
   }
-  showModule('dashboard');
+  navigateToModule('dashboard');
 }
 
 function refreshAfterPermissionChange(changedUserId){
@@ -955,38 +1022,34 @@ function refreshAfterPermissionChange(changedUserId){
     if(updated) activeUser = updated;
   }
   applyPermissionUiState();
-  const landing = resolveLandingModule(getActiveRole(), getActiveUserId());
-  showModule(currentCanAdminPanel() ? 'admin' : landing.module);
+  navigateToModule(currentCanAdminPanel() ? 'admin' : currentLanding());
 }
 
 function handleHashChange(){
   const parts = window.location.hash.replace(/^#\/?/, '').split(/[?/]/);
   const raw = parts[0];
+  const hash = `#/${raw}${parts[1] ? `/${parts[1]}` : ''}`;
+  if(hash === lastHash) return;
   if(!raw){
-    showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
+    navigateToModule(currentLanding());
     return;
   }
-  const moduleName = ROUTABLE_MODULES.includes(raw) ? raw : 'dashboard';
-  const alias = ALIAS_TO_PARENT[moduleName] || null;
-  const allowed = !HIDDEN_LEGACY_MODULES.includes(moduleName) && (alias
-    ? guardModuleAccess(alias, { silent: true }) && guardModuleAccess(moduleName, { silent: true })
-    : guardModuleAccess(moduleName, { silent: true }));
-  if(allowed){
-    showModule(moduleName, parts[1] ? { tab: parts[1] } : {});
+  if(isHashModuleAllowed(raw)){
+    navigateToModule(raw, parts[1] ? { tab: parts[1] } : {});
     return;
   }
-  showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
-  setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).');
+  navigateToModule(currentLanding(), { silentDeny: true });
+  setAccessNotice('Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).', 'warning');
 }
 
 function wireEvents(){
   if(wired) return;
   wired = true;
   document.querySelectorAll('.nav-module').forEach(btn => {
-    btn.addEventListener('click', () => showModule(btn.dataset.module));
+    btn.addEventListener('click', () => openModuleInBrowserTab(btn.dataset.module));
   });
   const adminNav = qs('nav-admin');
-  if(adminNav) adminNav.addEventListener('click', () => showModule('admin'));
+  if(adminNav) adminNav.addEventListener('click', () => openModuleInBrowserTab('admin'));
 
   document.querySelectorAll('.tab-button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1002,6 +1065,16 @@ function wireEvents(){
       }
     });
   });
+
+  const dashboardView = qs('view-dashboard');
+  if(dashboardView){
+    dashboardView.addEventListener('click', (ev) => {
+      const trigger = ev.target.closest('[data-goto]');
+      if(!trigger || trigger.disabled) return;
+      const opts = trigger.dataset.newRecord === 'true' ? { newRecord: true, focusForm: true } : {};
+      navigateToModule(trigger.dataset.goto, opts);
+    });
+  }
 
   const demoButton = qs('load-demo-data');
   if(demoButton){
@@ -1098,9 +1171,22 @@ export function initApp(resolved){
   clearTransferForm();
   clearShipmentForm();
   clearReplenishmentForm();
-  showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
+
+  const parts = window.location.hash.replace(/^#\/?/, '').split(/[?/]/);
+  const raw = parts[0];
+  const hashAllowed = raw ? isHashModuleAllowed(raw) : false;
+  const bootModule = raw && hashAllowed ? raw : currentLanding();
+  const bootOpts = hashAllowed && parts[1] ? { tab: parts[1] } : {};
+  showModule(bootModule, bootOpts);
+  const bootHash = `#/${bootModule}${bootOpts.tab && !ALIAS_TO_PARENT[bootModule] ? `/${bootOpts.tab}` : ''}`;
+  lastHash = bootHash;
+  if(window.location.hash !== bootHash) window.location.hash = bootHash;
+
   if(activeUser){
-    setAccessNotice(`Perfil activo (simulación): ${activeUser.user_name} — ${roleLabel(activeUser.role)}. Sin autenticación real ni seguridad.`, 'info');
+    setAccessNotice(raw && !hashAllowed
+      ? 'Acceso no disponible para el perfil activo. Sección restringida (simulación, sin seguridad real).'
+      : `Perfil activo (simulación): ${activeUser.user_name} — ${roleLabel(activeUser.role)}. Sin autenticación real ni seguridad.`,
+      raw && !hashAllowed ? 'warning' : 'info');
   }
 }
 

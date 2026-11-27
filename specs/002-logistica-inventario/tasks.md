@@ -849,3 +849,16 @@ Los ajustes visuales de Fase 16 se conservan como trabajo intermedio: T138–T14
   - Completada el 2026-11-27: se conservaron como `INTERNAL_MODULES`/`INTERNAL_VIEWS`/`ROUTABLE_MODULES` para que la navegación avanzada oculta y el guard de URLs heredadas sigan funcionando; `npx vitest run` quedó en `34 passed` / `302 passed`, `npm run build` OK y dev server `HTTP=200`.
 
 **Checkpoint de reversibilidad**: cada tarea debe dejar el árbol en estado verde antes de iniciar la siguiente; cualquier fallo detiene la secuencia y se reporta con el paso revertido.
+
+## Fase 22: HU-16 — Pestañas del navegador (2026-11-27)
+
+**Nota de IDs**: T177–T180 se añaden al final; no reordenan, renumeran ni desmarcan T001–T176. T140 sigue sin existir por decisión histórica documentada.
+
+**Paralelismo**: T177 y T179 pueden ejecutarse en paralelo; T178 depende de T177; T180 depende de T178 y T179.
+
+- [ ] T177 [P] [US16] Integrar en `src/app.js` las helpers `currentLanding()`, `isModuleAllowed()`, `isHashModuleAllowed()`, `moduleFromHash()`, `browserTabUrl()`, `syncHash()`, `navigateToModule()` y `openModuleInBrowserTab()`, conservando `showModule()`, los alias `#/shipments`/`#/replenishments`, las pestañas internas de Movimientos/Alertas, el panel de cuatro indicadores y la navegación avanzada oculta; aplicar el guard antes de `window.open` y caer a navegación local si el emergente es bloqueado (FR-157, FR-159, FR-160).
+- [ ] T178 [US16] Añadir `tests/integration/browser-tabs.test.js` para apertura por módulo, hash inicial, denegación, redirección de hash no autorizado, respaldo sin `window.open` y flujos internos en la misma pestaña; conservar `onConsoleLog` en `vitest.config.mjs` para el aviso «Not implemented: Window's open() method» de JSDOM (SC-079–SC-082).
+- [ ] T179 [P] Documentar HU-16 con FR-157–FR-160 y SC-079–SC-082 en `spec.md`, `plan.md`, `research.md`, `quickstart.md`, `data-model.md`, `contracts/logistics-storage.md` y `README.md`, sin renumerar FR-125–FR-128 de órdenes ni alterar el alcance canónico `HU-01`–`HU-15`.
+- [ ] T180 Ejecutar `npx vitest run` y `npm run build` tras fusionar `002-logistica-inventario` y `003-seed-data` en `main`, registrando recuento de archivos/pruebas y estado del build antes de declarar terminada la integración.
+
+**Checkpoint de HU-16**: la suite debe permanecer en verde y las pestañas internas de Movimientos/Alertas deben seguir visibles; cualquier regresión detiene la integración y se reporta antes de continuar.

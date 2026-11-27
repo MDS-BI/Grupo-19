@@ -22,7 +22,8 @@ Cada entidad se persiste bajo su propia clave de `localStorage`, como una lista 
 - `logistics:role_permissions`
 - `logistics:user_permission_overrides`
 
-`logistics:active_user_id` se conserva como clave independiente en `src/domain/permissions.js` y no se migra a este contrato.
+`logistics:active_user_id` se conserva como clave independiente en `src/domain/permissions.js` y no se migra a este contrato. No hay clave de pestañas: los módulos se abren en pestañas nuevas del navegador y su estado no se persiste (US16, FR-157–FR-160).
+
 ## Operaciones de Repositorio
 
 ### Genéricas (por entidad, implementadas en `src/storage.js`)
@@ -54,6 +55,7 @@ Cada entidad se persiste bajo su propia clave de `localStorage`, como una lista 
 - Las landing pages se validan contra módulos conocidos y permitidos; una configuración inválida cae a `dashboard` con aviso no bloqueante (FR-119).
 - Las etiquetas de roles, módulos y secciones configuradas se escapan con el helper compartido antes de mostrarse (FR-123).
 - Las operaciones de roles y permisos nunca escriben entidades operativas ni cambian el usuario activo (FR-120, FR-121).
+- La apertura de módulos en pestañas del navegador no escribe en `localStorage`: no se guarda una lista de pestañas ni borradores de formularios, y no altera entidades operativas ni el usuario activo (FR-120, FR-121, FR-158, FR-160).
 
 ## Expectativas de Extensibilidad
 

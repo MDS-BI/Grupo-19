@@ -108,3 +108,15 @@ El seguimiento técnico quedó cerrado para T104–T106 y T108–T110 sin rehace
 - `tests/unit/transfers.test.js`, `tests/integration/transfers.test.js`, `tests/integration/workspace-shell.test.js`, `tests/unit/orders.test.js`, `tests/integration/orders.test.js`: organización y helpers de prueba.
 
 **Resultado**: las decisiones técnicas quedaron resueltas y su ejecución se registró en T095–T152; T107 conserva su condición diferida y T136/T145 tienen confirmación manual parcial con criterios pendientes.
+
+## Decisión HU-16: pestañas del navegador (2026-11-27)
+
+| Tema | Decisión | Justificación | Alternativa rechazada |
+|---|---|---|---|
+| Apertura | `window.open()` con la misma página y `#/<modulo>` para los módulos laterales permitidos | Permite paralelizar secciones sin duplicar el estado de la aplicación ni inventar una barra de pestañas persistida | Mantener solo la navegación de una sola vista; rechazado por no cumplir HU-16, pero se conserva como respaldo si el navegador bloquea ventanas emergentes |
+| Compatibilidad | Conservar `showModule()`, las pestañas internas de Movimientos/Alertas y el panel de cuatro indicadores | La rama 002 partía de una versión anterior; tomar su versión completa habría revertido HU-09 a HU-15 | Reemplazar `src/app.js`, `index.html` y `src/domain/seed.js` por la versión de la rama; rechazado por regresión funcional |
+| Persistencia | No hay clave `tabs`, `activeTab`, `dirtyTabs` ni borradores compartidos | La apertura solo cambia el hash de la pestaña nueva y no altera `localStorage` | Sincronizar pestañas mediante `storage` events; rechazado por añadir estado no solicitado |
+| Permisos y hash | Comprobar permiso antes de abrir; un hash desconocido o no autorizado redirige a la landing del rol con aviso | Mantiene FR-113/FR-115 y evita exponer módulos restringidos al cargar una pestaña directa | Confiar en el hash sin guard; rechazado por permitir accesos indirectos |
+| Flujos internos | `data-goto` y crear reposición desde alerta navegan en la misma pestaña | Son continuaciones de la vista actual, no módulos independientes | Abrir una pestaña por cada acción interna; rechazado por perder el contexto y multiplicar estado |
+
+**Resultado**: HU-16 se integra como ampliación de navegación con FR-157–FR-160 y SC-079–SC-082, sin renumerar FR-125–FR-128 de órdenes ni modificar el alcance canónico `HU-01`–`HU-15`.

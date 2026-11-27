@@ -77,7 +77,7 @@ On top of the generic Entity/Document base, this feature shows six sections in t
 
 ### Storage keys
 
-`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`, `logistics:shipments`, `logistics:replenishment_requests`, `logistics:roles`, `logistics:role_permissions`, `logistics:user_permission_overrides`.
+`logistics:product_categories`, `logistics:products`, `logistics:warehouses`, `logistics:users`, `logistics:stock`, `logistics:inventory_transactions`, `logistics:stock_transfers`, `logistics:shipments`, `logistics:replenishment_requests`, `logistics:roles`, `logistics:role_permissions`, `logistics:user_permission_overrides`. No tab list or form drafts are persisted (FR-157–FR-160).
 
 ### Seed catalogs
 
@@ -90,6 +90,13 @@ On top of the generic Entity/Document base, this feature shows six sections in t
 - The administrator always retains the permissions panel (`admin:permissions`); business rules remain above configurable permissions.
 - On load, direct hash navigation or active-user change, the app routes to the role landing or falls back to `dashboard` with an access notice.
 - HU-11 adds the resources `module:shipments`, `view:shipments`, `action:shipments.create` and `action:shipments.update_status` for all three roles; they can be restricted in the permission matrix but no extra business-rule forbiddance is defined.
+
+### Browser tabs (US16, FR-157–FR-160)
+
+- Each main sidebar module opens in a new browser tab via `window.open`, using the same page URL with the hash `#/<module>`; there is no persisted workspace tab list.
+- The active user's permissions are checked before opening: an unauthorized module does not open a tab and shows the access notice. A blocked pop-up falls back to navigating in the current tab.
+- Each tab loads the app independently and shows only the module indicated by its hash. Internal sections and the movements/alerts tab panels keep working in the same tab.
+- Internal flows (`data-goto` buttons, creating a replenishment from an alert) keep navigating in the same tab. No tab list or form drafts are persisted or shared between tabs.
 
 ### Business rules worth knowing
 
