@@ -150,7 +150,7 @@ function renderDemoStatus(){
   }
   status.classList.remove('is-error');
   status.classList.add('is-success');
-  status.textContent = `Datos de demostración cargados: ${summary.products} productos, ${summary.warehouses} bodegas, ${summary.movements} movimientos y ${summary.transfers} transferencias.`;
+  status.textContent = `Datos de demostración cargados: ${summary.products} productos, ${summary.warehouses} bodegas, ${summary.stock} registros de stock, ${summary.movements} movimientos, ${summary.transfers} transferencias, ${summary.orders} órdenes y ${summary.shipments} envíos.`;
   if(button){
     button.disabled = true;
     button.textContent = 'Datos de demostración cargados';

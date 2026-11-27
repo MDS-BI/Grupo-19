@@ -32,13 +32,13 @@ export const LOGISTICS_SCHEMAS = {
   users: { required: ['user_id', 'user_name', 'role'], unique: ['user_id'], references: { role: 'roles' } },
   stock: { required: ['stock_id', 'product_id', 'warehouse_id', 'quantity_available'], unique: ['stock_id', ['product_id', 'warehouse_id']] },
   movements: { required: ['transaction_id', 'product_id', 'warehouse_id', 'transaction_type', 'quantity', 'user_id', 'transaction_date'], optional: ['order_id'], unique: ['transaction_id'] },
-  orders: { required: ['order_id', 'order_type', 'transaction_id', 'product_id', 'warehouse_id', 'quantity', 'user_id', 'order_date'], unique: ['order_id', 'transaction_id'] },
+  orders: { required: ['order_id', 'order_type', 'transaction_id', 'product_id', 'warehouse_id', 'quantity', 'user_id', 'order_date'], unique: ['order_id', 'transaction_id'], values: { status: ['borrador', 'aprobada', 'en_proceso', 'completada', 'cancelada'] } },
   shipments: {
     required: ['shipment_id', 'order_id', 'carrier', 'tracking_code', 'status', 'created_by', 'created_at', 'history'],
     unique: [['shipment_id'], ['order_id']],
-    values: { status: ['en_bodega', 'en_transito', 'en_reparto', 'entregado'] }
+    values: { status: ['preparando', 'despachado', 'en_transito', 'entregado', 'con_incidencia', 'en_bodega', 'en_reparto'] }
   },
-  transfers: { required: ['transfer_id', 'product_id', 'source_warehouse_id', 'target_warehouse_id', 'quantity', 'status', 'transfer_date', 'created_by'], unique: ['transfer_id'] },
+  transfers: { required: ['transfer_id', 'product_id', 'source_warehouse_id', 'target_warehouse_id', 'quantity', 'status', 'transfer_date', 'created_by'], unique: ['transfer_id'], values: { status: ['pendiente', 'en_transito', 'recibida', 'confirmada', 'cancelada'] } },
   replenishments: { required: ['request_id', 'product_id', 'warehouse_id', 'quantity', 'status', 'request_date', 'created_by'], unique: ['request_id'] },
   roles: { required: ['role_key', 'role_label', 'default_landing_module', 'is_admin'], unique: ['role_key'] },
   rolePermissions: { required: ['role_key', 'scope', 'resource_key', 'allowed'], unique: [['role_key', 'scope', 'resource_key']], references: { role_key: 'roles' } },

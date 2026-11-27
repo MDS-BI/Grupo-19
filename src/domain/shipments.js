@@ -8,13 +8,33 @@ import {
   isNonEmptyText
 } from '../storage.js';
 
-export const SHIPMENT_STATUSES = ['en_bodega', 'en_transito', 'en_reparto', 'entregado'];
+export const SHIPMENT_STATUSES = ['preparando', 'despachado', 'en_transito', 'entregado', 'con_incidencia', 'en_bodega', 'en_reparto'];
 
 export const SHIPMENT_NEXT_STATUS = {
+  preparando: 'despachado',
   en_bodega: 'en_transito',
+  despachado: 'en_transito',
   en_transito: 'en_reparto',
   en_reparto: 'entregado',
-  entregado: null
+  entregado: null,
+  con_incidencia: null
+};
+
+const SHIPMENT_ALLOWED_TARGETS = {
+  preparando: ['despachado'],
+  en_bodega: ['en_transito'],
+  despachado: ['en_transito'],
+  en_transito: ['en_reparto', 'entregado', 'con_incidencia'],
+  en_reparto: ['entregado'],
+  entregado: [],
+  con_incidencia: []
+};
+
+const SHIPMENT_STATUS_GROUPS = {
+  preparando: 'preparando',
+  en_bodega: 'preparando',
+  despachado: 'despachado',
+  en_reparto: 'despachado'
 };
 
 function hasFilter(value){
@@ -77,12 +97,16 @@ export function advanceShipmentStatus(shipmentId, actorUserId, targetStatus){
   if(index === -1) return { success: false, error: 'Envío no encontrado' };
 
   const current = shipments[index];
-  const nextStatus = SHIPMENT_NEXT_STATUS[current.status] ?? null;
+  const status = String(current.status);
+  const nextStatus = SHIPMENT_NEXT_STATUS[status] ?? null;
+  const requestedStatus = hasFilter(targetStatus) ? String(targetStatus) : null;
+  const advancedStatus = requestedStatus || nextStatus;
+  const allowedTargets = SHIPMENT_ALLOWED_TARGETS[status] || [];
   const errors = {};
-  if(!nextStatus){
+  if(!nextStatus && !requestedStatus){
     errors.status = 'El envío está entregado o tiene un estado no válido; no se puede avanzar';
   }
-  if(hasFilter(targetStatus) && String(targetStatus) !== String(nextStatus)){
+  if(requestedStatus && !allowedTargets.includes(requestedStatus)){
     errors.status = 'Solo se permite avanzar al siguiente estado del envío';
   }
   if(!actorUserId || !userExists(actorUserId)){
@@ -92,8 +116,8 @@ export function advanceShipmentStatus(shipmentId, actorUserId, targetStatus){
 
   const updated = {
     ...current,
-    status: nextStatus,
-    history: [...(Array.isArray(current.history) ? current.history : []), historyEvent(nextStatus, actorUserId, new Date().toISOString())]
+    status: advancedStatus,
+    history: [...(Array.isArray(current.history) ? current.history : []), historyEvent(advancedStatus, actorUserId, new Date().toISOString())]
   };
   const validation = validateRecord('shipments', updated, { list: shipments.filter((_, i) => i !== index) });
   if(!validation.valid){
@@ -113,7 +137,10 @@ export function listShipments(filters = {}){
         && ![shipment.order_id, shipment.tracking_code].some(value => matchesText(value, filters.term))) return false;
       if(hasFilter(filters.orderId) && !matchesText(shipment.order_id, filters.orderId)) return false;
       if(hasFilter(filters.trackingCode) && !matchesText(shipment.tracking_code, filters.trackingCode)) return false;
-      if(hasFilter(filters.status) && String(shipment.status) !== String(filters.status)) return false;
+      if(hasFilter(filters.status)){
+        const statusGroup = value => SHIPMENT_STATUS_GROUPS[String(value)] || String(value);
+        if(statusGroup(shipment.status) !== statusGroup(filters.status)) return false;
+      }
       return true;
     })
     .sort((a, b) => Number(b.shipment_id) - Number(a.shipment_id));

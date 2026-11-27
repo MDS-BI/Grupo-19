@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { loadTransfers, loadStock, loadOrders, loadMovements, loadProducts } from '../../src/storage.js';
+import { loadDemoData } from '../../src/domain/demo-data.js';
 
 const html = fs.readFileSync(fileURLToPath(new URL('../../index.html', import.meta.url)), 'utf8');
 
@@ -246,5 +247,36 @@ describe('User Story 10 - search and filter transfers', () => {
     expect(qs('transfer-filter-target').value).toBe('');
     expect(qs('transfer-count').textContent).toBe('3');
     expect(operationalSnapshot()).toBe(before);
+  });
+});
+
+describe('Estados canónicos de transferencias sembradas', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    loadDemoData();
+    qs('nav-transfers').click();
+  });
+
+  it('muestra los estados canónicos y ofrece confirmada como alias de recibida', () => {
+    const statuses = loadTransfers().map(transfer => transfer.status);
+    expect(statuses).toEqual(expect.arrayContaining(['pendiente', 'en_transito', 'recibida', 'cancelada']));
+    const listText = qs('transfer-list-body').textContent;
+    ['Pendiente', 'En tránsito', 'Recibida', 'Cancelada'].forEach(label => {
+      expect(listText).toContain(label);
+    });
+    const options = [...qs('transfer-filter-status').options].map(option => option.value);
+    ['pendiente', 'en_transito', 'recibida', 'confirmada', 'cancelada'].forEach(status => {
+      expect(options).toContain(status);
+    });
+  });
+
+  it('trata recibida y confirmada como equivalentes al filtrar', () => {
+    const received = loadTransfers().filter(transfer => transfer.status === 'recibida' || transfer.status === 'confirmada');
+    expect(received.length).toBeGreaterThan(0);
+    setControl('transfer-filter-status', 'recibida', 'change');
+    const rowsForRecibida = rowIds();
+    expect(rowsForRecibida).toHaveLength(received.length);
+    setControl('transfer-filter-status', 'confirmada', 'change');
+    expect(rowIds()).toEqual(rowsForRecibida);
   });
 });

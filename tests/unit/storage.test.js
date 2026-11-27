@@ -446,8 +446,11 @@ describe('logistics storage: schemas, repository helpers and seed loading', () =
       'shipment_id', 'order_id', 'carrier', 'tracking_code', 'status', 'created_by', 'created_at', 'history'
     ]);
     expect(LOGISTICS_SCHEMAS.shipments.unique).toEqual([['shipment_id'], ['order_id']]);
-    expect(LOGISTICS_SCHEMAS.shipments.values.status).toEqual(['en_bodega', 'en_transito', 'en_reparto', 'entregado']);
+    expect(LOGISTICS_SCHEMAS.shipments.values.status).toEqual(['preparando', 'despachado', 'en_transito', 'entregado', 'con_incidencia', 'en_bodega', 'en_reparto']);
     expect(validateRecord('shipments', shipment, { list: [] }).valid).toBe(true);
+    expect(validateRecord('shipments', { ...shipment, status: 'preparando' }, { list: [] }).valid).toBe(true);
+    expect(validateRecord('shipments', { ...shipment, status: 'despachado' }, { list: [] }).valid).toBe(true);
+    expect(validateRecord('shipments', { ...shipment, status: 'con_incidencia' }, { list: [] }).valid).toBe(true);
     expect(validateRecord('shipments', { ...shipment, carrier: '  ' }, { list: [] }).valid).toBe(false);
     expect(validateRecord('shipments', { ...shipment, shipment_id: 2 }, { list: [shipment] }).valid).toBe(false);
     expect(validateRecord('shipments', { ...shipment, shipment_id: 2, order_id: 'OV-0002' }, { list: [shipment] }).valid).toBe(true);
@@ -458,6 +461,12 @@ describe('logistics storage: schemas, repository helpers and seed loading', () =
     expect(localStorage.getItem(LOGISTICS_KEYS.orders)).toBeNull();
     expect(localStorage.getItem(LOGISTICS_KEYS.movements)).toBeNull();
     expect(localStorage.getItem(LOGISTICS_KEYS.stock)).toBeNull();
+  });
+
+  it('declares canonical order and transfer statuses while keeping legacy aliases', () => {
+    expect(LOGISTICS_SCHEMAS.orders.required).toContain('transaction_id');
+    expect(LOGISTICS_SCHEMAS.orders.values.status).toEqual(['borrador', 'aprobada', 'en_proceso', 'completada', 'cancelada']);
+    expect(LOGISTICS_SCHEMAS.transfers.values.status).toEqual(['pendiente', 'en_transito', 'recibida', 'confirmada', 'cancelada']);
   });
 
   it('escapes HTML-sensitive characters to prevent unwanted script execution (FR-046, FR-092)', () => {

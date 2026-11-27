@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
-import { LOGISTICS_KEYS, loadMovements, loadOrders } from '../../src/storage.js';
+import { LOGISTICS_KEYS, loadMovements, loadOrders, loadShipments } from '../../src/storage.js';
+import { loadDemoData } from '../../src/domain/demo-data.js';
 
 const html = fs.readFileSync(fileURLToPath(new URL('../../index.html', import.meta.url)), 'utf8');
 let dom;
@@ -121,5 +122,33 @@ describe('Órdenes generadas desde movimientos', () => {
     expect(loadMovements()).toEqual([]);
     expect(qs('error-movement-storage').textContent).toContain('fallo de escritura de órdenes');
     expect(qs('order-count').textContent).toBe('0');
+  });
+});
+
+describe('Estados canónicos de órdenes sembradas', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    loadDemoData();
+    qs('nav-movements').click();
+  });
+
+  it('expone los cinco estados de orden en el listado y en el filtro', () => {
+    const statuses = loadOrders().map(order => order.status);
+    expect(statuses).toEqual(expect.arrayContaining(['borrador', 'aprobada', 'en_proceso', 'completada', 'cancelada']));
+    const listText = qs('order-list-body').textContent;
+    ['Borrador', 'Aprobada', 'En proceso', 'Completada', 'Cancelada'].forEach(label => {
+      expect(listText).toContain(label);
+    });
+    const options = [...qs('order-filter-status').options].map(option => option.value);
+    ['borrador', 'aprobada', 'en_proceso', 'completada', 'cancelada'].forEach(status => {
+      expect(options).toContain(status);
+    });
+  });
+
+  it('no asocia envíos a órdenes borrador ni cancelada', () => {
+    const withoutShipment = loadOrders().filter(order => order.status === 'borrador' || order.status === 'cancelada');
+    expect(withoutShipment.length).toBeGreaterThan(0);
+    const shipmentOrderIds = loadShipments().map(shipment => String(shipment.order_id));
+    expect(withoutShipment.some(order => shipmentOrderIds.includes(String(order.order_id)))).toBe(false);
   });
 });

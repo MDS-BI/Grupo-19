@@ -10,6 +10,7 @@ import {
   LOGISTICS_KEYS
 } from '../../src/storage.js';
 import { setRolePermission } from '../../src/domain/permissions.js';
+import { loadDemoData } from '../../src/domain/demo-data.js';
 
 const html = fs.readFileSync(fileURLToPath(new URL('../../index.html', import.meta.url)), 'utf8');
 
@@ -253,5 +254,39 @@ describe('User Story 11 - buyer shipment tracking', () => {
     expect(qs('shipment-list-body').textContent).toContain('Millaray Antileo');
     expect(qs('shipment-list-body').textContent).toContain('Tomás Wiegand');
     expect(operationalSnapshot()).toBe(before);
+  });
+});
+
+describe('Estados canónicos de envíos sembrados', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    loadDemoData();
+    openShipments();
+  });
+
+  it('muestra los cinco estados canónicos y mantiene los aliases legacy en el filtro', () => {
+    const statuses = loadShipments().map(shipment => shipment.status);
+    expect(statuses).toEqual(expect.arrayContaining(['preparando', 'despachado', 'en_transito', 'entregado', 'con_incidencia']));
+    const listText = qs('shipment-list-body').textContent;
+    ['Preparando', 'Despachado', 'En tránsito', 'Entregado', 'Con incidencia'].forEach(label => {
+      expect(listText).toContain(label);
+    });
+    const options = [...qs('shipment-filter-status').options].map(option => option.value);
+    ['preparando', 'despachado', 'en_transito', 'entregado', 'con_incidencia', 'en_bodega', 'en_reparto'].forEach(status => {
+      expect(options).toContain(status);
+    });
+  });
+
+  it('conserva historial y solo asocia envíos a órdenes de venta compatibles', () => {
+    const shipments = loadShipments();
+    expect(shipments.length).toBeGreaterThan(0);
+    expect(shipments.every(shipment => Array.isArray(shipment.history) && shipment.history.length > 0)).toBe(true);
+    const orders = new Map(loadOrders().map(order => [String(order.order_id), order]));
+    for(const shipment of shipments){
+      const order = orders.get(String(shipment.order_id));
+      expect(order).toBeDefined();
+      expect(order.order_type).toBe('venta');
+      expect(['borrador', 'cancelada']).not.toContain(order.status);
+    }
   });
 });
