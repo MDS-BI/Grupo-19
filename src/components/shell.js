@@ -50,7 +50,7 @@ export function setActiveModule(name){
 }
 
 export function applyNavigationPermissions(role, userId){
-  const alwaysHidden = new Set(['entities', 'documents', 'search', 'shipments', 'replenishments']);
+  const alwaysHidden = new Set(['entities', 'documents', 'search']);
   document.querySelectorAll('.nav-module').forEach(btn => {
     const mod = btn.dataset.module;
     if(mod === 'admin' || mod === 'dashboard') return;

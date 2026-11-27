@@ -30,11 +30,11 @@ afterEach(() => {
 });
 
 describe('User Story 4 - manage entities and documents via the workspace sidebar', () => {
-  it('shows a persistent module navigation including Dashboard, Entities, Documents, Search and the logistics screens', () => {
+  it('shows a persistent module navigation with Dashboard, Entities, Documents, Search and top-level logistics screens', () => {
     const buttons = [...document.querySelectorAll('.nav-module')];
     expect(buttons.map(b => b.dataset.module)).toEqual([
       'dashboard', 'entities', 'documents', 'search',
-      'products', 'warehouses', 'stock', 'movements', 'transfers', 'shipments', 'alerts', 'replenishments'
+      'products', 'warehouses', 'stock', 'movements', 'transfers', 'alerts'
     ]);
   });
 

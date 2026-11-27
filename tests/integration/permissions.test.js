@@ -133,7 +133,7 @@ describe('HU-08 roles, landing pages and visibility', () => {
   it('keeps the shipment tab available for all roles and includes its resources in the matrix (T122, T146, FR-130, FR-133, FR-142)', () => {
     for(const userId of [1, 3, 2]){
       switchUser(userId);
-      expect(qs('nav-shipments').hidden).toBe(true);
+      expect(qs('nav-shipments')).toBeNull();
       expect(qs('tab-movements-shipments').hidden).toBe(false);
     }
     switchUser(1);
@@ -154,6 +154,6 @@ describe('HU-08 roles, landing pages and visibility', () => {
     expect(qs('view-dashboard').hidden).toBe(false);
     expect(qs('view-shipments').hidden).toBe(true);
     expect(qs('tab-movements-shipments').hidden).toBe(true);
-    expect(qs('nav-shipments').hidden).toBe(true);
+    expect(qs('nav-shipments')).toBeNull();
   });
 });

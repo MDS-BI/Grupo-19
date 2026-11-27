@@ -237,7 +237,7 @@ describe('User Story 11 - buyer shipment tracking', () => {
     expect(qs('access-notice').hidden).toBe(false);
     expect(qs('view-dashboard').hidden).toBe(false);
     expect(qs('view-shipments').hidden).toBe(true);
-    expect(qs('nav-shipments').hidden).toBe(true);
+    expect(qs('nav-shipments')).toBeNull();
   });
 
   it('persists shipments and history after reload without changing operational data (T121, FR-133)', async () => {

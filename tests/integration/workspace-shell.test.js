@@ -69,8 +69,8 @@ describe('User Story 13 - branded ERP workspace shell', () => {
     expect(qs('nav-entities').hidden).toBe(true);
     expect(qs('nav-documents').hidden).toBe(true);
     expect(qs('nav-search').hidden).toBe(true);
-    expect(qs('nav-shipments').hidden).toBe(true);
-    expect(qs('nav-replenishments').hidden).toBe(true);
+    expect(qs('nav-shipments')).toBeNull();
+    expect(qs('nav-replenishments')).toBeNull();
   });
 
   it('uses remapped terms on the sidebar for tailored modules', async () => {
@@ -140,10 +140,8 @@ describe('User Story 13 - branded ERP workspace shell', () => {
 
   it('keeps shipments inside Movements and hides the tab when access is denied (T123, T146, FR-113, FR-115, FR-133, FR-142)', async () => {
     await bootWith(undefined);
-    const nav = qs('nav-shipments');
     const tab = qs('tab-movements-shipments');
-    expect(nav).not.toBeNull();
-    expect(nav.hidden).toBe(true);
+    expect(qs('nav-shipments')).toBeNull();
     expect(tab).not.toBeNull();
     expect(tab.hidden).toBe(false);
     expect(qs('view-shipments').closest('#view-movements')).not.toBeNull();
@@ -151,7 +149,7 @@ describe('User Story 13 - branded ERP workspace shell', () => {
     expect(setRolePermission('administrador', 'modulo', 'module:shipments', false).success).toBe(true);
     window.location.hash = '#/shipments';
     window.dispatchEvent(new dom.window.Event('hashchange'));
-    expect(nav.hidden).toBe(true);
+    expect(qs('nav-shipments')).toBeNull();
     expect(tab.hidden).toBe(true);
     expect(qs('access-notice').hidden).toBe(false);
     expect(qs('view-dashboard').hidden).toBe(false);
@@ -164,7 +162,7 @@ describe('User Story 13 - branded ERP workspace shell', () => {
       .filter(card => !card.closest('[hidden]'))
       .map(card => card.querySelector('.stat-value')?.id);
     expect(visibleStatIds).toEqual(['stat-products', 'stat-warehouses', 'stat-units', 'stat-alerts']);
-    expect(qs('dashboard-quick-actions').closest('[hidden]')).not.toBeNull();
+    expect(qs('dashboard-quick-actions')).toBeNull();
     expect([...qs('view-dashboard').querySelectorAll('[data-goto]')].some(el => !el.closest('[hidden]'))).toBe(false);
 
     qs('nav-movements').click();

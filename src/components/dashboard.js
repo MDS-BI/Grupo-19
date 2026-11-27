@@ -1,20 +1,12 @@
 import {
-  loadEntities, loadDocuments, loadProducts, loadWarehouses, loadStock,
+  loadProducts, loadWarehouses, loadStock,
   loadMovements, loadTransfers, escapeHtml
 } from '../storage.js';
 import { listMovements } from '../domain/movements.js';
 import { listTransfers } from '../domain/transfers.js';
 import { listAlerts } from '../domain/alerts.js';
 import { listReplenishments, replenishmentCounts } from '../domain/replenishments.js';
-import { canAccessModule, canPerform, roleLabel } from '../domain/permissions.js';
 import { getDemoDataSummary } from '../domain/demo-data.js';
-
-export function recordCounts(){
-  return {
-    entities: loadEntities().length,
-    documents: loadDocuments().length
-  };
-}
 
 function setText(id, value){
   const el = document.getElementById(id);
@@ -45,55 +37,6 @@ function movementTypeInfo(type){
   if(type === 'ajuste_entrada') return { label: 'Ajuste +', className: 'type-adjust', dot: 'dot-adjust', sign: '+' };
   if(type === 'ajuste_salida') return { label: 'Ajuste −', className: 'type-adjust', dot: 'dot-adjust', sign: '−' };
   return { label: 'Entrada', className: '', dot: '', sign: '+' };
-}
-
-function renderQuickActions(role, userId){
-  const container = document.getElementById('dashboard-quick-actions');
-  if(!container) return;
-  const actions = [];
-  const can = (action) => canPerform(role, action, userId);
-  const access = (moduleName) => canAccessModule(role, moduleName, userId);
-
-  if(can('products.manage')){
-    actions.push({ label: 'Nuevo producto', hint: 'Registrar en el catálogo', module: 'products', newRecord: true });
-  }
-  if(can('warehouses.manage')){
-    actions.push({ label: 'Nueva bodega', hint: 'Agregar una ubicación', module: 'warehouses', newRecord: true });
-  }
-  if(can('movements.register') || can('movements.adjust')){
-    actions.push({ label: 'Registrar movimiento', hint: 'Entrada, salida o ajuste', module: 'movements' });
-  }
-  if(can('transfers.create')){
-    actions.push({ label: 'Nueva transferencia', hint: 'Solicitar traslado entre bodegas', module: 'transfers' });
-  }
-  if(can('replenishments.create')){
-    actions.push({ label: 'Solicitar reposición', hint: 'Nueva solicitud desde alerta o manual', module: 'replenishments', newRecord: true });
-  }
-  if(access('stock')){
-    actions.push({ label: 'Revisar stock', hint: 'Existencias por bodega', module: 'stock' });
-  }
-  if(access('alerts')){
-    actions.push({ label: 'Alertas de stock', hint: 'Productos en nivel mínimo o inferior', module: 'alerts' });
-  }
-  if(access('products')){
-    actions.push({ label: 'Catálogo', hint: 'Consultar productos y estados', module: 'products' });
-  }
-  if(access('warehouses')){
-    actions.push({ label: 'Bodegas', hint: 'Ubicaciones y responsables', module: 'warehouses' });
-  }
-
-  container.innerHTML = '';
-  for(const action of actions.slice(0, 6)){
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'action-card';
-    button.dataset.goto = action.module;
-    if(action.newRecord) button.dataset.newRecord = 'true';
-    button.innerHTML = `<strong>${escapeHtml(action.label)}</strong><span class="muted">${escapeHtml(action.hint)}</span>`;
-    container.appendChild(button);
-  }
-
-  setText('dashboard-role-pill', roleLabel(role));
 }
 
 function renderActivity(movements){
@@ -215,7 +158,6 @@ function renderDemoStatus(){
 }
 
 export function renderDashboard(role = '', userId){
-  const counts = recordCounts();
   const products = loadProducts();
   const warehouses = loadWarehouses();
   const stock = loadStock();
@@ -230,8 +172,6 @@ export function renderDashboard(role = '', userId){
   const activeWarehouses = warehouses.filter(w => w.status === 'activo');
   const totalUnits = stock.reduce((sum, record) => sum + Number(record.quantity_available || 0), 0);
 
-  setText('stat-entities', counts.entities);
-  setText('stat-documents', counts.documents);
   setText('stat-products', products.length);
   setText('stat-warehouses', activeWarehouses.length);
   setText('stat-units', formatNumber(totalUnits));
@@ -247,7 +187,6 @@ export function renderDashboard(role = '', userId){
   }
 
   renderCurrentDate();
-  renderQuickActions(role, userId);
   renderActivity(movementRows);
   renderLowStock(alerts);
   renderPendingTransfers(pendingTransfers);

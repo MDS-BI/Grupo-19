@@ -822,3 +822,30 @@ Los ajustes visuales de Fase 16 se conservan como trabajo intermedio: T138–T14
 | Calidad | `npm run lint`, `npm run format:check`, `npm run analyze`, `npm test` y `npm run build` | `package.json`, `plan.md`, `tasks.md` | T168 |
 
 **Punto de control**: la documentación ya permite reconstruir el MVP; la implementación solo podrá declararse terminada después de T165–T168 y del cierre evidenciado de las tareas bloqueantes.
+
+## Fase 21: Limpieza reversible de plantilla original (2026-11-27)
+
+**Alcance confirmado**: solo bloques `eliminar` del análisis de plantilla. Los elementos `dudoso` quedan sin cambios.
+**Regla de ejecución**: aplicar una sola tarea por paso, ejecutar `npx vitest run` y `npm run build` después de cada una, verificar arranque con `npm run dev` y comprobar usuario activo, navegación principal y operaciones logísticas. Si una prueba o verificación falla, revertir ese paso con `git checkout -- <archivos>` y reportar antes de continuar.
+
+### Setup y limpieza segura
+
+- [X] T169 Renombrar el paquete de `erp-base-module` a `logistica-inventario-grupo-19` en `package.json:2`, `package-lock.json:2` y `package-lock.json:8`; verificar `npx vitest run`, `npm run build` y arranque de `npm run dev`.
+- [X] T170 Eliminar los comentarios de ejemplo de plantilla en `src/module-config.js:1-20` sin cambiar `userConfig`, `DEFAULT_CONFIG`, etiquetas ni valores; verificar `npx vitest run`, `npm run build` y arranque de `npm run dev`.
+- [X] T171 Eliminar las funciones no usadas `renderEntityList` en `src/components/entity-list.js:48-51` y `renderDocumentList` en `src/components/document-list.js:20-23`, conservando `createEntityItem` y `folioLabel`; verificar `npx vitest run`, `npm run build` y arranque de `npm run dev`.
+
+### Superficie oculta del dashboard
+
+- [X] T172 Eliminar la sección «Acciones rápidas» de `index.html:215-224`, `renderQuickActions` de `src/components/dashboard.js:50-97`, el delegado `[data-goto]` de `src/app.js:1023-1031` y las aserciones asociadas en `tests/integration/dashboard.test.js`, `tests/integration/workspace-shell.test.js` y `tests/integration/replenishments.test.js`; verificar `npx vitest run`, `npm run build` y arranque de `npm run dev`.
+- [X] T173 Eliminar la tarjeta «Módulo base» de `index.html:265-301`, las etiquetas/acciones de `src/app.js:811-820`, `src/app.js:882-890` y `src/app.js:1059-1062`, y los contadores entidad/documento de `src/components/dashboard.js:12-17`, `:218`, `:233-234`; actualizar solo las aserciones de UI correspondientes en `tests/integration/dashboard.test.js`, `tests/integration/workspace-shell.test.js` y `tests/integration/relabeling.test.js`; verificar `npx vitest run`, `npm run build` y arranque de `npm run dev`.
+
+### Navegación heredada
+
+- [X] T174 Eliminar el grupo `nav-advanced-section` y los botones `nav-entities`, `nav-documents`, `nav-search` de `index.html:49-64`, y las etiquetas asociadas en `src/components/shell.js:18-34`; actualizar las pruebas que dependen de esos botones para usar uniquemente las seis secciones logísticas; verificar `npx vitest run`, `npm run build` y arranque de `npm run dev`.
+  - Resuelta el 2026-11-27 conservando la navegación avanzada oculta como acceso interno, por decisión del usuario. El intento de eliminación produjo 44 pruebas fallidas en 10 archivos (`npx vitest run`: `Test Files 10 failed | 24 passed (34)`, `Tests 44 failed | 258 passed (302)`); se revirtió y la suite volvió a `34 passed` / `302 passed`. No se elimina ningún DOM ni etiqueta de esta tarea.
+- [X] T175 Eliminar los botones de primer nivel `nav-shipments` y `nav-replenishments` de `index.html:85-96`, mantener las pestañas, alias y permisos en `src/app.js`, y actualizar `tests/integration/workspace-shell.test.js` y `tests/integration/replenishments.test.js` para usar pestañas/hash en lugar de navegación oculta; verificar `npx vitest run`, `npm run build` y arranque de `npm run dev`.
+  - Completada el 2026-11-27: también se actualizaron `src/components/shell.js`, `tests/integration/shipments.test.js`, `tests/integration/permissions.test.js` y `tests/integration/manage-tabs.test.js`; `npx vitest run` quedó en `34 passed` / `302 passed`, `npm run build` OK y dev server `HTTP=200`.
+- [X] T176 Retirar `entities`, `documents` y `search` de `MODULES`/`VIEWS` en `src/app.js:61-79` y de `MODULES` en `src/domain/permissions.js:16`, conservando el guard de redirección de `src/app.js:979-996` y las claves internas de `src/storage.js`; verificar `npx vitest run`, `npm run build` y arranque de `npm run dev`.
+  - Completada el 2026-11-27: se conservaron como `INTERNAL_MODULES`/`INTERNAL_VIEWS`/`ROUTABLE_MODULES` para que la navegación avanzada oculta y el guard de URLs heredadas sigan funcionando; `npx vitest run` quedó en `34 passed` / `302 passed`, `npm run build` OK y dev server `HTTP=200`.
+
+**Checkpoint de reversibilidad**: cada tarea debe dejar el árbol en estado verde antes de iniciar la siguiente; cualquier fallo detiene la secuencia y se reporta con el paso revertido.

@@ -25,7 +25,7 @@ function rowButton(label, row = qs('replenishment-list-body').querySelector('tr'
 }
 
 function createRequest({ quantity = '5', observation = 'Reposición de prueba' } = {}){
-  qs('nav-replenishments').click();
+  qs('nav-alerts').click(); qs('tab-alerts-replenishments').click();
   qs('replenishment-product').value = '1';
   qs('replenishment-warehouse').value = '1';
   qs('replenishment-quantity').value = quantity;
@@ -73,7 +73,7 @@ beforeEach(async () => {
   const { initApp } = await import('../../src/app.js');
   initApp(normalizeConfig(undefined));
   await setupData();
-  qs('nav-replenishments').click();
+  qs('nav-alerts').click(); qs('tab-alerts-replenishments').click();
 });
 
 afterEach(() => {
@@ -117,14 +117,14 @@ describe('User Story 7 - solicitudes de reposición con trazabilidad', () => {
   it('el supervisor puede crear pero no aprobar ni cancelar; el administrador aprueba (FR-092, FR-094)', () => {
     createRequest();
     switchUser(3);
-    qs('nav-replenishments').click();
+    qs('nav-alerts').click(); qs('tab-alerts-replenishments').click();
     expect(qs('replenishment-form-heading').closest('.card').hidden).toBe(false);
     const supervisorRow = qs('replenishment-list-body').querySelector('tr');
     expect(rowButton('Aprobar', supervisorRow)).toBeUndefined();
     expect(rowButton('Cancelar', supervisorRow)).toBeUndefined();
 
     switchUser(1);
-    qs('nav-replenishments').click();
+    qs('nav-alerts').click(); qs('tab-alerts-replenishments').click();
     rowButton('Aprobar').click();
     expect(loadReplenishments()[0]).toMatchObject({ status: 'aprobada', approved_by: 1 });
     expect(loadStock().find(s => s.warehouse_id === 1).quantity_available).toBe(10);
@@ -135,7 +135,7 @@ describe('User Story 7 - solicitudes de reposición con trazabilidad', () => {
     rowButton('Aprobar').click();
 
     switchUser(2);
-    qs('nav-replenishments').click();
+    qs('nav-alerts').click(); qs('tab-alerts-replenishments').click();
     expect(qs('replenishment-form-heading').closest('.card').hidden).toBe(true);
     expect(qs('replenishment-filter-status').disabled).toBe(true);
     expect(qs('replenishment-filter-status').value).toBe('aprobada');
@@ -158,7 +158,7 @@ describe('User Story 7 - solicitudes de reposición con trazabilidad', () => {
     const requestId = loadReplenishments()[0].request_id;
 
     switchUser(2);
-    qs('nav-replenishments').click();
+    qs('nav-alerts').click(); qs('tab-alerts-replenishments').click();
     rowButton('Recibir').click();
     const secondAttempt = receiveRequest(requestId, 2);
     expect(secondAttempt.success).toBe(false);
@@ -181,11 +181,11 @@ describe('User Story 7 - solicitudes de reposición con trazabilidad', () => {
     qs('nav-dashboard').click();
     expect(qs('stat-replenishment-pending').textContent).toBe('1');
     expect(qs('dashboard-replenishments').textContent).toContain('Producto Reposición');
-    expect([...qs('dashboard-quick-actions').querySelectorAll('button')].some(b => b.textContent.includes('Solicitar reposición'))).toBe(true);
+    expect(qs('dashboard-quick-actions')).toBeNull();
 
     switchUser(2);
     qs('nav-dashboard').click();
-    expect([...qs('dashboard-quick-actions').querySelectorAll('button')].some(b => b.textContent.includes('Solicitar reposición'))).toBe(false);
+    expect(qs('dashboard-quick-actions')).toBeNull();
   });
 
   it('filtra solicitudes por estado sin alterar los indicadores globales', () => {

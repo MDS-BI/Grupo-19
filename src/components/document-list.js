@@ -16,12 +16,3 @@ export function createDocumentItem(doc, entityName){
   li.appendChild(info);
   return li;
 }
-
-export function renderDocumentList(listEl, documents, entityNameFor){
-  listEl.innerHTML = '';
-  if(!documents || documents.length === 0) return false;
-  for(const d of documents){
-    listEl.appendChild(createDocumentItem(d, entityNameFor ? entityNameFor(d) : undefined));
-  }
-  return true;
-}

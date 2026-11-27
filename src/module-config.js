@@ -1,23 +1,3 @@
-// ============================================================================
-// Configuración del Módulo — edita `userConfig` abajo para adaptar este módulo
-// base a un módulo ERP específico (p. ej., Ventas). Ningún otro archivo necesita cambios.
-// ============================================================================
-
-// Establece en null para ejecutar con los valores predeterminados integrados,
-// o proporciona un objeto como:
-// {
-//   moduleName: 'Ventas',
-//   labels: { entity: 'Cliente', entities: 'Clientes', document: 'Pedido de Venta', documents: 'Pedidos de Venta' },
-//   customFields: [
-//     { target: 'entity', key: 'zona', label: 'Zona', type: 'select', options: ['Norte', 'Sur'] },
-//     { target: 'document', key: 'metodoEnvio', label: 'Método de envío', type: 'select', options: ['estándar', 'exprés'] }
-//   ],
-//   statusLifecycle: {
-//     statuses: ['cotización', 'pedido', 'facturado'],
-//     transitions: { cotización: ['pedido'], pedido: ['facturado'], facturado: [] }
-//   },
-//   theme: { accentColor: '#0f62fe' }
-// }
 export const userConfig = {
   moduleName: 'Logística e Inventario | Grupo 19',
   theme: { accentColor: '#0f766e' }

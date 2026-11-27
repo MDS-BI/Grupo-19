@@ -82,17 +82,9 @@
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h10"></path><path d="M10 4l3 3-3 3"></path><path d="M17 13H7"></path><path d="M10 16l-3-3 3-3"></path></svg>
             <span class="nav-label">Transferencias</span>
           </button>
-          <button type="button" class="nav-module" data-module="shipments" id="nav-shipments" aria-label="Seguimiento de envíos" title="Seguimiento de envíos" hidden>
-            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6h9v8h-9z"></path><path d="M11.5 9h3l2 2.5V14h-5z"></path><circle cx="6" cy="15" r="1.5"></circle><circle cx="14.5" cy="15" r="1.5"></circle></svg>
-            <span class="nav-label">Seguimiento de envíos</span>
-          </button>
           <button type="button" class="nav-module" data-module="alerts" id="nav-alerts" aria-label="Alertas" title="Alertas">
             <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 2.5 16h15z"></path><path d="M10 8v4"></path><circle cx="10" cy="13.5" r="0.75" fill="currentColor" stroke="none"></circle></svg>
             <span class="nav-label">Alertas</span>
-          </button>
-          <button type="button" class="nav-module" data-module="replenishments" id="nav-replenishments" aria-label="Reposiciones" title="Reposiciones" hidden>
-            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5h11"></path><path d="m11 4 3 2.5-3 2.5"></path><path d="M17 13.5H6"></path><path d="m9 11-3 2.5L9 16"></path></svg>
-            <span class="nav-label">Reposiciones</span>
           </button>
         </nav>
         <div class="sidebar-foot">
@@ -212,17 +204,6 @@
             </aside>
           </div>
 
-          <section class="card card--quick-actions" aria-labelledby="quick-actions-heading" hidden>
-            <div class="card-head">
-              <div>
-                <h2 id="quick-actions-heading">Acciones rápidas</h2>
-                <p class="card-subtitle">Atajos disponibles según el perfil activo.</p>
-              </div>
-              <span class="pill" id="dashboard-role-pill">Perfil</span>
-            </div>
-            <div class="action-grid" id="dashboard-quick-actions"></div>
-          </section>
-
           <div class="dashboard-layout dashboard-layout--secondary" hidden>
             <div class="dashboard-main">
               <section class="card" aria-labelledby="dashboard-transfers-heading">
@@ -262,43 +243,6 @@
                 <p id="demo-data-status" class="demo-status muted" aria-live="polite"></p>
               </section>
 
-              <section class="card" id="base-module-card" aria-labelledby="base-module-heading">
-                <div class="card-head">
-                  <div>
-                    <h2 id="base-module-heading">Módulo base</h2>
-                    <p class="card-subtitle">Sección avanzada del administrador.</p>
-                  </div>
-                  <span class="pill">Avanzado</span>
-                </div>
-                <div class="stat-grid stat-grid--compact">
-                  <div class="stat-card stat-card--soft">
-                    <span class="stat-value" id="stat-entities">0</span>
-                    <span class="stat-label" id="stat-entities-label">Entidades</span>
-                  </div>
-                  <div class="stat-card stat-card--soft">
-                    <span class="stat-value" id="stat-documents">0</span>
-                    <span class="stat-label" id="stat-documents-label">Documentos</span>
-                  </div>
-                </div>
-                <div class="action-grid action-grid--compact">
-                  <button type="button" class="action-card" id="action-new-entity">
-                    <strong id="action-new-entity-title">Nueva Entidad</strong>
-                    <span class="muted" id="action-new-entity-sub">Crear un registro de entidad</span>
-                  </button>
-                  <button type="button" class="action-card" id="action-new-document">
-                    <strong id="action-new-document-title">Nuevo Documento</strong>
-                    <span class="muted" id="action-new-document-sub">Registrar un registro de documento</span>
-                  </button>
-                  <button type="button" class="action-card" id="action-open-entities">
-                    <strong id="action-open-entities-title">Entidades</strong>
-                    <span class="muted" id="action-open-entities-sub">Abrir la gestión de entidades</span>
-                  </button>
-                  <button type="button" class="action-card" id="action-find">
-                    <strong id="action-find-title">Buscar registros</strong>
-                    <span class="muted" id="action-find-sub">Buscar entidades</span>
-                  </button>
-                </div>
-              </section>
             </aside>
           </div>
         </section>

@@ -38,7 +38,6 @@ describe('User Story 6 - relabel screens from configuration', () => {
     expect(qs('brand-name').textContent).toBe('Módulo Base ERP');
     expect(qs('nav-entities-label').textContent).toBe('Entidades');
     expect(qs('nav-documents-label').textContent).toBe('Documentos');
-    expect(qs('action-new-entity-title').textContent).toBe('Nueva Entidad');
     qs('nav-entities').click();
     expect(qs('entity-form-heading').textContent).toBe('Agregar / Editar Entidad');
     expect(qs('delete-entity').textContent).toBe('Eliminar la entidad seleccionada');
@@ -56,8 +55,6 @@ describe('User Story 6 - relabel screens from configuration', () => {
     expect(qs('dashboard-heading').textContent).toBe('Ventas');
     expect(qs('nav-entities-label').textContent).toBe('Clientes');
     expect(qs('nav-documents-label').textContent).toBe('Pedidos de Venta');
-    expect(qs('action-new-entity-title').textContent).toBe('Nuevo Cliente');
-    expect(qs('action-new-document-title').textContent).toBe('Nuevo Pedido de Venta');
 
     qs('nav-entities').click();
     expect(qs('entities-view-heading').textContent).toBe('Clientes');

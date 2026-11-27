@@ -58,12 +58,9 @@ const articulo = (word) => esFemenina(word) ? 'la' : 'el';
 const demostrativo = (word) => esFemenina(word) ? 'esta' : 'este';
 const seleccionada = (word) => esFemenina(word) ? 'seleccionada' : 'seleccionado';
 
-const MODULES = ['dashboard', 'entities', 'documents', 'search', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'shipments', 'alerts', 'replenishments', 'admin'];
+const MODULES = ['dashboard', 'products', 'warehouses', 'stock', 'movements', 'transfers', 'shipments', 'alerts', 'replenishments', 'admin'];
 const VIEWS = {
   dashboard: 'view-dashboard',
-  entities: 'view-entities',
-  documents: 'view-documents',
-  search: 'view-search',
   products: 'view-products',
   warehouses: 'view-warehouses',
   stock: 'view-stock',
@@ -77,8 +74,16 @@ const VIEWS = {
 
 const ALIAS_TO_PARENT = { shipments: 'movements', replenishments: 'alerts' };
 const HIDDEN_LEGACY_MODULES = ['entities', 'documents', 'search'];
+const INTERNAL_MODULES = ['entities', 'documents', 'search'];
+const INTERNAL_VIEWS = {
+  entities: 'view-entities',
+  documents: 'view-documents',
+  search: 'view-search'
+};
+const ROUTABLE_MODULES = [...MODULES, ...INTERNAL_MODULES];
+const VIEW_IDS = { ...VIEWS, ...INTERNAL_VIEWS };
 const TAB_DEFAULTS = { movements: 'entries', alerts: 'alerts' };
-const TOP_LEVEL_MODULES = MODULES.filter(moduleName => !ALIAS_TO_PARENT[moduleName]);
+const TOP_LEVEL_MODULES = ROUTABLE_MODULES.filter(moduleName => !ALIAS_TO_PARENT[moduleName]);
 
 let wired = false;
 let activeUser = null;
@@ -205,7 +210,7 @@ function applyTabPermissions(){
 }
 
 function showModule(name, opts = {}){
-  if(!MODULES.includes(name)) name = 'dashboard';
+  if(!ROUTABLE_MODULES.includes(name)) name = 'dashboard';
   const requestedModule = name;
   const alias = ALIAS_TO_PARENT[requestedModule] ? requestedModule : null;
   const parent = alias ? ALIAS_TO_PARENT[alias] : requestedModule;
@@ -220,7 +225,7 @@ function showModule(name, opts = {}){
     name = parent;
   }
   const tab = opts.tab || alias || null;
-  TOP_LEVEL_MODULES.forEach(m => { const el = qs(VIEWS[m]); if(el) el.hidden = m !== name; });
+  TOP_LEVEL_MODULES.forEach(m => { const el = qs(VIEW_IDS[m]); if(el) el.hidden = m !== name; });
   if(name !== 'movements') setParentTabsHidden('movements');
   if(name !== 'alerts') setParentTabsHidden('alerts');
   setActiveModule(name);
@@ -797,9 +802,6 @@ function applyLabels(config){
   const entities = config.labels.entities;
   const document_ = config.labels.document;
   const documents = config.labels.documents;
-  const femEntity = esFemenina(entity);
-  const femDocument = esFemenina(document_);
-
   document.title = config.moduleName;
   const brandParts = config.moduleName.split('|');
   qs('brand-name').textContent = brandParts[0].trim();
@@ -807,17 +809,7 @@ function applyLabels(config){
   applyShellLabels();
 
   qs('dashboard-heading').textContent = config.moduleName;
-  qs('dashboard-subtitle').textContent = `Gestiona inventario, bodegas y operaciones logísticas. (Módulo base disponible en sección avanzada para administrador)`;
-  qs('stat-entities-label').textContent = entities;
-  qs('stat-documents-label').textContent = documents;
-  qs('action-new-entity-title').textContent = `${femEntity ? 'Nueva' : 'Nuevo'} ${entity}`;
-  qs('action-new-entity-sub').textContent = `Crear un registro de ${entity.toLowerCase()}`;
-  qs('action-new-document-title').textContent = `${femDocument ? 'Nueva' : 'Nuevo'} ${document_}`;
-  qs('action-new-document-sub').textContent = `Registrar un registro de ${document_.toLowerCase()}`;
-  qs('action-open-entities-title').textContent = entities;
-  qs('action-open-entities-sub').textContent = `Abrir la gestión de ${entities.toLowerCase()}`;
-  qs('action-find-title').textContent = 'Buscar registros';
-  qs('action-find-sub').textContent = `Buscar ${entities.toLowerCase()}`;
+  qs('dashboard-subtitle').textContent = `Gestiona inventario, bodegas y operaciones logísticas.`;
 
   qs('entities-view-heading').textContent = entities;
   qs('documents-view-heading').textContent = documents;
@@ -879,15 +871,6 @@ function applyPermissionUiState(){
   const canShipmentCreate = currentCan('shipments.create');
   const canReplenishmentCreate = currentCan('replenishments.create');
 
-  ['action-new-entity', 'action-new-document', 'action-open-entities', 'action-find'].forEach(id => {
-    const el = qs(id);
-    if(!el) return;
-    el.hidden = true;
-    el.disabled = false;
-  });
-
-  const baseCard = qs('base-module-card');
-  if(baseCard) baseCard.hidden = true;
   const demoCard = qs('demo-data-card');
   if(demoCard) demoCard.hidden = true;
 
@@ -983,7 +966,7 @@ function handleHashChange(){
     showModule(resolveLandingModule(getActiveRole(), getActiveUserId()).module);
     return;
   }
-  const moduleName = MODULES.includes(raw) ? raw : 'dashboard';
+  const moduleName = ROUTABLE_MODULES.includes(raw) ? raw : 'dashboard';
   const alias = ALIAS_TO_PARENT[moduleName] || null;
   const allowed = !HIDDEN_LEGACY_MODULES.includes(moduleName) && (alias
     ? guardModuleAccess(alias, { silent: true }) && guardModuleAccess(moduleName, { silent: true })
@@ -1020,16 +1003,6 @@ function wireEvents(){
     });
   });
 
-  const dashboardView = qs('view-dashboard');
-  if(dashboardView){
-    dashboardView.addEventListener('click', (ev) => {
-      const trigger = ev.target.closest('[data-goto]');
-      if(!trigger || trigger.disabled) return;
-      const opts = trigger.dataset.newRecord === 'true' ? { newRecord: true, focusForm: true } : {};
-      showModule(trigger.dataset.goto, opts);
-    });
-  }
-
   const demoButton = qs('load-demo-data');
   if(demoButton){
     demoButton.addEventListener('click', () => {
@@ -1056,10 +1029,6 @@ function wireEvents(){
     });
   }
 
-  qs('action-new-entity').addEventListener('click', () => { if(guardAction('base.manage')) showModule('entities', { newRecord: true, focusForm: true }); });
-  qs('action-new-document').addEventListener('click', () => { if(guardAction('base.manage')) showModule('documents', { newRecord: true, focusForm: true }); });
-  qs('action-open-entities').addEventListener('click', () => { if(guardAction('base.manage')) showModule('entities'); });
-  qs('action-find').addEventListener('click', () => { if(guardAction('base.manage')) showModule('search', { focusSearch: true }); });
   qs('entity-form').addEventListener('submit', handleEntitySubmit);
   qs('cancel-edit').addEventListener('click', clearEntityForm);
   qs('document-form').addEventListener('submit', handleDocumentSubmit);

@@ -44,10 +44,3 @@ export function renderDocumentsFor(entity, container){
     container.appendChild(ul);
   }
 }
-
-export function renderEntityList(listEl, entities){
-  listEl.innerHTML = '';
-  if(!entities || entities.length === 0) return false;
-  for(const e of entities) listEl.appendChild(createEntityItem(e));
-  return true;
-}
